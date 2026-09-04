@@ -3,7 +3,7 @@
 **Project:** <client project name>
 **Members:** DJ Brown, Giang Tran, Aria Linganuri, Amarachi Chiemela
 **Repository:** <url>, owned by <name>
-**Signed:** DJ Brown, Giang Tran, Amarachi Chiemela
+**Signed:** DJ Brown, Giang Tran,Aria Linganuri, Amarachi Chiemela
 
 ## 1. Meeting time
 
