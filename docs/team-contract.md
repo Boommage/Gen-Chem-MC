@@ -1,9 +1,9 @@
 # Team Contract: Gem Chem MC
 
 **Project:** Gen Chem Metacognition
-**Members:** DJ Brown, Giang Tran, Aria Linganuri, Amarachi Chiemela
+**Members:** DJ Brown, Giang Tran, Aria Linganuri, Amarachi Chiemela, Sam Shema
 **Repository:** https://github.com/Boommage/Gen-Chem-MC, owned by DJ Brown
-**Signed:** DJ Brown, Giang Tran,Aria Linganuri, Amarachi Chiemela, Victor Perez
+**Signed:** DJ Brown, Giang Tran,Aria Linganuri, Amarachi Chiemela, Victor Perez, Sam Shema
 
 ## 1. Meeting time
 
@@ -55,4 +55,4 @@ Still unresolved: We escalate to our TA, then to the instructor.
 
 Each member adds their own line, in their own commit.
 
-- DJ Brown, Giang Tran, Aria Linganuri, Amarachi Chiemela, Victor Perez 09/04/26
+- DJ Brown, Giang Tran, Aria Linganuri, Amarachi Chiemela, Victor Perez, Sam Shema 09/04/26
