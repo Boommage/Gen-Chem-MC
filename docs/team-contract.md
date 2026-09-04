@@ -1,7 +1,7 @@
 # Team Contract: Gem Chem MC
 
 **Project:** <client project name>
-**Members:** DJ Brown, Giang Tran
+**Members:** DJ Brown, Giang Tran, Aria Linganuri
 **Repository:** <url>, owned by <name>
 **Signed:** DJ Brown, Giang Tran
 
@@ -55,4 +55,4 @@ Still unresolved: we escalate to our TA, then to the instructor. We escalate ear
 
 Each member adds their own line, in their own commit.
 
-- DJ Brown, Giang Tran 09/04/26
+- DJ Brown, Giang Tran, Aria Linganuri 09/04/26
