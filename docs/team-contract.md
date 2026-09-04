@@ -1,55 +1,55 @@
 # Team Contract: Gem Chem MC
 
-**Project:** <client project name>
+**Project:** Gen Chem Metacognition
 **Members:** DJ Brown
-**Repository:** <url>, owned by <name>
+**Repository:** https://github.com/Boommage/Gen-Chem-MC, owned by DJ Brown
 **Signed:** DJ Brown
 
 ## 1. Meeting time
 
-We meet every **<day>** at **<time>** in **<place or link>**, for <duration>.
-A member who cannot attend tells the team **<how far ahead>** and reads the minutes.
+We plan on meeting Monday 1-3pm, Tuesday 10-11am, and Friday 1-3pm in Library, Guit Dinner Hall, or Starbucks depending on vibe. If a member cannot attend they have to let us know 12 hours ahead.
 
 ## 2. Communication
 
-Primary channel: **<Slack channel>**. Client contact goes through **<name>**.
-We reply within **<n>** hours on weekdays. Anything urgent: **<how>**.
+Primary channel: gen-chemers-team-4. Client contact goes through Heidi Conrad.
+We reply within 2 hours on weekdays. Anything urgent: Will be done through the text group.
 
 ## 3. How we decide
 
-Routine calls: **<e.g. whoever owns the use case decides>**.
-Anything affecting the whole team: **<e.g. discussed at the weekly meeting, majority, ties go to the project lead>**.
-A decision that survives the meeting is written down in **<where>**.
+Routine calls: whoever owns the use case decides.
+Anything affecting the whole team: Discussed at the weekly meeting, majority, ties go to the project lead.
+A decision that survives the meeting is written down in slack and or the meeting minutes doc.
 
 ## 4. How work is claimed
 
-Work is divided **by use case, not by layer**. One member owns a use case end to
+Work is divided by feature. One member owns a use case end to
 end: front end, back end, tests, and the pipeline.
-Claiming: **<e.g. assign yourself the sub-issue and move the card>**.
-Nobody is the "front-end person" or the "tester".
+Claiming: Assign yourself the sub-issue and move the card.
+Nobody is the "front-end person" or the "tester" we are all fullstack!
 
 ## 5. Git workflow and review
 
-Coding conventions (naming, formatting, layout) live in `AGENTS.md`, not here.
+Coding conventions (naming, formatting, layout) live in `AGENTS.md` or `CLAUDE.md`, not here.
 This clause is about how work moves.
 
-Branch per sub-issue, named **<convention, e.g. feat/42-short-slug>**.
-Never push to `main`. Every change arrives as a pull request.
-A pull request needs **<n>** approving review(s) from someone who does not own the use case.
-A reviewer reads the issue before the diff. Blocking a merge: **<what blocks it>**.
+Branch per sub-issue, named by convention, e.g. feat/42-gamers.
+Never push to `main`. Every change arrives as a pull request!!!
+A pull request needs at minamum 2 approving review(s) from someone who does not own the use case.
+A reviewer reads the issue before the diff. Blocking a merge: 
+    Ignoring merge conflicts, any breaking changes to the existing software
 
 ## 6. Working with AI
 
-We use **<tools>**. Our charter lives in `AGENTS.md`.
+We use codex or claude code. Our charter lives in `AGENTS.md` or `CLAUDE.md`.
 Every member can explain any line submitted under their name.
 We do not merge agent output that nobody has read.
-Additional limits we agree on: **<anything else>**.
+
 
 ## 7. When someone does not deliver
 
-First: **<who raises it, and how soon>**. We attack the problem, not the person.
-If it happens again: **<what the team does>**.
-Still unresolved: we escalate to our TA, then to the instructor. We escalate early.
+First: Team member must inform group at least two days prior. We will take over their feature for now.
+If it happens again: Tell them to prioritize the work in this class first and be more harsh on deadlines
+Still unresolved: We escalate to our TA, then to the instructor. 
 
 ## Signatures
 
