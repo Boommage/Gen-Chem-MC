@@ -1,8 +1,8 @@
 # Use Cases
 
-**Project:** _[Your project name]_
-**Team:** _[Team NN]_
-**Client:** _[Client name and organization]_
+**Project:** Gen Chem Metacognition
+**Team:** Team #4
+**Client:** Heidi Conrad - TCU Chemistry
 **Version:** 0.1
 
 ---
@@ -29,7 +29,7 @@ _Within one use case, `PRE-1`, `POST-1`, and the step numbers are local and may 
 
 | Date | Version | Description | Author |
 |---|---|---|---|
-| _[YYYY-MM-DD]_ | 0.1 | Initial use cases derived from the vision and scope feature list | _[Name]_ |
+| _[2026-09-11]_ | 0.1 | Initial use cases derived from the vision and scope feature list | _[Victor Perez]_ |
 
 ---
 
@@ -104,7 +104,7 @@ _[Your area codes, then a table of every use case by area. Write this list first
 
 ---
 
-## 4. Use Cases
+## 4. Use Cases EXAMPLE
 
 _[One `###` heading per use case, grouped under a `##` heading per area. Worked example below, taken from Project Pulse. Delete it and write your own.]_
 
@@ -172,3 +172,75 @@ _Keep human: whether this is one use case or three, what the priority is, and wh
 _The verification that catches the most: read the main success scenario aloud to someone who has not read the document, and stop wherever they ask a question. Every question is a missing step or a missing extension._
 
 _**Checklist for each use case:** Does the name start with a verb? Can the system test every precondition? Does every step alternate actor and system? Is there at least one extension per step that can fail? Does every business rule appear as an identifier only? Could a tester write test cases from this without asking you anything?_
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Use Cases
+
+_[One `###` heading per use case, grouped under a `##` heading per area. Worked example below, taken from Project Pulse. Delete it and write your own.]_
+
+### UC-RUB-find-criteria: The course admin finds criteria
+
+**UC ID and Name:** `UC-RUB-find-criteria`: Find criteria
+**Created By:** _[Name]_
+**Date Created:** _[YYYY-MM-DD]_
+**Primary Actor:** course admin
+**Secondary Actors:** none
+**Trigger:** The course admin indicates to find criteria.
+**Description:** The course admin wants to find the peer evaluation criteria defined in her course so that she can review, edit, delete, or add one to a rubric.
+
+**Preconditions:**
+
+- PRE-1. The course admin is logged into the system.
+
+**Postconditions:**
+
+- POST-1. A list of matching criteria in the course admin's course is returned and displayed. The list may be empty.
+
+**Main Success Scenario:**
+
+1. The course admin indicates to find criteria.
+2. The system asks the course admin to enter search values according to the "Search criteria" defined in the Associated Information of this use case.
+3. The course admin enters one or more search values and confirms that she has finished entering.
+4. The system finds all criteria in the course admin's course that match the provided search criteria.
+5. The system displays the matching criteria according to the "Search results display strategy" and the "Sort criteria" defined in the Associated Information of this use case.
+6. Use case ends.
+
+**Extensions:**
+
+- **4a. No matching criteria are found:**
+    - 4a1. The system alerts the course admin that no matching criteria are found.
+    - 4a2. The course admin either chooses `UC-RUB-create-criterion`: Create a criterion, or terminates the use case, or returns to step 2 of the normal flow.
+
+**Priority:** High
+**Frequency of Use:** Occasional; mostly at course setup and rubric revision.
+**Business Rules:** `BR-role-based-access`
+
+**Associated Information:**
+
+Search criteria:
+
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| criterion name | String | Optional | Course-scoped to the course admin's course | Criterion |
+
+Search results display strategy: criterion name, description, max score.
+
+Sort criteria: criterion name, ascending.
+
+**Related Use Cases:** `UC-RUB-create-criterion`: Create a criterion.
+**Assumptions:** none
+**Open Issues:** none
+
+---
+
+## Working these with your agent
+
+_[Delegate: drafting the main success scenario once you have the trigger and the goal; proposing extensions you have not thought of, which it is genuinely good at; turning a filled-in use case into a first set of test cases; checking that every `BR-*` you cite exists in [business-rules.md](business-rules.md).]_
+
+_Keep human: whether this is one use case or three, what the priority is, and whether an extension the agent proposed is a real path in your client's business or a generic one it has seen elsewhere. "The system handles concurrent edits" is a real requirement for some projects and invented complexity for others, and only you have met the client._
+
+_The verification that catches the most: read the main success scenario aloud to someone who has not read the document, and stop wherever they ask a question. Every question is a missing step or a missing extension._
+
+_**Checklist for each use case:** Does the name start with a verb? Can the system test every precondition? Does every step alternate actor and system? Is there at least one extension per step that can fail? Does every business rule appear as an identifier only? Could a tester write test cases from this without asking you anything?_
+
