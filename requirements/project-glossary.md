@@ -1,8 +1,8 @@
 # Project Glossary
 
-**Project:** _[Your project name]_
-**Team:** _[Team NN]_
-**Client:** _[Client name and organization]_
+**Project:** Gen Chem Metacognition
+**Team:** Team #4
+**Client:** Heidi Conrad, Chemistry Department, Texas Christian University
 **Version:** 0.1
 
 ---
