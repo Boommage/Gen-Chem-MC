@@ -1,39 +1,177 @@
 # Vision and Scope
 
-**Project:** _[Your project name]_
-**Team:** _[Team NN]_
-**Client:** _[Client name and organization]_
+**Project:** Gen Chem Metacognition Study Assistant  
+**Team:** Team #4 
+**Client:** Heidi Conrad, Chemistry Department, Texas Christian University  
 **Version:** 0.1
 
 ---
 
-_**How to use this template.** Every section below opens with an instruction in italic square brackets: what the section is for, how to produce it, a worked example, and a checklist. Fill in the section underneath the instruction. **Leave the instructions in the file until the document is stable.** They are context for you, for the teammate who writes a later section, and for your AI teammate, which reads this file every time it works on your project._
-
-_**This document has two readers.** Your client has to recognize their own business in it, so avoid jargon they would not use. Your AI teammate has to build from it, so avoid a claim it cannot check. When the two pull against each other, write for the client and put the precision in the use cases._
-
-_**Work it with your agent, not instead of it.** Give the agent this template, your one-page project brief, and your meeting notes, then put it in a role: "You are an experienced business analyst. Using the instructions in this template, draft section X, and list every question you cannot answer from what I gave you." The questions it cannot answer are the point. They go in [OPEN-ISSUES.md](OPEN-ISSUES.md) and they become the agenda for your next client meeting. What the agent cannot do is decide which of its questions deserve your client's limited time, or tell enthusiasm apart from commitment. That judgment is yours._
-
-## Identifiers in this document
-
-_Identifiers here are **name-based slugs**, never numbers._
-
-| Space | Shape | Example |
-|---|---|---|
-| Business objective | `BO-<slug>` | `BO-grading-time` |
-| Success metric | `SM-<slug>` | `SM-submission-rate` |
-| Risk | `RI-<slug>` | `RI-cloud-cost` |
-| Assumption or dependency | `AS-<slug>` | `AS-client-maintains-stack` |
-| Feature | `FEAT-<slug>` | `FEAT-performance-tracking` |
-
-_Coin each slug from the concept itself: short, kebab-case, unique within its space. **Never renumber, rename, or repoint an identifier.** A new item gets a new slug; a retired item keeps its slug and is marked withdrawn. Cite items by identifier, never by position in a list ("the third objective")._
-
-_Why this matters more with an agent than it used to: ask an agent to insert a new objective into a list numbered `BO-1` through `BO-6` and it has two options. Renumber everything, silently breaking every citation in your use cases and your specification, or append out of order. No test you can write detects either one. A slug has neither failure mode, and it tells a reader what the item is at the place it is cited._
+_[Instructions and identifiers section]_
 
 ## Revision History
 
 | Date | Version | Description | Author |
 |---|---|---|---|
-| _[YYYY-MM-DD]_ | 0.1 | Initial draft from the client brief and first client meeting | _[Name]_ |
+| 2026-09-11 | 0.1 | Initial draft from client brief and interview notes | Team + Instructor |
+
+---
+
+## Business Objectives
+
+_A business objective is something the client needs to be true after the system ships. It is not a feature ("build a chatbot") but an outcome ("students break down chemistry problems without giving up or memorizing")._
+
+| Identifier | Objective | Client Quote |
+|---|---|---|
+| `BO-metacognition` | Freshmen chemistry students develop problem-breakdown habits independent of direct instruction | "Self-reflection should be a big success after the study and the exams" |
+| `BO-study-habits` | Students identify which study methods and timing work for them, backed by usage data | "Aim for the study habits, not the material... if they don't prepare beforehand, they'll still lack confidence" |
+| `BO-guided-not-answered` | The system guides problem decomposition but never provides answers | "Differs from other AI platforms... it won't give you the answer but only help you to get there" |
+
+---
+
+## Success Metrics
+
+_Each metric is measurable at the end of the pilot. State it so a student or TA can check it without interpretation._
+
+| Identifier | Metric | Target | How Measured |
+|---|---|---|---|
+| `SM-usage-logs` | App logs study sessions: method, duration, timing of day, and student self-report confidence before/after | — | Built into app; exported for analysis |
+| `SM-correlation` | Correlation detectable between logged study habits (timing, method, duration) and quiz/exam performance | Correlation coefficient > 0.3 (moderate) | Grades from D2L + app logs, analyzed post-semester |
+| `SM-student-adoption` | Freshmen in target course(s) use the app at least once before the first quiz | ≥ 60% of enrolled | D2L enrollment vs. app login logs |
+
+---
+
+## Scope: In, Out, and Postponed
+
+_Be explicit about what ships in v1.0 and what does not. This prevents scope creep._
+
+### In Scope (v1.0)
+- `FEAT-guided-chatbot`: Chat interface that asks students to break down a problem step-by-step, never providing the answer directly
+- `FEAT-benchmark-quiz`: Initial survey to profile student's preferred study time (morning/evening), study length, existing methods (print/online, office hours attendance)
+- `FEAT-pomodoro-timer`: Built-in timer with session logging; app records duration and method used
+- `FEAT-study-session-log`: App records each study session (method, duration, time of day, subject). Student can review their own summary.
+- `FEAT-d2l-grades-read`: Read-only link to D2L to fetch quiz/exam grades for analysis (post-pilot)
+
+### Out of Scope (v1.1+)
+- `FEAT-assignment-tracker`: Sync assignment deadlines from D2L; send notifications before each due date
+- `FEAT-multi-class`: Extend to all student courses; recommend study habits per class
+- `FEAT-notifications`: Targeted push notifications (e.g., "3 PM: chem quiz tomorrow, study formulas for 25 min")
+- `FEAT-leaderboard`: Professor-only view of aggregated study habits and performance (gamification)
+- `FEAT-streak`: Streak counter for consecutive study sessions
+- `FEAT-school-wide`: Generalize beyond Heidi's courses to all chemistry courses at TCU
+
+---
+
+## Assumptions and Dependencies
+
+_State what must be true for this to work, and what the team does not control._
+
+| Identifier | Assumption | Risk Level | Owned By |
+|---|---|---|---|
+| `AS-d2l-access` | Team will gain D2L API access or account credentials by September 20 | High | Client (Heidi) |
+| `AS-training-data` | Client will provide access to D2L course materials and YouTube videos for chatbot training | Medium | Client |
+| `AS-client-available` | Client will be available for ~2 hours/month for feedback and requirement clarification | Medium | Client |
+| `AS-freshman-scope` | MVP targets only Heidi's freshman gen chem sections (no school-wide rollout in v1.0) | Low | Team + Client |
+| `AS-no-lti` | D2L integration does not require LTI launch; read-only API or manual credential sync is acceptable | Medium | Team (investigation task) |
+
+---
+
+## Known Risks
+
+_A risk is stated as a mechanism, not a category. It says what goes wrong, not what category it belongs to._
+
+| Identifier | Risk | Mitigation | Owner |
+|---|---|---|---|
+| `RI-chatbot-gives-answer` | Fine-tuning a model (e.g., Claude, GPT) to guide without answering is harder than it looks. Model hallucinates or pattern-matches on similar problems and gives away the method. | Build a simple rule-based tree first (hard-coded decision logic); test on real student questions from office hours before using an LLM | Team (spike in week 1) |
+| `RI-d2l-integration-wall` | D2L API is undocumented or requires institutional approval that takes weeks. Team rebuilds auth and sync twice. | Request D2L access immediately (before Tuesday meeting); assign one person to prototype read-only access by September 20. If API is blocked, fall back to: manual grade upload or student pastes screenshot of grades for pilot. | Team + Client (joint ownership) |
+| `RI-benchmark-survey-noise` | Benchmark quiz attempts to capture study habits via self-report; students guess or don't answer honestly. Correlation analysis later shows no signal. | Keep benchmark quiz short (~5 questions). Validate against first two weeks of logged data (do students actually use morning slots if they said they prefer morning?). Discard if noise is high. | Team (analysis, week 6) |
+
+---
+
+## Open Issues for Kickoff Meeting
+
+_These are questions the agent and team could not answer from the brief and interview notes. They become the agenda for the Tuesday session._
+
+1. **D2L Access Timeline & API Scope**  
+   _Who grants access, and how long does it take? Does the team need LTI launch, or can they read grades via API key?_
+
+2. **Freshman Scope Definition**  
+   _Which specific course section(s) are in the v1.0 pilot? One section (test), all gen chem freshmen (~200 students), or one course across multiple instructors?_
+
+3. **Grading Integration Timing**  
+   _Does the app need to pull grades during the semester to show correlation, or is end-of-semester analysis acceptable?_
+
+4. **Chatbot Training Data Format**  
+   _D2L materials: can they be exported as text, or are they locked in the LMS? YouTube videos: do you want transcripts, or should the team watch and extract Q&A?_
+
+5. **Anonymous vs. Identified**  
+   _The client mentioned "use it without judgment" and "possibility of anonymous." Does the app require a TCU login, or can students study without logging in (breaking grade correlation)?_
+
+6. **Study Method Taxonomy**  
+   _The benchmark quiz lists: "print studying, online studying, office hours." Are there others (flashcards, group study, problem sets)? Should the Pomodoro timer be the only tracked method, or can students log others?_
+
+7. **Success & Handoff**  
+   _After v1.0 ships, who maintains it (Heidi, a department TA, the team)? Is this a one-semester prototype, or expected to run for multiple cohorts?_
+
+8. **Existing Chat App**  
+   _You prefer to build on an existing chat app. Which one—Slack, Discord, a web chat like Rasa, or ChatGPT's web interface? Does the team have experience with it?_
+
+---
+
+## 1. Introduction
+
+_[This document defines the goals, purpose, and boundaries of the project. It gives every stakeholder a shared understanding of what the software is for and the context it operates in: the business problem being solved, how the software fits into the client's world, and where the line falls between what is in scope and what is not.]_
+
+### 1.1 Background
+
+_[Summarize the rationale and context for the new product, or for the changes to an existing one. Describe the situation that led to the decision to build it.]_
+
+_**Step 1: Describe the business.** Introduce the organization. Cover what it does (industry, products, services), its size (employees, locations), and the goals that relate to the problem you are solving._
+
+_Example: "The client, XYZ Logistics, is a mid-sized shipping company that specializes in last-mile delivery services for e-commerce businesses. The company operates in five major cities, employs 200 delivery staff, and handles over 10,000 deliveries per day. The goal is to optimize delivery efficiency and customer satisfaction."_
+
+_**Checklist:** Would a reader who has never heard of this organization understand what it does and why this project exists?]_
+
+### 1.2 Current Process Flows (As-Is Process Flows)
+
+_[Most projects require everyone involved to have a firm grasp of the business process being created, replicated, or improved. Without that understanding there is little chance users adopt the new solution. Process flows are the most effective model for building it.]_
+
+_**Step 1: Diagram the current process.** Draw the process people execute **today**, before your software exists, as a mermaid flowchart with **one subgraph per actor** (roles, departments, existing systems). Show the sequence of activities, the decision points, and the handoffs between actors._
+
+_Diagrams in this project are authored as mermaid inside the Markdown file, never exported from a drawing tool as an image. A picture of a diagram is invisible to your AI teammate and unreadable in a diff; a mermaid block is text it can read and revise. A skeleton to start from:_
+
+    ```mermaid
+    flowchart TD
+      subgraph Student
+        A[Open the shared spreadsheet] --> B[Type last week's activities]
+      end
+      subgraph Instructor
+        C[Review the updated sheets] --> D{Complete?}
+        D -- No --> E[Email the student]
+        D -- Yes --> F[Enter the grade in the LMS]
+      end
+      B --> C
+    ```
+
+_**Step 2: Write the prose.** Not every reader reads diagrams. Explain the flow in a paragraph underneath it._
+
+_**Step 3: List the current tools.** Enumerate what the process runs on today (spreadsheets, paper schedules, email, a legacy system) and give the limitation of each._
+
+_Example: "XYZ Logistics relies heavily on Excel spreadsheets for order management. Printed delivery schedules are distributed to drivers daily. These tools lack automation, making the process prone to human error and delays."_
+
+_**Step 4: Name the pain points.** Highlight the inefficient, slow, or error-prone steps, using one or two specific examples rather than a general complaint._
+
+_Inefficiency example: "Manual entry of order details into Excel causes delays and transcription errors. During peak season, order entries pile up, delaying processing and delivery."_
+
+_Time example: "Printing and distributing delivery schedules to drivers takes 2 hours daily, cutting into time available for deliveries."_
+
+_**Step 5: Write for an outsider.** Assume your reader knows nothing about this domain. Define every domain term on first use and add it to the [project glossary](project-glossary.md)._
+
+_**Checklist:** Is the business context clear to someone unfamiliar with it? Does the flow give step-by-step detail? Are all actors and tools described? Are the inefficiencies illustrated with specific examples? Is there a mermaid diagram with one subgraph per actor?]_
+
+### 1.3 References
+
+_[List every document referenced elsewhere in this one: the client's project brief, existing forms and reports, regulations, standards, competing products. Identify each by title, date, and where it can be obtained. The spreadsheet or screenshot your client showed you belongs here.]_
 
 ---
 
