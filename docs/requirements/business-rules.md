@@ -1,8 +1,8 @@
 # Business Rules
 
-**Project:** _[Your project name]_
-**Team:** _[Team NN]_
-**Client:** _[Client name and organization]_
+**Project:** Gen Chem Metacognition
+**Team:** Team #4
+**Client:** Heidi Conrad, Chemistry Department, Texas Christian University
 **Version:** 0.1
 
 ---
@@ -91,11 +91,17 @@ _The Source column is the defense. Every rule traces to a document or a person, 
 ### 1.1 Purpose
 
 _[One paragraph: this document collects the policies, regulations, standards, and formulas that govern the business your software operates in, so the specification can cite them rather than restate them.]_
+This document collects the policies and design philosophy that Heidi Conrad (Instructor, Department of Chemistry) has stated for the Gen Chem Metacognition project, so the specification can cite them instead of restating them. Because this project is early-stage, most of what surfaced in the first meeting is scope, goals, and open questions rather than firm rules — the sections below capture only what currently meets the bar of an attributable, business-owned constraint.
 
 ### 1.2 Scope
 
 _[Which parts of the client's business these rules cover, and which are out of scope. If your client's organization has rules that your system does not touch, say so here rather than silently omitting them.]_
 
+This document covers rules about **how the coaching tool is allowed to behave toward a student** — specifically the client's core differentiator (guide, don't answer). It does not yet cover:
+
+- Data-sharing/access arrangements (D2L access, YouTube lecture videos as training material) — these are resource/logistics arrangements, not business rules, and likely belong in a data-access or integration document once formalized.
+- Target population (freshmen / transitioning students), study methods to support (Pomodoro, benchmark quiz), and "big scope" items (assignment tracker, cross-class notifications) — these are project scope and requirements decisions, not rules the business held independent of this software, and belong in the specification/vision document instead.
+- Anything from "Retention Methods" not explicitly confirmed as client-owned policy (see flagged candidate below).
 ---
 
 ## 2. Rules
@@ -104,14 +110,27 @@ _[Group rules under topic headings that fit your project. The Project Pulse head
 
 _Format each rule as a bold identifier, the rule in one sentence, then its source. Worked examples:]_
 
-### 2.1 _[Topic]_
+### 2.1 Tutoring and Guidance Behavior
 
-- **`BR-active-weeks`:** A student may submit or edit a weekly activity report only during a week that the course section has marked active.
-  **Source:** course policy, confirmed by the instructor 2026-09-10.
-- **`BR-section-admin-only`:** Only a course admin may create or edit a course section, configure its active-weeks window (see `BR-active-weeks`), or assign a rubric to it.
-  **Source:** department policy on grade-bearing records.
-- **`BR-artifact-key-unique`:** Every artifact key is unique within a team and remains stable across edits to the artifact's content.
-  **Source:** team decision, 2026-09-10. **Candidate for the specification instead of this file**, since the team, not the client, would approve a change.
+- **`BR-no-direct-answers`:** The system must never give a student the final answer to a chemistry problem or question; it may only guide the student toward finding the answer themselves.
+  **Source:** client meeting notes — "Current AI platforms provide the answer - ours should never provide the answer but guide them." Confirmed by Heidi Conrad, client meeting, _[confirm date]_.
+
+- **`BR-answer-confirmation-only`:** The system may confirm whether a student's own answer is correct, but only after the student has produced an answer themselves; it does not supply the answer in advance of that. Depends on `BR-no-direct-answers`.
+  **Source:** client meeting notes — "Only tell them the answer if they got the answer correctly." Confirmed by Heidi Conrad, client meeting, _[confirm date]_.
+
+- **`BR-student-initiated-breakdown`:** When a student cannot break a problem down, the system prompts the student to break the problem down themselves; the system does not perform the breakdown for them. Depends on `BR-no-direct-answers`.
+  **Source:** client meeting notes — "The app does not break down itself... It asks students to break down the problem." Confirmed by Heidi Conrad, client meeting, _[confirm date]_.
+
+- **`BR-no-content-teaching`:** The system does not teach chemistry content or solve chemistry problems; its scope is limited to helping students reflect on and improve their study habits and preparation.
+  **Source:** client project brief, "Gen Chem Metacognition: A General Chemistry Success Coach" — "The goal is not for the AI to teach chemistry or solve chemistry problems. Instead, it should act as a coach..."
+
+  ### 2.2 Candidate Rules — Not Yet Confirmed
+
+_[Flagged per the checklist: these have the shape of a rule but the source is the team's own brainstorm, not a client statement. Confirm with Heidi before treating as a real rule, or move to the specification as a team design decision.]_
+
+- **`BR-leaderboard-professor-only`** *(unconfirmed)***:** If a leaderboard/points feature is implemented, it is visible only to the course instructor, not to students.
+  **Source:** team brainstorm ("Retention Methods" notes), not yet raised with or confirmed by the client. **Action:** ask Heidi directly at the next meeting; if she didn't originate this, it is a team design decision and belongs in the specification, not here.
+
 
 _[That third entry is deliberate. Flag rules you are not sure about rather than dropping them; deciding whether something is a rule or a requirement is a conversation to have with your client, and it is worth having.]_
 

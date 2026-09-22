@@ -33,6 +33,12 @@ _[The temptation is to define words your teammates already know. Skip those. The
 - _**Terms you invented** that the client does not use. Record them, then consider dropping them in favor of the client's word._
 
 _Ask the client directly: "Is there a word your team uses here that I would not guess the meaning of?"_
+- **Chatbot**: Online AI assistant that a student can talk with about their Chemistry problems
+- **Tutoring**: The role of the chatbot. Helps students break down problems by encouraging the reflection of notes and course material. Never breaks down the probelems on their own.
+- **Benchmark Quiz**: Initial assesment given to the students prior to using the chatbot. Evaluates the students knowledge level and guides the chatbot prior to sending their first message
+- **D2L**: The online hub for all TCU course material. All quizes, grades, and assignments are accessable from D2L.
+- 
+
 
 ## Conventions
 
@@ -50,7 +56,7 @@ _Rules:_
 
 | Date | Version | Description | Author |
 |---|---|---|---|
-| _[YYYY-MM-DD]_ | 0.1 | Initial terms from the client brief and first client meeting | _[Name]_ |
+| _[2016-09-10]_ | 0.1 | Initial terms from the client brief and first client meeting | _[DJ Brown]_ |
 
 ---
 
