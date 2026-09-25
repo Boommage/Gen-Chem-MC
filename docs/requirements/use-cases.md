@@ -100,147 +100,71 @@ _[Your area codes, then a table of every use case by area. Write this list first
 
 | Area code | Feature area | Use cases |
 |---|---|---|
-| _[RUB]_ | _[Rubric, from `FEAT-...`]_ | _[`UC-RUB-...`]_ |
+| `BNCH` | `FEAT-benchmark-quiz`: Initial study-habits survey | `UC-BNCH-complete-baseline-assessment` |
 
 ---
 
-## 4. Use Cases EXAMPLE
+## 4. Use Cases
 
-_[One `###` heading per use case, grouped under a `##` heading per area. Worked example below, taken from Project Pulse. Delete it and write your own.]_
+### UC-BNCH-complete-baseline-assessment: The student completes a baseline assessment
 
-### UC-RUB-find-criteria: The course admin finds criteria
-
-**UC ID and Name:** `UC-RUB-find-criteria`: Find criteria
-**Created By:** _[Name]_
-**Date Created:** _[YYYY-MM-DD]_
-**Primary Actor:** course admin
+**UC ID and Name:** `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment
+**Created By:** Team 4
+**Date Created:** 2026-09-18
+**Primary Actor:** student
 **Secondary Actors:** none
-**Trigger:** The course admin indicates to find criteria.
-**Description:** The course admin wants to find the peer evaluation criteria defined in her course so that she can review, edit, delete, or add one to a rubric.
+**Trigger:** The student selects the option to begin the baseline assessment during or after onboarding.
+**Description:** The student completes an initial assessment so that the system records the student's current study habits and preferences.
 
 **Preconditions:**
 
-- PRE-1. The course admin is logged into the system.
+- PRE-1. The student can access the application.
+- PRE-2. The baseline assessment is available.
 
 **Postconditions:**
 
-- POST-1. A list of matching criteria in the course admin's course is returned and displayed. The list may be empty.
+- POST-1. The student's baseline responses are stored and associated with the student.
+- POST-2. The baseline assessment is marked complete for the student.
 
 **Main Success Scenario:**
 
-1. The course admin indicates to find criteria.
-2. The system asks the course admin to enter search values according to the "Search criteria" defined in the Associated Information of this use case.
-3. The course admin enters one or more search values and confirms that she has finished entering.
-4. The system finds all criteria in the course admin's course that match the provided search criteria.
-5. The system displays the matching criteria according to the "Search results display strategy" and the "Sort criteria" defined in the Associated Information of this use case.
-6. Use case ends.
+1. The student selects the option to begin the baseline assessment.
+2. The system retrieves the assessment questions and displays an explanation of the assessment.
+3. The student begins the assessment.
+4. The system presents a question about the student's current study habits or preferences.
+5. The student answers the question.
+6. The system records the response and presents the next question.
+7. The student repeats steps 5 and 6 until all questions are answered.
+8. The system displays the completed assessment for review and submission.
+9. The student submits the completed assessment.
+10. The system validates the required responses.
+11. The system stores the validated responses, associates them with the student, marks the assessment complete, and confirms completion to the student.
+12. Use case ends.
 
 **Extensions:**
 
-- **4a. No matching criteria are found:**
-    - 4a1. The system alerts the course admin that no matching criteria are found.
-    - 4a2. The course admin either chooses `UC-RUB-create-criterion`: Create a criterion, or terminates the use case, or returns to step 2 of the normal flow.
+- **10a. A required response is missing:**
+    - 10a1. The system identifies the unanswered question or questions and asks the student to complete them.
+    - 10a2. The student provides the missing response or responses.
+    - 10a3. The flow rejoins at step 10.
+- **11a. The system cannot save the responses:**
+    - 11a1. The system informs the student that the assessment could not be saved and preserves the entered responses for another attempt where feasible.
+    - 11a2. The student retries submission or terminates the use case.
 
 **Priority:** High
-**Frequency of Use:** Occasional; mostly at course setup and rubric revision.
-**Business Rules:** `BR-role-based-access`
+**Frequency of Use:** Primarily once per student; whether retakes are allowed is not yet determined.
+**Business Rules:** none
 
 **Associated Information:**
 
-Search criteria:
-
 | Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
 |---|---|---|---|---|
-| criterion name | String | Optional | Course-scoped to the course admin's course | Criterion |
+| baseline response | Selection or text | Required for required assessment questions | Visible only to the student and authorized system functions | Study habits |
+| assessment completion status | Boolean | Set to complete only after all required responses are successfully stored | Student-specific; not editable by other students | Baseline assessment |
 
-Search results display strategy: criterion name, description, max score.
+The assessment focuses on study behavior rather than chemistry knowledge. Questions may cover preferred study times, session lengths, study methods, print versus digital study, and office-hours use. If persistence fails, the assessment is not marked complete; entered responses are preserved for a retry where feasible.
 
-Sort criteria: criterion name, ascending.
-
-**Related Use Cases:** `UC-RUB-create-criterion`: Create a criterion.
-**Assumptions:** none
-**Open Issues:** none
-
----
-
-## Working these with your agent
-
-_[Delegate: drafting the main success scenario once you have the trigger and the goal; proposing extensions you have not thought of, which it is genuinely good at; turning a filled-in use case into a first set of test cases; checking that every `BR-*` you cite exists in [business-rules.md](business-rules.md).]_
-
-_Keep human: whether this is one use case or three, what the priority is, and whether an extension the agent proposed is a real path in your client's business or a generic one it has seen elsewhere. "The system handles concurrent edits" is a real requirement for some projects and invented complexity for others, and only you have met the client._
-
-_The verification that catches the most: read the main success scenario aloud to someone who has not read the document, and stop wherever they ask a question. Every question is a missing step or a missing extension._
-
-_**Checklist for each use case:** Does the name start with a verb? Can the system test every precondition? Does every step alternate actor and system? Is there at least one extension per step that can fail? Does every business rule appear as an identifier only? Could a tester write test cases from this without asking you anything?_
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-Use Cases
-
-_[One `###` heading per use case, grouped under a `##` heading per area. Worked example below, taken from Project Pulse. Delete it and write your own.]_
-
-### UC-RUB-find-criteria: The course admin finds criteria
-
-**UC ID and Name:** `UC-RUB-find-criteria`: Find criteria
-**Created By:** _[Name]_
-**Date Created:** _[YYYY-MM-DD]_
-**Primary Actor:** course admin
-**Secondary Actors:** none
-**Trigger:** The course admin indicates to find criteria.
-**Description:** The course admin wants to find the peer evaluation criteria defined in her course so that she can review, edit, delete, or add one to a rubric.
-
-**Preconditions:**
-
-- PRE-1. The course admin is logged into the system.
-
-**Postconditions:**
-
-- POST-1. A list of matching criteria in the course admin's course is returned and displayed. The list may be empty.
-
-**Main Success Scenario:**
-
-1. The course admin indicates to find criteria.
-2. The system asks the course admin to enter search values according to the "Search criteria" defined in the Associated Information of this use case.
-3. The course admin enters one or more search values and confirms that she has finished entering.
-4. The system finds all criteria in the course admin's course that match the provided search criteria.
-5. The system displays the matching criteria according to the "Search results display strategy" and the "Sort criteria" defined in the Associated Information of this use case.
-6. Use case ends.
-
-**Extensions:**
-
-- **4a. No matching criteria are found:**
-    - 4a1. The system alerts the course admin that no matching criteria are found.
-    - 4a2. The course admin either chooses `UC-RUB-create-criterion`: Create a criterion, or terminates the use case, or returns to step 2 of the normal flow.
-
-**Priority:** High
-**Frequency of Use:** Occasional; mostly at course setup and rubric revision.
-**Business Rules:** `BR-role-based-access`
-
-**Associated Information:**
-
-Search criteria:
-
-| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
-|---|---|---|---|---|
-| criterion name | String | Optional | Course-scoped to the course admin's course | Criterion |
-
-Search results display strategy: criterion name, description, max score.
-
-Sort criteria: criterion name, ascending.
-
-**Related Use Cases:** `UC-RUB-create-criterion`: Create a criterion.
-**Assumptions:** none
-**Open Issues:** none
-
----
-
-## Working these with your agent
-
-_[Delegate: drafting the main success scenario once you have the trigger and the goal; proposing extensions you have not thought of, which it is genuinely good at; turning a filled-in use case into a first set of test cases; checking that every `BR-*` you cite exists in [business-rules.md](business-rules.md).]_
-
-_Keep human: whether this is one use case or three, what the priority is, and whether an extension the agent proposed is a real path in your client's business or a generic one it has seen elsewhere. "The system handles concurrent edits" is a real requirement for some projects and invented complexity for others, and only you have met the client._
-
-_The verification that catches the most: read the main success scenario aloud to someone who has not read the document, and stop wherever they ask a question. Every question is a missing step or a missing extension._
-
-_**Checklist for each use case:** Does the name start with a verb? Can the system test every precondition? Does every step alternate actor and system? Is there at least one extension per step that can fail? Does every business rule appear as an identifier only? Could a tester write test cases from this without asking you anything?_
+**Related Use Cases:** none
+**Assumptions:** The baseline assessment is available at the start of the student's use of the application.
+**Open Issues:** Is completion mandatory? Can students retake the assessment?
 
