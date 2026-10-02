@@ -1,4 +1,4 @@
-# Team Contract: Gem Chem MC
+# Team Contract: Gen Chem MC
 
 **Project:** Gen Chem Metacognition
 **Members:** DJ Brown, Giang Tran, Aria Linganuri, Amarachi Chiemela, Sam Shema
