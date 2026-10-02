@@ -124,6 +124,9 @@ _Format each rule as a bold identifier, the rule in one sentence, then its sourc
 - **`BR-no-content-teaching`:** The system does not teach chemistry content or solve chemistry problems; its scope is limited to helping students reflect on and improve their study habits and preparation.
   **Source:** client project brief, "Gen Chem Metacognition: A General Chemistry Success Coach" — "The goal is not for the AI to teach chemistry or solve chemistry problems. Instead, it should act as a coach..."
 
+- **`BR-no-direct-answers`:** The system must never give a student the final answer to a chemistry problem or question; it may only guide the student toward finding the answer themselves.
+  **Source:** Client meeting notes, September 8, 2026 — Heidi Conrad: "Current AI platforms provide the answer - ours should never provide the answer but guide them."
+
   ### 2.2 Candidate Rules — Not Yet Confirmed
 
 _[Flagged per the checklist: these have the shape of a rule but the source is the team's own brainstorm, not a client statement. Confirm with Heidi before treating as a real rule, or move to the specification as a team design decision.]_

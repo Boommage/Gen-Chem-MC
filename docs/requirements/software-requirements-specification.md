@@ -219,31 +219,67 @@ _Write one subsection per attribute your project actually has, and say "not appl
 
 ### 9.1 Usability
 
-_Example: `USE-wcag-aa`: All user-facing views shall conform to WCAG 2.1 level AA._
+**USE-core-navigation**: A student shall be able to access their study plan, Pomodoro timer, study history, and AI study assistant within 3 clicks from the main dashboard.
+
+**USE-study-plan**: A first-time student shall be able to create or view their initial study plan within 5 minutes of completing onboarding.
+
+**USE-task-completion**: At least 80% of students participating in usability testing shall be able to start a study session, view their study plan, and access the AI study assistant without help from the development team.
+
+**USE-accessibility**: All primary student-facing pages shall meet WCAG 2.1 Level AA accessibility requirements.
+
 
 ### 9.2 Performance
 
-_Example: `PER-report-load`: A peer evaluation report for a section of 80 students shall render within 2 seconds at the 95th percentile._
+**PER-page-load**: The dashboard, study plan, and study tracking pages shall load within 2 seconds for at least 95% of requests under normal expected usage.
+
+**PER-ai-response**: The system shall display an AI response or a loading indicator within 3 seconds after a student submits a question.
+
+**PER-study-log**: A completed study session shall appear in the student's study history within 2 seconds after being saved.
+
 
 ### 9.3 Security
 
-_Example: `SEC-authentication`: The system shall authenticate every request to a non-public endpoint, and shall reject unauthenticated requests without disclosing whether the requested resource exists._
+**SEC-authentication**: 100% of student-specific pages and API endpoints shall require an authenticated user before returning private student information.
+
+**SEC-student-isolation**: Students shall only be able to access their own grades, study plans, study history, confidence ratings, and other private academic information.
+
+**SEC-grade-consent**: The platform shall not import or use a student's D2L grade information unless the student has explicitly chosen to share it.
+
+**SEC-passwords**: If passwords are stored by the platform, 100% of passwords shall be stored using a recognized password-hashing algorithm and shall never be stored as plain text.
+
 
 ### 9.4 Safety
 
-_[Conditions under which the system could contribute to harm, and what prevents it. For most projects in this course the honest answer is `SAF-not-applicable`, with a sentence saying why.]_
+**SAF-ai-guidance**: For General Chemistry practice questions, the AI study assistant shall provide at least one guiding question, hint, or explanation before providing a final answer.
+
+**SAF-ai-transparency**: The AI study assistant shall clearly identify itself as an AI study tool and shall not claim that its generated chemistry explanations are guaranteed to be correct.
+
 
 ### 9.5 Availability
 
-_Example: `AVL-uptime`: The system shall be available 99% of the time during the academic term, excluding announced maintenance windows._
+**AVL-uptime**: The platform shall maintain at least 99% availability during the academic term, excluding announced maintenance periods and outages caused by external services such as D2L or the AI provider.
+
 
 ### 9.6 Robustness
 
-_Example: `ROB-edit-loss-bound`: On an unexpected client disconnect, the system shall lose no more than 30 seconds of a student's in-progress edits._
+**ROB-study-session**: If a student refreshes the page or temporarily loses connection during an active Pomodoro session, the system shall restore the session with no more than 10 seconds of timer difference.
 
-### 9.7 Scalability, interoperability, maintainability
+**ROB-external-service**: If D2L, the AI service, or another external integration is unavailable, the platform shall display an understandable error message and keep unrelated platform features usable.
 
-_[Add the ones that apply, with `SCA-`, `INT-`, and `MNT-` identifiers. Maintainability is the one this course cares about most, because someone inherits your code in January.]_
+**ROB-invalid-data**: Invalid or incomplete schedule, study-session, and check-in information shall be rejected with an error message instead of causing the application to crash or save corrupted information.
+
+
+### 9.7 Scalability, Interoperability, Maintainability
+
+**SCA-concurrent-users**: The platform shall support at least 100 simultaneously active students without increasing the 95th-percentile page-load time beyond 3 seconds.
+
+**INT-d2l**: The platform shall use an approved D2L integration method or API when accessing academic information and shall only access information that the student has authorized.
+
+**INT-calendar**: Study-plan events shall use a standardized date and time format so that future integration with external calendar services can be added without redesigning the study-plan data model.
+
+**MNT-documentation**: All major application modules and external integrations shall include documentation explaining their purpose, dependencies, and setup requirements.
+
+**MNT-setup**: A new developer following the project's README shall be able to install the required dependencies, configure the development environment, and launch the application within 30 minutes, excluding time required to obtain external API credentials.
 
 ---
 

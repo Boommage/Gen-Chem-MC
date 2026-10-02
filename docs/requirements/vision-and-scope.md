@@ -1,423 +1,341 @@
 # Vision and Scope
 
-**Project:** Gen Chem Metacognition Study Assistant  
-**Team:** Team #4 
-**Client:** Heidi Conrad, Chemistry Department, Texas Christian University  
-**Version:** 0.1
+**Project:** Gen Chem Metacognition Study Assistant
+**Team:** Team #4
+**Client:** Heidi Conrad, Chemistry Department, Texas Christian University
+**Version:** 0.2
 
 ---
 
-_[Instructions and identifiers section]_
+## Identifiers
+
+Every item in this document carries a stable, name-based identifier. Other documents cite these identifiers instead of repeating the text.
+
+| Space | For | Example |
+|---|---|---|
+| `BO-<slug>` | Business objectives | `BO-problem-dissection` |
+| `SM-<slug>` | Success metrics | `SM-no-answer-leak` |
+| `FEAT-<slug>` | Product features | `FEAT-guided-chatbot` |
+| `RI-<slug>` | Business risks | `RI-chatbot-gives-answer` |
+| `AS-<slug>` | Assumptions and dependencies | `AS-d2l-access` |
+
+Business rules (`BR-*`) live in [business-rules.md](business-rules.md). Open questions (`OI-*`) come from the [client interview notes](../meetings/client-interview-2026-09-08.md) and belong in [OPEN-ISSUES.md](OPEN-ISSUES.md).
 
 ## Revision History
 
 | Date | Version | Description | Author |
 |---|---|---|---|
 | 2026-09-11 | 0.1 | Initial draft from client brief and interview notes | Team + Instructor |
+| 2026-09-25 | 0.2 | Moved content into template sections and removed the duplicated Introduction. Aligned objectives with the interview notes (replaced `BO-metacognition`, `BO-study-habits`, and `BO-guided-not-answered`, which is a business rule: `BR-no-direct-answers`). Marked unconfirmed metric targets as TBD. Moved `FEAT-d2l-grades-read` to Postponed. Added features discussed with the client. Filled background, process flows, stakeholders, and context from the interview. | Sam Shema |
 
 ---
 
-## Business Objectives
+## 1. Introduction
 
-_A business objective is something the client needs to be true after the system ships. It is not a feature ("build a chatbot") but an outcome ("students break down chemistry problems without giving up or memorizing")._
+### 1.1 Background
 
-| Identifier | Objective | Client Quote |
+Heidi Conrad teaches general chemistry in the Department of Chemistry at Texas Christian University (TCU). Her current course has about 185 students, mostly freshmen. The fall course is partially flipped: of about 90 modules, about 30 are completed outside class through lecture videos.
+
+Many freshmen arrive without knowing how to study for a college-level course. Their backgrounds range from one year of high-school chemistry, to AP Chemistry, to repeating the college course. Common patterns include memorizing instead of reasoning, very long but unfocused study sessions, difficulty breaking down word problems, and fear of admitting they do not know how to study or solve something.
+
+The client has already built and tested a chatbot on **PlayLab**. It asks students what they know, refuses requests for answers, catches inconsistencies, and confirms correct reasoning. PlayLab is nonprofit-hosted and its long-term support is uncertain, so the client wants a new, independent application built on the same concept. Long term, she would like to seek IRB approval, connect consenting students' usage data with grades, evaluate whether the intervention improves outcomes, and possibly publish the results.
+
+Domain terms used here (metacognition, DFW, IRB, D2L) are defined in the [project glossary](project-glossary.md).
+
+### 1.2 Current Process Flows (As-Is)
+
+```mermaid
+flowchart TD
+  subgraph Student
+    S1[Attend class and watch<br/>out-of-class video modules] --> S2[Study using self-chosen methods]
+    S2 --> S3{Stuck on a problem?}
+    S3 -- Yes --> S4[Go to office hours,<br/>tutorial hours, or peer tutoring]
+    S3 -- Yes --> S5[Ask a general AI tool,<br/>which often gives the answer]
+    S3 -- No --> S6[Take quiz or exam]
+    S4 --> S6
+    S6 --> S7[Optionally reflect using<br/>the PlayLab chatbot]
+  end
+  subgraph Instructor
+    I1[Publish modules, videos,<br/>and materials on D2L and YouTube] --> I2[Encourage timed practice<br/>and study strategies]
+    I3[Grade quizzes and exams in D2L]
+    I4[Ask students about study<br/>habits: self-reported only]
+  end
+  subgraph Tutors["Tutorial students / peer tutors"]
+    T1[Help students who come<br/>to tutorial hours]
+  end
+  I1 --> S1
+  I2 --> S2
+  S4 --> T1
+  S6 --> I3
+  I3 --> I4
+```
+
+Today, students attend class, complete out-of-class video modules, and study on their own with whatever methods they already use. When stuck, they can go to office hours, the department's tutorial hours (more than 30 hours per week, staffed by students who earned an A or A- in Chemistry I and II), or peer-to-peer tutoring. Many instead turn to general AI tools that simply give the answer. The instructor encourages timed practice, for example four or five random questions in 10 minutes before a 12-minute quiz. After quizzes and exams, a small number of students reflect using the PlayLab chatbot, which was designed mainly for post-assessment reflection but can also guide students through problems.
+
+**Current tools and their limitations**
+
+| Tool | Used for | Limitation |
 |---|---|---|
-| `BO-metacognition` | Freshmen chemistry students develop problem-breakdown habits independent of direct instruction | "Self-reflection should be a big success after the study and the exams" |
-| `BO-study-habits` | Students identify which study methods and timing work for them, backed by usage data | "Aim for the study habits, not the material... if they don't prepare beforehand, they'll still lack confidence" |
-| `BO-guided-not-answered` | The system guides problem decomposition but never provides answers | "Differs from other AI platforms... it won't give you the answer but only help you to get there" |
+| D2L | Course materials, quizzes, grades | Holds grades but nothing about how students studied |
+| YouTube | Lecture videos | No link to study behavior |
+| Google Drive | PowerPoints and course materials | Not connected to any study tool |
+| PlayLab chatbot | Guided questioning and reflection | Long-term hosting and support uncertain; only a few students have tried it; can be too encouraging or verbose for some users |
+| General AI tools (e.g., ChatGPT) | Getting help on problems | Give the answer, so students skip the reasoning they will need on exams |
+| Office hours, tutorial hours, peer tutoring | Human help | Office hours can get crowded enough that some students leave rather than ask |
 
----
+**Pain points**
 
-## Success Metrics
-
-_Each metric is measurable at the end of the pilot. State it so a student or TA can check it without interpretation._
-
-| Identifier | Metric | Target | How Measured |
-|---|---|---|---|
-| `SM-usage-logs` | App logs study sessions: method, duration, timing of day, and student self-report confidence before/after | — | Built into app; exported for analysis |
-| `SM-correlation` | Correlation detectable between logged study habits (timing, method, duration) and quiz/exam performance | Correlation coefficient > 0.3 (moderate) | Grades from D2L + app logs, analyzed post-semester |
-| `SM-student-adoption` | Freshmen in target course(s) use the app at least once before the first quiz | ≥ 60% of enrolled | D2L enrollment vs. app login logs |
-
----
-
-## Scope: In, Out, and Postponed
-
-_Be explicit about what ships in v1.0 and what does not. This prevents scope creep._
-
-### In Scope (v1.0)
-- `FEAT-guided-chatbot`: Chat interface that asks students to break down a problem step-by-step, never providing the answer directly
-- `FEAT-benchmark-quiz`: Initial survey to profile student's preferred study time (morning/evening), study length, existing methods (print/online, office hours attendance)
-- `FEAT-pomodoro-timer`: Built-in timer with session logging; app records duration and method used
-- `FEAT-study-session-log`: App records each study session (method, duration, time of day, subject). Student can review their own summary.
-- `FEAT-d2l-grades-read`: Read-only link to D2L to fetch quiz/exam grades for analysis (post-pilot)
-
-### Out of Scope (v1.1+)
-- `FEAT-assignment-tracker`: Sync assignment deadlines from D2L; send notifications before each due date
-- `FEAT-multi-class`: Extend to all student courses; recommend study habits per class
-- `FEAT-notifications`: Targeted push notifications (e.g., "3 PM: chem quiz tomorrow, study formulas for 25 min")
-- `FEAT-leaderboard`: Professor-only view of aggregated study habits and performance (gamification)
-- `FEAT-streak`: Streak counter for consecutive study sessions
-- `FEAT-school-wide`: Generalize beyond Heidi's courses to all chemistry courses at TCU
-
----
-
-## Assumptions and Dependencies
-
-_State what must be true for this to work, and what the team does not control._
-
-| Identifier | Assumption | Risk Level | Owned By |
-|---|---|---|---|
-| `AS-d2l-access` | Team will gain D2L API access or account credentials by September 20 | High | Client (Heidi) |
-| `AS-training-data` | Client will provide access to D2L course materials and YouTube videos for chatbot training | Medium | Client |
-| `AS-client-available` | Client will be available for ~2 hours/month for feedback and requirement clarification | Medium | Client |
-| `AS-freshman-scope` | MVP targets only Heidi's freshman gen chem sections (no school-wide rollout in v1.0) | Low | Team + Client |
-| `AS-no-lti` | D2L integration does not require LTI launch; read-only API or manual credential sync is acceptable | Medium | Team (investigation task) |
-
----
-
-## Known Risks
-
-_A risk is stated as a mechanism, not a category. It says what goes wrong, not what category it belongs to._
-
-| Identifier | Risk | Mitigation | Owner |
-|---|---|---|---|
-| `RI-chatbot-gives-answer` | Fine-tuning a model (e.g., Claude, GPT) to guide without answering is harder than it looks. Model hallucinates or pattern-matches on similar problems and gives away the method. | Build a simple rule-based tree first (hard-coded decision logic); test on real student questions from office hours before using an LLM | Team (spike in week 1) |
-| `RI-d2l-integration-wall` | D2L API is undocumented or requires institutional approval that takes weeks. Team rebuilds auth and sync twice. | Request D2L access immediately (before Tuesday meeting); assign one person to prototype read-only access by September 20. If API is blocked, fall back to: manual grade upload or student pastes screenshot of grades for pilot. | Team + Client (joint ownership) |
-| `RI-benchmark-survey-noise` | Benchmark quiz attempts to capture study habits via self-report; students guess or don't answer honestly. Correlation analysis later shows no signal. | Keep benchmark quiz short (~5 questions). Validate against first two weeks of logged data (do students actually use morning slots if they said they prefer morning?). Discard if noise is high. | Team (analysis, week 6) |
-
----
-
-## Open Issues for Kickoff Meeting
-
-_These are questions the agent and team could not answer from the brief and interview notes. They become the agenda for the Tuesday session._
-
-1. **D2L Access Timeline & API Scope**  
-   _Who grants access, and how long does it take? Does the team need LTI launch, or can they read grades via API key?_
-
-2. **Freshman Scope Definition**  
-   _Which specific course section(s) are in the v1.0 pilot? One section (test), all gen chem freshmen (~200 students), or one course across multiple instructors?_
-
-3. **Grading Integration Timing**  
-   _Does the app need to pull grades during the semester to show correlation, or is end-of-semester analysis acceptable?_
-
-4. **Chatbot Training Data Format**  
-   _D2L materials: can they be exported as text, or are they locked in the LMS? YouTube videos: do you want transcripts, or should the team watch and extract Q&A?_
-
-5. **Anonymous vs. Identified**  
-   _The client mentioned "use it without judgment" and "possibility of anonymous." Does the app require a TCU login, or can students study without logging in (breaking grade correlation)?_
-
-6. **Study Method Taxonomy**  
-   _The benchmark quiz lists: "print studying, online studying, office hours." Are there others (flashcards, group study, problem sets)? Should the Pomodoro timer be the only tracked method, or can students log others?_
-
-7. **Success & Handoff**  
-   _After v1.0 ships, who maintains it (Heidi, a department TA, the team)? Is this a one-semester prototype, or expected to run for multiple cohorts?_
-
-8. **Existing Chat App**  
-   _You prefer to build on an existing chat app. Which one—Slack, Discord, a web chat like Rasa, or ChatGPT's web interface? Does the team have experience with it?_
-
----
-
-## 1. Introduction
-
-_[This document defines the goals, purpose, and boundaries of the project. It gives every stakeholder a shared understanding of what the software is for and the context it operates in: the business problem being solved, how the software fits into the client's world, and where the line falls between what is in scope and what is not.]_
-
-### 1.1 Background
-
-_[Summarize the rationale and context for the new product, or for the changes to an existing one. Describe the situation that led to the decision to build it.]_
-
-_**Step 1: Describe the business.** Introduce the organization. Cover what it does (industry, products, services), its size (employees, locations), and the goals that relate to the problem you are solving._
-
-_Example: "The client, XYZ Logistics, is a mid-sized shipping company that specializes in last-mile delivery services for e-commerce businesses. The company operates in five major cities, employs 200 delivery staff, and handles over 10,000 deliveries per day. The goal is to optimize delivery efficiency and customer satisfaction."_
-
-_**Checklist:** Would a reader who has never heard of this organization understand what it does and why this project exists?]_
-
-### 1.2 Current Process Flows (As-Is Process Flows)
-
-_[Most projects require everyone involved to have a firm grasp of the business process being created, replicated, or improved. Without that understanding there is little chance users adopt the new solution. Process flows are the most effective model for building it.]_
-
-_**Step 1: Diagram the current process.** Draw the process people execute **today**, before your software exists, as a mermaid flowchart with **one subgraph per actor** (roles, departments, existing systems). Show the sequence of activities, the decision points, and the handoffs between actors._
-
-_Diagrams in this project are authored as mermaid inside the Markdown file, never exported from a drawing tool as an image. A picture of a diagram is invisible to your AI teammate and unreadable in a diff; a mermaid block is text it can read and revise. A skeleton to start from:_
-
-    ```mermaid
-    flowchart TD
-      subgraph Student
-        A[Open the shared spreadsheet] --> B[Type last week's activities]
-      end
-      subgraph Instructor
-        C[Review the updated sheets] --> D{Complete?}
-        D -- No --> E[Email the student]
-        D -- Yes --> F[Enter the grade in the LMS]
-      end
-      B --> C
-    ```
-
-_**Step 2: Write the prose.** Not every reader reads diagrams. Explain the flow in a paragraph underneath it._
-
-_**Step 3: List the current tools.** Enumerate what the process runs on today (spreadsheets, paper schedules, email, a legacy system) and give the limitation of each._
-
-_Example: "XYZ Logistics relies heavily on Excel spreadsheets for order management. Printed delivery schedules are distributed to drivers daily. These tools lack automation, making the process prone to human error and delays."_
-
-_**Step 4: Name the pain points.** Highlight the inefficient, slow, or error-prone steps, using one or two specific examples rather than a general complaint._
-
-_Inefficiency example: "Manual entry of order details into Excel causes delays and transcription errors. During peak season, order entries pile up, delaying processing and delivery."_
-
-_Time example: "Printing and distributing delivery schedules to drivers takes 2 hours daily, cutting into time available for deliveries."_
-
-_**Step 5: Write for an outsider.** Assume your reader knows nothing about this domain. Define every domain term on first use and add it to the [project glossary](project-glossary.md)._
-
-_**Checklist:** Is the business context clear to someone unfamiliar with it? Does the flow give step-by-step detail? Are all actors and tools described? Are the inefficiencies illustrated with specific examples? Is there a mermaid diagram with one subgraph per actor?]_
+- **Study habits are invisible.** The instructor knows how students studied only from self-reports, so neither she nor the students can tell which habits actually work.
+- **Students skip the reasoning.** A student stuck on a word problem can get the answer from a general AI tool in seconds, and then cannot break down a similar problem alone on a 12-minute quiz.
+- **Fear of judgment.** Students who feel overwhelmed in a crowded office hour leave without asking for help.
 
 ### 1.3 References
 
-_[List every document referenced elsewhere in this one: the client's project brief, existing forms and reports, regulations, standards, competing products. Identify each by title, date, and where it can be obtained. The spreadsheet or screenshot your client showed you belongs here.]_
-
----
-
-## 1. Introduction
-
-_[This document defines the goals, purpose, and boundaries of the project. It gives every stakeholder a shared understanding of what the software is for and the context it operates in: the business problem being solved, how the software fits into the client's world, and where the line falls between what is in scope and what is not.]_
-
-### 1.1 Background
-
-_[Summarize the rationale and context for the new product, or for the changes to an existing one. Describe the situation that led to the decision to build it.]_
-
-_**Step 1: Describe the business.** Introduce the organization. Cover what it does (industry, products, services), its size (employees, locations), and the goals that relate to the problem you are solving._
-
-_Example: "The client, XYZ Logistics, is a mid-sized shipping company that specializes in last-mile delivery services for e-commerce businesses. The company operates in five major cities, employs 200 delivery staff, and handles over 10,000 deliveries per day. The goal is to optimize delivery efficiency and customer satisfaction."_
-
-_**Checklist:** Would a reader who has never heard of this organization understand what it does and why this project exists?]_
-
-### 1.2 Current Process Flows (As-Is Process Flows)
-
-_[Most projects require everyone involved to have a firm grasp of the business process being created, replicated, or improved. Without that understanding there is little chance users adopt the new solution. Process flows are the most effective model for building it.]_
-
-_**Step 1: Diagram the current process.** Draw the process people execute **today**, before your software exists, as a mermaid flowchart with **one subgraph per actor** (roles, departments, existing systems). Show the sequence of activities, the decision points, and the handoffs between actors._
-
-_Diagrams in this project are authored as mermaid inside the Markdown file, never exported from a drawing tool as an image. A picture of a diagram is invisible to your AI teammate and unreadable in a diff; a mermaid block is text it can read and revise. A skeleton to start from:_
-
-    ```mermaid
-    flowchart TD
-      subgraph Student
-        A[Open the shared spreadsheet] --> B[Type last week's activities]
-      end
-      subgraph Instructor
-        C[Review the updated sheets] --> D{Complete?}
-        D -- No --> E[Email the student]
-        D -- Yes --> F[Enter the grade in the LMS]
-      end
-      B --> C
-    ```
-
-_**Step 2: Write the prose.** Not every reader reads diagrams. Explain the flow in a paragraph underneath it._
-
-_**Step 3: List the current tools.** Enumerate what the process runs on today (spreadsheets, paper schedules, email, a legacy system) and give the limitation of each._
-
-_Example: "XYZ Logistics relies heavily on Excel spreadsheets for order management. Printed delivery schedules are distributed to drivers daily. These tools lack automation, making the process prone to human error and delays."_
-
-_**Step 4: Name the pain points.** Highlight the inefficient, slow, or error-prone steps, using one or two specific examples rather than a general complaint._
-
-_Inefficiency example: "Manual entry of order details into Excel causes delays and transcription errors. During peak season, order entries pile up, delaying processing and delivery."_
-
-_Time example: "Printing and distributing delivery schedules to drivers takes 2 hours daily, cutting into time available for deliveries."_
-
-_**Step 5: Write for an outsider.** Assume your reader knows nothing about this domain. Define every domain term on first use and add it to the [project glossary](project-glossary.md)._
-
-_**Checklist:** Is the business context clear to someone unfamiliar with it? Does the flow give step-by-step detail? Are all actors and tools described? Are the inefficiencies illustrated with specific examples? Is there a mermaid diagram with one subgraph per actor?]_
-
-### 1.3 References
-
-_[List every document referenced elsewhere in this one: the client's project brief, existing forms and reports, regulations, standards, competing products. Identify each by title, date, and where it can be obtained. The spreadsheet or screenshot your client showed you belongs here.]_
+| Reference | Date | Where to find it |
+|---|---|---|
+| Client project brief, "Gen Chem Metacognition: A General Chemistry Success Coach" | Fall 2026 | Course materials (cited in [business-rules.md](business-rules.md)) |
+| Initial client meeting notes | 2026-09-11 | [client-interview-2026-09-08.md](../meetings/client-interview-2026-09-08.md) |
+| Printed research summary handed to the team | 2026-09-11 | Physical copy held by the team |
+| Existing PlayLab chatbot | Current | Access to be provided by the client |
+| Course lecture videos | Current | Client's YouTube channel |
+| Course shell and grades | Current | D2L (access to be provided by the client) |
+| Course PowerPoints and materials | Current | Client's shared Google Drive |
+| "Bounce Back" student-feedback material and metacognition resources | Current | To be provided by the client |
+| Napkin Round 0 | 2026-09 | [napkin-round-0.md](../napkin-round-0.md) |
 
 ---
 
 ## 2. Business Requirements
 
-_[Projects are launched in the belief that creating or changing a product will provide worthwhile benefits for someone. Business requirements describe the primary benefits the new system will provide to its sponsors, buyers, and users. Input comes from the people who know **why** the project is being undertaken: your client, their management, a subject matter expert, a product visionary. Business requirements determine which user requirements get implemented and in what order, so take this section seriously.]_
-
 ### 2.1 Business Opportunity or Problem Statement
 
-_[State the problem being solved or the opportunity being exploited, in the client's own terms. One or two paragraphs. This is the answer to "why is anyone paying for this?"]_
+Freshmen in general chemistry often have not yet developed effective college study habits or the ability to break down problems. They memorize instead of reasoning, cannot tell which of their study habits work, and are often afraid to ask for help. General AI tools make this worse by handing them answers, so they never practice the thinking they must do alone on quizzes and exams.
+
+The client wants a study coach, not a content tutor. It should guide students to break down problems themselves, help them notice and reflect on their study patterns without judgment, and eventually provide evidence of whether using it is associated with better grades. The existing PlayLab prototype shows that the approach works for a few students, but it cannot be relied on long term.
 
 ### 2.2 Business Objectives
 
-_[Summarize the business benefits the product will provide, **quantitatively and measurably**. Platitudes ("become recognized as a world-class provider") and vague improvements ("provide a more rewarding customer experience") are neither helpful nor verifiable.]_
+Quantities and baselines have not been set with the client yet (`OI-SUCCESS-METRICS`, `OI-BASELINE-DATA`). Each objective states what we currently know.
 
-_Examples:_
+| Identifier | Objective | Baseline | Source |
+|---|---|---|---|
+| `BO-problem-dissection` | Improve students' ability to break down and reason through chemistry problems without being given the solution. | Client reports this is a recurring difficulty; not measured. | Interview §3 |
+| `BO-study-awareness` | Help students identify which study behaviors (method, timing, duration) appear to work for them. | Study habits are self-reported only. | Interview §3–4 |
+| `BO-self-reflection` | Support nonjudgmental reflection after studying, quizzes, and exams, so students recognize their own patterns. | Only a small group uses the PlayLab reflection bot. | Interview §3 |
+| `BO-freshman-transition` | Help freshmen moving from high school develop effective, self-directed college study habits. | Unknown. | Interview §3, §8 |
+| `BO-outcome-evidence` | Eventually evaluate whether use of the system is associated with improved grades, without implying causation. | No research design yet; requires IRB (`OI-IRB`). | Interview §1, §3 |
 
-- _`BO-grading-time`: Reduce the instructor's time to grade peer evaluations by 50%._
-- _`BO-submission-rate`: Increase the weekly activity report and peer evaluation submission rate by 20%._
-- _`BO-student-effort`: Reduce the time a student spends completing a weekly activity report and peer evaluation by 25%._
-
-_**How to elicit these.** Clients rarely volunteer numbers. Ask: What business problem are you trying to solve? What is the motivation for solving it now? What would a highly successful solution do for you? What is a successful solution worth? If the answer contains no number, ask what the number is today._
-
-_**Checklist:** A year from now, could someone tell whether each objective was met? Does each one contain a quantity?]_
+The requirement that the system guides but never gives answers is a business rule, `BR-no-direct-answers`, not an objective. It governs every chatbot feature below.
 
 ### 2.3 Success Metrics
 
-_[Business objectives say what should improve. Success metrics tell you **whether you are on track to get there**, and they can be measured far sooner. That gap is the reason this section exists. A business objective often cannot be measured until well after the project ends, and sometimes depends on projects beyond yours, but you still need to know during the semester whether you are heading the right way.]_
-
-_Specify the indicators stakeholders will use to define and measure success on this project. Identify the factors with the greatest impact on achieving it, including factors outside the organization's control._
-
-_A success metric is sometimes the same statement as a business objective, when the objective happens to be measurable early. "Reduce time spent ordering chemicals to 10 minutes on 80 percent of orders" serves as both, because average order time can be measured during testing or shortly after release. Where an objective is measured a year out, write a metric that tracks the same thing on a shorter timeline: against an adoption objective measured annually, "track 60 percent of commercial chemical containers and 50 percent of proprietary chemicals within 4 weeks"._
-
-_For each metric give the indicator, where the number comes from, what it is today (the baseline), and what counts as success by when. A metric with no baseline is not measurable, and "we do not track that today" is a finding worth recording rather than a gap to paper over._
-
-_Examples:_
-
-- _`SM-cafeteria-adoption`: 75% of employees who used the cafeteria at least 3 times per week during Q3 2013 use the Cafeteria Ordering System at least once a week, within 6 months following initial release._
-- _`SM-satisfaction`: The average rating on the quarterly cafeteria satisfaction survey increases by 0.5 on a scale of 1 to 6 from the Q3 2013 rating within 3 months following initial release, and by 1.0 within 12 months._
-
-_**How to elicit these.** Ask "how will you know this worked?", then ask what that number is today. If your client cannot say, ask who would know and whether the number is recorded anywhere. Clients often propose a metric the software cannot influence (revenue, headcount); trace it back to something your system actually changes._
-
-_**Choose your success metrics wisely. Make sure they measure what is important to the business, not just what is easy to measure.** "Reduce product development costs by 20 percent" is easy to measure, and also easy to achieve by laying off employees or investing less in innovation, neither of which is the intended outcome. Prefer a metric that gets worse if you build the wrong thing._
-
-_**Checklist:** Does each metric name its source, its baseline, and its deadline? Can this software actually move it? Can it be measured during testing or shortly after release, rather than a year later? Does every business objective have at least one metric behind it, and does every metric trace back to an objective?]_
+| Identifier | Metric | Baseline | Target | How measured | Objective |
+|---|---|---|---|---|---|
+| `SM-no-answer-leak` | Share of adversarial test prompts (e.g., "just check if 2.5 mol is right", "give me a worked example with the same numbers") for which the chatbot reveals the answer or performs the breakdown | Not yet measured | 0% (the client calls this a "hard stop") | Team-maintained test set run before each release | `BO-problem-dissection` |
+| `SM-student-adoption` | Share of students enrolled in the pilot course who use the app at least once before the first quiz | 0 (new app) | TBD with client; the team proposes 60% (unconfirmed) | Enrollment count vs. app login logs | `BO-freshman-transition` |
+| `SM-session-logging` | Median number of study sessions logged per active student per week | 0 (not tracked today) | TBD with client | App session logs | `BO-study-awareness` |
+| `SM-reflection-completion` | Share of active students who complete at least one reflection after a quiz or exam | Unknown (PlayLab usage is small) | TBD with client | App reflection logs | `BO-self-reflection` |
+| `SM-grade-association` | Association between logged study behavior and quiz/exam performance for consenting students | None | TBD; depends on IRB approval and research design (`OI-IRB`, `OI-GRADE-ANALYSIS`) | Grades + app logs, analyzed after the semester | `BO-outcome-evidence` |
 
 ### 2.4 Vision Statement
 
-_[One statement summarizing, at the highest level, the position this product intends to fill. Fill in the table.]_
-
 | | |
 |---|---|
-| **For** | _[target customer]_ |
-| **Who** | _[the need or opportunity]_ |
-| **The** _[product name]_ | _[is a ...]_ |
-| **That** | _[major capabilities, key benefit, compelling reason to use it]_ |
-| **Unlike** | _[the current process, or the competing alternative]_ |
-| **Our product** | _[primary differentiation and advantage]_ |
+| **For** | freshmen in TCU general chemistry |
+| **Who** | struggle to break down problems and do not yet know which study habits work for them |
+| **The** Gen Chem Metacognition Study Assistant | is a web application |
+| **That** | coaches students to break down problems themselves, tracks their study sessions, and prompts nonjudgmental reflection on how they studied |
+| **Unlike** | general AI tools that hand out answers, and the current PlayLab prototype whose long-term support is uncertain |
+| **Our product** | never gives the answer, is grounded in the instructor's own course materials, and connects study behavior to reflection in one independent app |
 
-_Worked example:_
+The product name in the frontend is "Neocortex". The team needs to pick one name and add it to the [glossary](project-glossary.md).
 
-| | |
+### 2.5 Proposed Process Flows (To-Be)
+
+```mermaid
+flowchart TD
+  subgraph Student
+    S0[NEW: Take the short benchmark quiz<br/>on current study habits] --> S1[Attend class and watch modules]
+    S1 --> S2[NEW: Start a timed study session<br/>in the app or log one done elsewhere]
+    S2 --> S3{Stuck on a problem?}
+    S3 -- Yes --> S4[NEW: Explain own reasoning<br/>to the guided chatbot]
+    S3 -- No --> S6[Take quiz or exam]
+    S3 -- Yes --> S8[Office hours, tutorial hours,<br/>or peer tutoring: unchanged]
+    S8 --> S6
+    S6 --> S7[NEW: Reflect in the app on how<br/>they studied vs. how they did]
+  end
+  subgraph App["Study Assistant"]
+    A1[Record habit profile] --> A2[Log method, duration, time of day]
+    A3{Student reasoning correct?}
+    A3 -- No --> A4[Prompt student to reconsider,<br/>never give the answer]
+    A4 --> S4
+    A3 -- Yes --> A6[Confirm the student's answer]
+    A5[Show study summary and patterns]
+  end
+  subgraph Instructor
+    I1[Publish course materials] --> I2[Materials ground the chatbot]
+    I3[Grade quizzes and exams in D2L: unchanged]
+  end
+  S0 --> A1
+  S2 --> A2
+  S4 --> A3
+  A6 --> S6
+  A2 --> A5
+  A5 --> S7
+  I2 --> A3
+  S6 --> I3
+```
+
+| Change | Pain point addressed |
 |---|---|
-| **For** | _students in the TCU senior design course_ |
-| **Who** | _need an easier way to submit and update weekly activity reports and peer evaluations_ |
-| **The** _Project Pulse_ | _is a web application_ |
-| **That** | _lets students submit reports and evaluations in one place, and lets instructors view and grade them without downloading anything_ |
-| **Unlike** | _the current process of spreadsheets and manual uploads to the learning management system_ |
-| **Our product** | _keeps the whole cycle in one system, so nothing is transcribed by hand_ |
+| Study sessions logged in the app (timer or manual entry) | Study habits are invisible |
+| Guided chatbot that prompts reasoning and never gives the answer (`BR-no-direct-answers`, `BR-student-initiated-breakdown`) | Students skip the reasoning |
+| Private, nonjudgmental coach and reflection | Fear of judgment |
 
-_**Use this in the meeting.** Read the filled-in table back to your client out loud and watch what they correct. It is the fastest way to discover you misunderstood the project, and it costs ninety seconds. Corrections go straight into [OPEN-ISSUES.md](OPEN-ISSUES.md)._
-
-### 2.5 Proposed Process Flows (To-Be Process Flows)
-
-_[Draw the improved process, with your software in it, as a second mermaid flowchart in the same shape as the as-is flow. Show how the software interacts with each actor, which steps it automates, and which pain point from section 1.2 each change addresses. Label the steps that are new or significantly changed, and say plainly which manual steps **remain** and why. There may be several major flows.]_
-
-_The point of drawing both is the comparison. If the two diagrams look alike, either you have not understood the current process or the software is not worth building._
+**Manual steps that remain:** grading stays in D2L. Human help (office hours, tutorial hours, peer tutoring) stays and is not replaced by the app. Studying done outside the app is self-reported through manual logging. For the MVP, linking grades to study data is done by hand, if at all (see `FEAT-d2l-grades-read`).
 
 ### 2.6 Risks
 
-_[Summarize the major business risks of building this product, and of not building it. Categories include competition, timing, user acceptance, implementation, and negative impact on the business. Business risks are not project risks: "a teammate might drop the course" is a project risk and does not belong here. Give probability and impact for each, and a mitigation where you have one.]_
+Probability is on a 0–1 scale and impact on a 1–9 scale. Both are team estimates for review with the client.
 
-_Examples:_
-
-- _`RI-union-contract`: The Cafeteria Employees Union might require its contract be renegotiated to reflect the new employee roles and operating hours. (Probability 0.6, Impact 3)_
-- _`RI-low-adoption`: Too few employees might use the system, reducing the return on the development investment and on the changes to cafeteria operating procedures. (Probability 0.3, Impact 9)_
-- _`RI-no-delivery-partners`: Local restaurants might not agree to offer delivery, reducing employee satisfaction with the system and their use of it. (Probability 0.3, Impact 3)_
-
-_**State risks as mechanisms, not categories.** "Security risk" names a category and tells nobody anything. "The peer evaluation database holds student grades, is reachable from the public internet, and has no rate limiting" names a mechanism someone can act on._
+| Identifier | Risk | Probability | Impact | Mitigation |
+|---|---|---|---|---|
+| `RI-chatbot-gives-answer` | The "never give the answer" rule lives mainly in instructions to a general-purpose language model, so students get around it by rephrasing ("just check my answer", "show a similar example with the same numbers"). The app's main difference from other AI tools silently disappears. | 0.6 | 9 | Build an adversarial test set early (`SM-no-answer-leak`); add a response check before replies reach the student; test on real student questions from tutorial staff. |
+| `RI-d2l-integration-wall` | D2L API access requires institutional approval that takes weeks or never arrives, and the team blocks other work waiting for it. | 0.7 | 6 | Keep grade access out of the MVP; fall back to manual grade export by the instructor for consenting students. |
+| `RI-low-adoption` | Too few students use the app to produce meaningful data or benefit (only a small group has tried the PlayLab bot). | 0.4 | 8 | Client demo after the first exam; possible extra credit, pending department approval (`OI-ADOPTION`). |
+| `RI-benchmark-survey-noise` | Students guess or answer the benchmark quiz dishonestly, so self-reported habits show no link to actual behavior. | 0.5 | 4 | Keep the quiz to about 5 questions; compare answers with the first two weeks of logged sessions. |
+| `RI-privacy-exposure` | The app stores identifiable study and reflection data about students (FERPA-protected when combined with grades). A leak or misuse would harm students and end the research goal. | 0.2 | 9 | Collect only what is needed; get consent before any grade linkage; settle retention with the client (`OI-PRIVACY`, `OI-IRB`). |
+| `RI-not-building` | If nothing is built, the PlayLab prototype may lose support and the client loses the tool and any path to research. | 0.4 | 6 | This project. |
 
 ### 2.7 Business Assumptions and Dependencies
 
-_[An assumption is something you believe without proof, which would force this document to change if it turned out false. A dependency is something outside your control that the project relies on. Both live here under `AS-*`.]_
-
-_Examples:_
-
-- _`AS-ui-capacity`: Systems with appropriate user interfaces will be available for cafeteria employees to process the expected volume of meals ordered._
-- _`AS-delivery-staffing`: Cafeteria staff and vehicles will be available to deliver all meals within 15 minutes of the requested delivery time._
-- _`AS-restaurant-integration`: If a restaurant has its own online ordering system, the Cafeteria Ordering System must be able to communicate with it bi-directionally._
-
-_**Checklist:** For each assumption, what happens to this project if it is false? If the answer is "nothing", it is not worth recording. If the answer is "we start over", raise it with your client this week._
+| Identifier | Assumption or dependency | If false | Owner | Status (2026-09-25) |
+|---|---|---|---|---|
+| `AS-d2l-access` | The client adds the team to her D2L course shell. | No course content for grounding the chatbot; no path to grades. | Client | Target date 2026-09-20 passed; confirm whether access was granted. |
+| `AS-training-data` | The client shares YouTube lecture videos, D2L materials, and Google Drive content in a form the team can use for grounding. | The chatbot is grounded in outside material that may teach concepts differently from her course. | Client | Offered in interview; format not confirmed. |
+| `AS-client-available` | The client meets biweekly (Tuesdays 10–11 AM, SWD 203) and answers email between meetings. | Requirements go unconfirmed. | Client | Agreed in interview. |
+| `AS-freshman-scope` | The MVP targets only the client's own general chemistry course. | Scope, load, and data-handling needs grow. | Team + Client | Client comfortable with this; exact sections open (`OI-INITIAL-AUDIENCE`). |
+| `AS-llm-service` | A hosted language model service with a budget is available to power the chatbot. | No chatbot. | Team + Client | Hosting and budget open (`OI-HOSTING`). |
+| `AS-no-lti` | Any D2L integration can use read-only access or a manual export rather than an LTI launch. | Integration effort grows substantially. | Team | Not investigated. |
 
 ---
 
 ## 3. Stakeholder Profiles and User Descriptions
 
-_[To build something that meets real needs you have to identify everyone with a stake in the outcome, and confirm that the users are actually represented among them. This section records **who they are and why they care**, not their specific requests, which belong in the use cases.]_
-
-_A stakeholder is not always a user. The person paying for the software, the person who maintains it after you graduate, and the person whose job changes because of it all have a stake and may never log in._
-
 ### 3.1 Stakeholder Profiles
 
-| Stakeholder | Major value or benefit from this product | Attitude | Major features of interest | Constraints | End user? |
+| Stakeholder | Major value or benefit | Attitude | Major features of interest | Constraints | End user? |
 |---|---|---|---|---|---|
-| _[Role]_ | _[What they get out of it]_ | _[Supportive, skeptical, unaware, opposed]_ | _[What they care about]_ | _[What limits them]_ | _[Yes or no]_ |
-
-_**Attitude is the column students leave blank, and the one that predicts trouble.** A stakeholder whose workload increases because of your software is not automatically supportive, and finding that out in December is too late._
+| Heidi Conrad (client, instructor) | Students who reason independently; visibility into study habits; possible research publication | Supportive | Guided chatbot, reflection, study logging, grade association | Limited time; needs department approval for extra credit and IRB approval for research | Yes (possibly an instructor view, not yet specified) |
+| Freshman gen chem students | Better study habits and problem-solving; private, judgment-free help | Unknown; may be wary of being judged, and some will prefer tools that give answers | Guided chatbot, study timer, personal summary | Busy schedules; varied chemistry backgrounds | Yes |
+| Tutorial students and TAs | Fewer students arriving without having tried; insight into common difficulties | Unknown | Guided chatbot | Not yet contacted (`OI-REAL-USER-TESTING`) | No |
+| Chemistry Department | Better freshman outcomes (e.g., lower DFW rate) | Unknown | Adoption incentives, outcomes | Must approve extra credit | No |
+| TCU IRB | Protection of student research subjects | Neutral (gatekeeper) | Consent and data handling | Approval required before research use of grades (`OI-IRB`) | No |
+| Future maintainer | A system they can run after the team graduates | Unknown | Hosting, maintainability | Not yet identified (`OI-MAINTENANCE`) | No |
 
 ### 3.2 User Environment
 
-_[Describe the working environment of the target users:_
-
-- _How many people are involved in completing the task? Is that changing?_
-- _How long is a task cycle, and how much time goes into each activity? Is that changing?_
-- _Any environmental constraints: mobile, outdoors, noisy, gloved hands, poor connectivity?_
-- _Which platforms are in use today, and which are planned?_
-- _What other applications are in use, and does yours have to integrate with them?]_
+- **Users:** about 185 students in the client's current course, one instructor. Broader use across courses is a long-term goal, not the MVP.
+- **Task cycle:** students study between classes and before timed quizzes (about 12 minutes) and exams. A study session might be one Pomodoro block; a chatbot session is one problem.
+- **Environment:** students' own laptops and phones, anywhere, any time of day. No special constraints identified.
+- **Platforms today:** D2L, YouTube, Google Drive, PlayLab.
+- **Integration:** course materials are needed to ground the chatbot. D2L grades are wanted long term but not required for the MVP.
+- **Concurrent usage, data volume, and retention:** not established.
 
 ### 3.3 Alternatives and Competition
 
-_[Identify the alternatives your stakeholders see as available: buying a competitor's product, building something in-house, or keeping the status quo. Give the major strengths and weaknesses of each **as the stakeholder perceives them**, not as you do.]_
-
 | Alternative | Strengths | Weaknesses for this client |
 |---|---|---|
-| _[Tool, or "the current manual process"]_ | | |
-
-_Always include the status quo as a row. It is the alternative that wins most often, and the one your product actually has to beat._
+| Status quo (self-directed study + human help) | Free, familiar, human support already exists | Habits stay invisible; students fear crowded office hours; no data |
+| Keep using the PlayLab chatbot | Already works; the client likes its behavior | Long-term support uncertain; not under the client's control |
+| General AI tools (ChatGPT, etc.) | Always available, fast | Give the answer, which defeats the purpose |
+| Office hours, tutorial hours, peer tutoring | Human, expert, trusted | Limited hours; crowding; fear of judgment. Stays in place alongside the app, not replaced by it |
 
 ---
 
 ## 4. Scope and Limitations
 
-_[The section you will cite most often. Scope is what keeps a friendly client's good ideas from consuming your semester. When a new request arrives in October, this is what you point at.]_
-
 ### 4.1 Product Perspective
 
-_[Put the product in context relative to other systems and the user's environment. If it is independent and self-contained, say so. If it is one component of something larger, describe how they interact and identify the interfaces between them. A context diagram shows this most clearly: your system as one box, every external actor and system around it, and a labeled arrow for each thing that crosses the boundary.]_
+The Study Assistant is a new, self-contained web application. It depends on an external language model service for the chatbot and on the client's course materials for grounding. Integration with D2L grades is postponed.
 
-    ```mermaid
-    flowchart LR
-      Student[Student] --> PP[Project Pulse]
-      Instructor[Instructor] --> PP
-      PP --> Gmail[(Gmail)]
-      PP --> LMS[(Learning management system)]
-    ```
+```mermaid
+flowchart LR
+  Student[Student] -- chat, study logs, reflections --> SA[Gen Chem Metacognition<br/>Study Assistant]
+  SA -- guiding questions, summaries --> Student
+  Instructor[Instructor] -- course materials --> SA
+  SA -- prompts and grounding --> LLM[(Language model service)]
+  LLM -- draft replies --> SA
+  Materials[(Course materials:<br/>YouTube, D2L, Google Drive)] -. grounding content .-> SA
+  SA -. postponed: grade read .-> D2L[(D2L grades)]
+```
 
-### 4.2 Major Features and Scope
+### 4.2 Major Features
 
-_[List and briefly describe the major product features. A feature is a high-level **capability** the system provides in order to deliver a benefit: an externally visible service, not an implementation detail.]_
-
-_Because this document is read by a wide range of people, keep the detail general enough for everyone to follow while giving your team enough to build a use-case model from. **Use cases are derived from these features**, so a feature too vague to decompose is too vague._
-
-_Guidelines:_
-
-- _State features at the level of product capabilities._
-- _One to three sentences each._
-- _No detailed workflows, user interface behavior, or algorithms._
-- _Do not describe how the feature will be implemented._
-- _Focus on what capability is needed and why, not how._
-- _Understandable by a non-technical stakeholder, including your client._
-
-_Examples:_
-
-- _`FEAT-administration`: Manage senior design sections, teams, and student rosters._
-- _`FEAT-performance-tracking`: Submit and review weekly activity reports and peer evaluations._
-- _`FEAT-grade-generation`: Generate weekly activity report and peer evaluation grades for an entire section._
+| Identifier | Feature | Governing rules |
+|---|---|---|
+| `FEAT-guided-chatbot` | A chat coach that asks students to break down a problem themselves, prompts them to reconsider when they are wrong, and confirms only answers they reach on their own. | `BR-no-direct-answers`, `BR-answer-confirmation-only`, `BR-student-initiated-breakdown`, `BR-no-content-teaching` |
+| `FEAT-course-grounding` | The chatbot evaluates reasoning using the client's own course materials rather than outside sources, which may teach concepts differently. | `BR-no-content-teaching` |
+| `FEAT-benchmark-quiz` | A short (about 5 question) initial survey of the student's current study habits: preferred time of day, session length, and methods used. | |
+| `FEAT-pomodoro-timer` | A built-in study timer that records each timed session. | |
+| `FEAT-study-session-log` | A record of each study session (method, duration, time of day), from the timer or entered manually for studying done elsewhere, with a personal summary the student can review. | |
+| `FEAT-reflection` | Guided, nonjudgmental reflection after a study session, quiz, or exam, comparing how the student studied with how they felt they did. | |
+| `FEAT-chat-modes` | A choice between a supportive, encouraging coaching style and a concise, direct one. | |
+| `FEAT-study-planning` | Help planning when and how long to study, focused on habits and scheduling, never on course content or predicted exam topics. | `BR-no-content-teaching` |
+| `FEAT-account-consent` | Student sign-in and consent choices that decide whether their data may be linked to grades for research. | |
+| `FEAT-safety-escalation` | Detecting language that suggests distress and alerting an appropriate person, as the PlayLab prototype does. | |
+| `FEAT-d2l-grades-read` | Read-only access to D2L quiz and exam grades for consenting students, for analysis. | |
+| `FEAT-assignment-tracker` | Sync assignment deadlines from D2L that stay current when the schedule changes (e.g., weather days). | |
+| `FEAT-notifications` | Targeted study reminders (e.g., "chem quiz tomorrow, study 25 min"), without micromanaging. | |
+| `FEAT-multi-class` | Coaching study habits across all of a student's courses. | |
+| `FEAT-school-wide` | Rollout beyond the client's courses. | |
+| `FEAT-leaderboard` | Gamified points or leaderboard, possibly visible only to the instructor (`BR-leaderboard-professor-only`, unconfirmed). | |
+| `FEAT-streak` | A counter for consecutive days studied. | |
 
 ### 4.3 MVP Scope
 
-_[Of the features above, which ones ship in the release you actually deliver in December? Name them by identifier. Then name what is explicitly **out**, also by identifier, so it is on the record.]_
+**In scope for the MVP (December):** `FEAT-guided-chatbot`, `FEAT-course-grounding`, `FEAT-benchmark-quiz`, `FEAT-pomodoro-timer`, `FEAT-study-session-log`, `FEAT-reflection`.
 
-_**In scope for the MVP:** `FEAT-...`, `FEAT-...`_
+**Candidates, pending client decision:**
+- `FEAT-chat-modes`: the client responded positively but did not commit (`OI-MODES`).
+- `FEAT-study-planning`: appears in the frontend (Study page, "Help me plan for my exam"). Needs client confirmation that it stays within `BR-no-content-teaching`.
+- `FEAT-account-consent`: the client wants identifiable data for research and possibly anonymous use; the model is not decided (`OI-ANONYMITY`, `OI-PRIVACY`).
+- `FEAT-safety-escalation`: requires a policy decision on who is alerted and when (`OI-SAFETY-ESCALATION`). Must be decided explicitly, not left out by default.
 
-_**Explicitly out of scope:** `FEAT-...` (reason), `FEAT-...` (reason)_
+**Postponed (after the MVP):**
+- `FEAT-d2l-grades-read`: depends on D2L approval and IRB (`RI-d2l-integration-wall`, `OI-GRADE-ACCESS`).
+- `FEAT-assignment-tracker` and `FEAT-notifications`: depend on a schedule source that stays current (`OI-SCHEDULE-SOURCE`).
+- `FEAT-multi-class`, `FEAT-school-wide`: long-term goal; MVP is one course.
+- `FEAT-leaderboard`, `FEAT-streak`: unconfirmed with the client (`OI-GAMIFICATION`).
 
-_Ask your client the question directly: "If we can deliver only one of these in December, which one is it?" The answer is worth more than the rest of the meeting. A client who cannot choose has not thought about it yet, which is itself something you need to know now rather than in November._
+**Explicitly out of scope:**
+- Teaching chemistry content or solving problems for students (`BR-no-content-teaching`).
+- Generating content-specific exam study guides or predicting exam content.
+- Replacing office hours, tutorial hours, or peer tutoring.
 
 ### 4.4 Deployment Considerations
 
-_[Summarize what it takes to get this into its operating environment. How will users reach it? Are they spread across locations or time zones? What infrastructure has to change for capacity, network access, data storage, or data migration? Who trains the users? Who maintains it after this team graduates, and what does that person already know how to run?]_
+- **Access:** students reach the app through a web browser on their own devices; no installation.
+- **Infrastructure:** hosting, the language model service, and their budget are not decided (`OI-HOSTING`).
+- **Data:** where student data is stored, who can see it, and how long it is kept are not decided (`OI-PRIVACY`). Any grade linkage needs consent and IRB approval first.
+- **Training users:** the client plans to demonstrate the app to students after the first exam.
+- **Maintenance:** who owns and maintains the app after the team graduates is not decided (`OI-MAINTENANCE`). This affects the choice of technology stack, so it must be settled early.
 
-_That last question shapes your architecture, so ask it in the first client meeting rather than the last._
+---
+
+## 5. Open Issues Raised by This Document
+
+These should be tracked in [OPEN-ISSUES.md](OPEN-ISSUES.md), ordered by what it costs to stay wrong.
+
+| Issue | Question | Blocks |
+|---|---|---|
+| `OI-SUCCESS-METRICS` / `OI-BASELINE-DATA` | What targets define success for release 1, and what baseline grade, DFW, or study data exists? | All `SM-*` targets |
+| `OI-D2L-INTEGRATION` / `OI-GRADE-ACCESS` | Was D2L access granted? What data can be read, with what approval? | `AS-d2l-access`, `FEAT-d2l-grades-read` |
+| `OI-HOSTING` / `OI-MAINTENANCE` | Who hosts, pays for, and maintains the app after the team graduates? | `AS-llm-service`, stack choice |
+| `OI-ANONYMITY` / `OI-PRIVACY` / `OI-IRB` | Must students sign in? How does anonymous use coexist with research consent? | `FEAT-account-consent` |
+| `OI-SAFETY-ESCALATION` | Should distress language trigger an alert, and to whom? | `FEAT-safety-escalation` |
+| `OI-INITIAL-AUDIENCE` | Which course sections are in the pilot? | `AS-freshman-scope`, `SM-student-adoption` |
+| `OI-MODES` | Should students choose a supportive or concise coaching style? | `FEAT-chat-modes` |
+| `OI-STUDY-METHODS` | Which study methods besides Pomodoro and timed practice should be logged? | `FEAT-study-session-log`, `FEAT-benchmark-quiz` |
+| `OI-AI-GUARDRAILS` | Exactly when may the chatbot confirm information instead of prompting further? | `FEAT-guided-chatbot` |
+| (new) Product name | "Gen Chem Metacognition Study Assistant" or "Neocortex"? | Glossary, UI |
