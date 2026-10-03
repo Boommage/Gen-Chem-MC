@@ -39,14 +39,16 @@ _[These are slugs, like every other identifier in your project, so an inserted d
 ---
 
 ## 1. Introduction and Goals
-
-_Due: Checkpoint 1._
+Neocortex is a metacognition, student-success, and study platform for General Chemistry students. The app utilizes a dynamic chat that encourages student growth and development throughout their coursework. 
 
 ### 1.1 Requirements overview
 
-_[Your [specification](../requirements/software-requirements-specification.md) and your [use cases](../requirements/use-cases.md) are the requirements overview. Link them here; do not summarize them.]_
+The platform's functional requirements live in the requirements specs under ../requirements/ (a Wiegers/Beatty-style SRS plus use cases, glossary, and business rules), not here. This document realizes those requirements and does not restate them.
 
 ### 1.2 Quality goals
+
+> The architecturally significant quality attributes that drive the design, in priority order. The full quality-attribute *requirements* live in the requirements specs; this states the architecture's **response** to the ones that most shape the structure, and [10. Quality Requirements](#10-quality-requirements) makes them measurable.
+
 
 _[The **three** quality attributes that most shape your system, in priority order. Pick them from section 9 of your [specification](../requirements/software-requirements-specification.md) and cite their identifiers. If you cannot rank them, ask your client which one they would give up first; that answer is the ranking._
 
@@ -56,21 +58,22 @@ _Example, from the Cafeteria Ordering System:]_
 
 | Priority | Quality goal | Specification handles | Why it shapes the architecture |
 |---|---|---|---|
-| 1 | _Payroll data stays confidential_ | _`SEC-payroll-auth`, `SEC-employee-own-orders`_ | _Orders are paid by payroll deduction, so an order record carries an employee's pay account. A leak is a legal problem, not a bug._ |
-| 2 | _Orders placed before 10:00 are not lost_ | _`ROB-order-persisted`, `AVL-lunch-window`_ | _The lunch rush is the only load that matters, and a lost order is a hungry employee with a payroll charge._ |
-| 3 | _Cafeteria staff can run it without IT_ | _`CO-no-dedicated-ops`, `MNT-menu-self-service`_ | _Nobody on the cafeteria side can deploy, restart, or patch anything._ |
+| 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | The client calls an answer leak a "hard stop" (`SM-no-answer-leak`), and it is the product's one difference from general AI tools. The rule lives mainly in instructions to a general-purpose model, which students can get around by rephrasing (`RI-chatbot-gives-answer`). |
+| 2 | A student's study data is seen only by that student | `SEC-authentication`, `SEC-student-isolation` | The system stores identifiable study and reflection data, which is FERPA-protected once combined with grades (`RI-privacy-exposure`). Students already avoid help when they fear judgment, so the coach has to be private. |
+| 3 | An outage of an external service does not take the rest down | `ROB-external-service` | The chatbot depends on a hosted language model service the team does not control (`AS-llm-service`). The study timer and study log have to keep working when it is unavailable. |
 
 ### 1.3 Stakeholders
 
-_[Your stakeholders are profiled in section 3.1 of [vision and scope](../requirements/vision-and-scope.md). Link it here; do not copy it.]_
+Stakeholders are profiled in section 3.1 of [vision and scope](../requirements/vision-and-scope.md).
 
 ## 2. Architecture Constraints
-
-_Due: Checkpoint 1._
 
 _[The constraints the architecture has to honor. They are already written as `CO-*` in section 2.4 of your specification, and `OE-*` in section 2.3; **list the identifiers here, do not restate them.** Add one sentence only where a constraint narrows an architectural choice in a way that is not obvious from its text._
 
 _Your technology stack is a constraint only if something external fixes it: the client's IT department, an existing system, or the person who maintains this after you graduate. A stack your team chose is a decision, and it goes in section 9 with the alternative you rejected.]_
+
+- Students use a web browser on their own laptops and phones, with no installation (vision and scope 3.2 and 4.4). This is an `OE-*` candidate.
+- Who hosts, pays for, and maintains the system after the team graduates is undecided (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5). Vision and scope 4.4 says the answer affects the choice of technology stack, so it is a `CO-*` candidate once the client answers.
 
 ## 3. Context and Scope
 
@@ -84,30 +87,24 @@ _This is your project's one context diagram. Section 4.1 of [vision and scope](.
 
 _arc42 divides context into a **business context** (who and what crosses the boundary) and a **technical context** (the channels and protocols). This diagram is the business context. The protocols go on the arrows of the container diagram in section 5.1._
 
-_The **trust boundary** is not drawn here. You name it in writing in section 8.1, as Project Pulse does._
-
-_Example:]_
+Redrawn from the first draft in vision and scope 4.1.
 
 ```mermaid
 C4Context
-    title System Context: Cafeteria Ordering System
+    title System Context: Gen Chem Metacognition Study Assistant
 
-    Person(patron, "Patron", "Employee ordering a meal")
-    Person(staff, "Cafeteria Staff", "Prepares and delivers orders")
-    Person(menu, "Menu Manager", "Maintains the daily menu")
+    Person(student, "Student", "General chemistry student who works problems, logs study sessions, and reflects")
+    Person(instructor, "Instructor", "Supplies the course materials")
 
-    System(cos, "Cafeteria Ordering System", "Takes, prepares, and delivers meal orders")
+    System(sa, "Study Assistant", "Coaches students to break down problems themselves, records study sessions, prompts reflection")
 
-    System_Ext(payroll, "Payroll System", "Deducts meal payments from pay")
-    System_Ext(sso, "Corporate Sign-On", "Authenticates employees")
-    System_Ext(email, "Corporate Email", "Order confirmations")
+    System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
+    System_Ext(materials, "Course Material Sources", "The client's YouTube lecture videos, D2L materials, and Google Drive content")
 
-    Rel(patron, cos, "Orders meals")
-    Rel(staff, cos, "Fulfils orders")
-    Rel(menu, cos, "Edits menu")
-    Rel(cos, payroll, "Submits payment requests")
-    Rel(cos, sso, "Verifies identity")
-    Rel(cos, email, "Sends confirmations")
+    Rel(student, sa, "Chats, logs study sessions, reflects")
+    Rel(instructor, sa, "Supplies course materials")
+    Rel(sa, llm, "Sends prompts and grounding content")
+    Rel(materials, sa, "Grounding content")
 ```
 
 ## 4. Solution Strategy
@@ -118,11 +115,8 @@ _[Three to five bullets: the few moves that shape everything else. arc42 suggest
 
 _Each bullet is one sentence, and it cites what explains it: the key decision in section 9.2 where one exists, and otherwise the quality goal and the building block in section 5 it shapes. Keep it short; the reasoning lives in section 9. A bullet that cites nothing is either not load-bearing, or it is a decision you have not written down yet._
 
-_Example:]_
-
-- _**One deployable with one managed database** (`KD-deployment-shape`), because nobody on the cafeteria side can operate infrastructure (quality goal 3)._
-- _**Payment is the only component that talks to the Payroll System** (section 5.2), so payroll data crosses the trust boundary in exactly one place (quality goal 1)._
-- _**Divided by use case area**, Ordering, Menu, and Delivery, each owning its own rules, so a menu change never touches ordering code (quality goal 3, `MNT-menu-self-service`)._
+- **One component is the only path to the Language Model Service** (Model Gateway, section 5.2), so the reply check that `RI-chatbot-gives-answer` calls for runs in one place (quality goal 1) and a model outage is contained there (quality goal 3).
+- **Divided by use case area, with identity resolved in one cross-cutting component** (section 5.2), so the rule that a student reaches only their own records is enforced the same way for every area (quality goal 2).
 
 ## 5. Building Block View
 
@@ -130,72 +124,172 @@ _Due: Checkpoint 1. This section is most of what your TA checks._
 
 ### 5.1 Containers
 
-_[One C4 container diagram: the separately running or separately stored pieces inside your system box. For most projects that is a front end, a back end, and a database, and sometimes a file store. Name each container's technology. Every external system from section 3 appears again here, attached to the container that talks to it._
-
-_Label every arrow with what it does and the protocol it uses ("Sends confirmations [SMTP]"). Those protocols are arc42's technical context._
-
-_Under the diagram, one or two sentences on **why the system is divided this way**, citing `KD-deployment-shape`. A reader who sees three containers should not have to guess why there are not seven._
-
-_Three containers is a normal answer. If you have more than five, check each one against section 9: which decision, driven by which quality attribute, requires it to run separately?_
-
-_Example:]_
-
 ```mermaid
 C4Container
-    title Container Diagram: Cafeteria Ordering System
+    title Container Diagram: Neocortex General Chemistry Study Assistant
 
-    Person(patron, "Patron", "Employee ordering a meal")
-    Person(staff, "Cafeteria Staff", "Prepares and delivers orders")
-    Person(menu, "Menu Manager", "Maintains the daily menu")
+    Person(student, "Student", "General Chemistry student who plans and records study, reflects, and uses the coach")
+    Person(instructor, "Instructor", "Supplies course material used to ground coaching")
 
-    System_Boundary(cos, "Cafeteria Ordering System") {
-        Container(web, "Web Front End", "Vue.js", "Ordering, menu, and fulfilment screens in the browser")
-        Container(app, "Application", "Java / Spring Boot", "Every business rule; serves the front end")
-        ContainerDb(db, "Database", "PostgreSQL", "Orders, menus, and delivery slots")
+    System_Boundary(neocortex, "Neocortex") {
+        Container(spa, "Web Application", "React 19 / TypeScript / Vite", "Browser UI for dashboard, study planning and sessions, coaching, and progress")
+        Container(api, "Application API", "Server technology TBD", "Enforces student-data access, exposes the application API, and mediates external integrations")
+        ContainerDb(db, "Application Database", "Managed relational database TBD", "Student accounts and consent, baseline responses, study sessions, reflections, plans, and conversation metadata")
     }
 
-    System_Ext(payroll, "Payroll System", "Deducts meal payments from pay")
-    System_Ext(sso, "Corporate Sign-On", "Authenticates employees")
-    System_Ext(email, "Corporate Email", "Order confirmations")
+    System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
+    System_Ext(materials, "Course Material Sources", "Client YouTube videos, D2L materials, and Google Drive content")
 
-    Rel(patron, web, "Orders meals", "HTTPS")
-    Rel(staff, web, "Fulfils orders", "HTTPS")
-    Rel(menu, web, "Edits menu", "HTTPS")
-    Rel(web, app, "Calls", "JSON/HTTPS")
-    Rel(app, db, "Reads and writes", "JDBC")
-    Rel(app, payroll, "Submits payment requests", "not yet known: RISK-payroll-api-unavailable")
-    Rel(app, sso, "Verifies identity", "OpenID Connect")
-    Rel(app, email, "Sends confirmations", "SMTP")
+    Rel(student, spa, "Uses", "HTTPS")
+    Rel(instructor, spa, "Supplies or authorizes course material", "HTTPS; workflow TBD")
+    Rel(spa, api, "Calls application APIs", "JSON/HTTPS")
+    Rel(api, db, "Reads and writes", "Database protocol TBD")
+    Rel(api, llm, "Requests a grounded coaching reply", "HTTPS; provider API TBD")
+    Rel(api, materials, "Obtains approved grounding material", "Provider API or managed export TBD")
 ```
 
-_The system is one application and one database because nobody on the cafeteria side can operate more (`KD-deployment-shape`). The front end is a separate container only because it runs in the browser; it ships inside the application's package._
+Neocortex has three target containers: the React single-page application that runs on the student's device, one server-side application API, and one durable data store. The SPA is already the implemented frontend shell; the API and database are proposed target containers, not present in the current frontend-only milestone. They are separated because browser code cannot safely hold credentials for the language model or enforce server-side student isolation. The final server technology, database product, hosting, and whether the SPA is served by the API remain open under `OI-HOSTING` and `OI-MAINTENANCE`; this view deliberately does not turn those open issues into a premature deployment decision.
 
 ### 5.2 Use case areas and components
 
-_[One row per use case area in your [use cases](../requirements/use-cases.md), taken from the area column of [traceability.md](../traceability.md) section 1, plus one row per **cross-cutting component** that no single area owns (authentication, notifications, file handling, an integration with an external system). A use case area with no row is a part of your system with no home; a component with no area and no cross-cutting reason is one nobody asked for._
+The component view zooms into the proposed Application API. `BNCH` is the only use-case area currently defined in [the use-case list](../requirements/use-cases.md#3-use-case-list); the remaining rows are cross-cutting homes for the external systems and system-wide rules already in scope. They are all provisional until a use case establishes and tests their boundaries. The React implementation currently has page-level prototype components under `gen-chem-mc/src/`; it has no API packages yet, so these names are responsibilities rather than claimed code packages.
 
-_**Responsibility** is one sentence, what the component owns, not how it works. **Depends on** names other components and external systems, never classes. **Status** is `provisional` until the component has been built through at least one use case, and `proven` after that. At Checkpoint 1 every row is `provisional`; Checkpoint 2 turns at least one to `proven`._
+```mermaid
+C4Component
+    title Component Diagram: proposed Application API for Neocortex
 
-_Project Pulse's component tables also name each component's package. They can because its code exists; yours does not yet, so a row here is a name and a responsibility, and packages come with the design-of-record in week 7._
+    Container(spa, "Web Application", "React 19 / TypeScript", "Student dashboard, study, coach, and progress views")
 
-_Example:]_
+    Container_Boundary(api, "Application API (server technology TBD)") {
+        Component(identity, "Identity and access", "Authentication and authorization", "Identifies the caller, records consent, and applies student-level access control")
+        Component(baseline, "Baseline assessment", "BNCH use-case component", "Presents the study-habits assessment, validates responses, and records completion")
+        Component(study, "Study record", "Future feature component", "Owns study-session, plan, reflection, and progress records when their use cases are specified")
+        Component(coach, "Coach and model gateway", "Cross-cutting integration component", "The only path to the language model; adds approved course context and applies coaching safety checks")
+        Component(content, "Course-material gateway", "Cross-cutting integration component", "Obtains, records provenance for, and makes approved grounding material available to the coach")
+    }
+
+    ContainerDb(db, "Application Database", "Managed relational database TBD", "Private student data, consent, assessment responses, and study records")
+    System_Ext(llm, "Language Model Service", "Draft coaching replies")
+    System_Ext(materials, "Course Material Sources", "YouTube, D2L, and Google Drive course content")
+
+    Rel(spa, identity, "Signs in and sends authenticated requests through", "JSON/HTTPS")
+    Rel(identity, baseline, "Passes an authorized student's request to")
+    Rel(identity, study, "Passes an authorized student's request to")
+    Rel(identity, coach, "Passes an authorized student's request to")
+    Rel(baseline, db, "Stores and reads student-specific responses", "Database protocol TBD")
+    Rel(study, db, "Stores and reads student-specific records", "Database protocol TBD")
+    Rel(coach, content, "Requests approved grounding context from")
+    Rel(coach, llm, "Requests constrained coaching replies", "HTTPS; provider API TBD")
+    Rel(content, materials, "Obtains approved course materials", "Provider API or managed export TBD")
+    Rel(content, db, "Stores material references and provenance", "Database protocol TBD")
+```
+
+Every student-specific request first reaches **Identity and access**, which is the intended enforcement point for `SEC-authentication`, `SEC-student-isolation`, and consent before any future D2L grade use (`SEC-grade-consent`). The **Baseline assessment** component is the home of `UC-BNCH-complete-baseline-assessment`: it owns assessment questions, response validation, the student association, and completion state. It depends on Identity and access for the caller's identity, rather than accepting a student identifier supplied by the browser.
+
+The other components exist because their responsibilities cut across individual screens and feature use cases. **Coach and model gateway** is the sole integration path to the Language Model Service, concentrating the guidance and transparency safeguards required by `SAF-ai-guidance` and `SAF-ai-transparency` and isolating an LLM failure from study recording (`ROB-external-service`). **Course-material gateway** is the sole home for the three external content sources named in section 3. **Study record** is a deliberately provisional home for the planned timer, manual study log, study plan, reflections, and progress view; it must be split or revised when their use cases are written, rather than treating the current prototype pages as a completed backend design. No D2L grade-reading component is drawn: that feature is postponed and requires approval and explicit student consent.
 
 | Use case area | Component | Responsibility | Depends on | Status |
 |---|---|---|---|---|
-| _`ORD`_ | _Ordering_ | _Owns an order from placement to cancellation, and the cut-off rules_ | _Menu, Payment, Identity_ | _provisional_ |
-| _`MNU`_ | _Menu_ | _Owns daily menus and item availability_ | _Identity_ | _provisional_ |
-| _`DEL`_ | _Delivery_ | _Owns delivery slots and the staff's fulfilment queue_ | _Ordering, Notification_ | _provisional_ |
-| _(cross-cutting)_ | _Payment_ | _The only component that talks to the Payroll System_ | _Payroll System_ | _provisional_ |
-| _(cross-cutting)_ | _Identity_ | _Maps a signed-on employee to a role_ | _Corporate Sign-On_ | _provisional_ |
-| _(cross-cutting)_ | _Notification_ | _Sends every email the system sends_ | _Corporate Email_ | _provisional_ |
-
-_[Check before Checkpoint 1: every area in your use case file appears in the first column, and every external system in section 3 appears in some Depends on cell.]_
+| `BNCH` | Baseline assessment | Owns the baseline study-habits assessment, its response validation, and each student's completion state. | Identity and access; Application Database | provisional |
+| _(cross-cutting)_ | Identity and access | Identifies each caller, records consent, and ensures a student can reach only their own private records. | Application Database; identity-provider decision TBD | provisional |
+| _(cross-cutting)_ | Coach and model gateway | Is the only component that sends coaching requests to the Language Model Service and applies approved course context and safety checks. | Identity and access; Course-material gateway; Language Model Service | provisional |
+| _(cross-cutting)_ | Course-material gateway | Obtains approved course material and preserves the source/provenance needed to ground coaching. | Course Material Sources; Application Database | provisional |
+| _(future use-case areas)_ | Study record | Owns study sessions, plans, reflections, and progress records after their use cases define the boundaries. | Identity and access; Application Database | provisional |
 
 ## 6. Runtime View
 
-_Due: Checkpoint 2. [One sequence diagram, for the use case your proving slice builds, from the user's action through every container and external system it touches. Leave this section empty until the slice exists; a sequence diagram of code nobody has written describes a guess._
+Key runtime scenarios show how Neocortex's building blocks collaborate. The physical topology belongs in [Deployment View](#7-deployment-view). The current frontend prototype has no authentication, API, database, or external integrations, so these are target flows derived from the confirmed use case and quality requirements; the API routes, identity mechanism, and provider contracts remain to be designed.
 
-_Draw it as a mermaid `sequenceDiagram`, and name the participants exactly as the containers in section 5.1 name them. If the use case calls an external system, show what happens when that system fails or does not answer; arc42 counts error scenarios among the most useful runtime views. Under the diagram, a sentence or two on anything a reader would not guess from it. Cite the use case by its `UC-*` identifier; do not restate its steps.]_
+### 6.1 Authentication and an authorized request
+
+```mermaid
+sequenceDiagram
+    actor S as Student (browser)
+    participant SPA as Web Application
+    participant API as Application API
+    participant DB as Application Database
+
+    S->>SPA: signs in using mechanism TBD
+    SPA->>API: submit credentials or identity assertion (HTTPS)
+    API->>DB: load account and consent state
+    API-->>SPA: authenticated session or access token (format TBD)
+    SPA->>SPA: retain session using browser-storage policy TBD
+    S->>SPA: opens a private student view
+    SPA->>API: request private resource with session credential (JSON/HTTPS)
+    API->>API: authenticate caller and scope request to that student
+    API->>DB: read only that student's records
+    API-->>SPA: requested data or authorization error
+```
+
+The Application API is the trust boundary. The browser never selects the student whose private records it can read; the API derives that identity from the authenticated session and scopes every data access to it. This is the runtime enforcement point intended for `SEC-authentication`, `SEC-student-isolation`, and, before any future D2L grade use, `SEC-grade-consent`. The credential type and issuing identity provider are deliberately not named because neither has been selected.
+
+### 6.2 Baseline-assessment submission — `UC-BNCH-complete-baseline-assessment`
+
+```mermaid
+sequenceDiagram
+    actor S as Student (browser)
+    participant SPA as Web Application
+    participant API as Application API
+    participant ID as Identity and access
+    participant BNCH as Baseline assessment
+    participant DB as Application Database
+
+    S->>SPA: begins and completes assessment
+    SPA->>API: submit responses (JSON/HTTPS)
+    API->>ID: authenticate caller and establish student scope
+    ID-->>API: authorized student identity
+    API->>BNCH: validate and save responses for that student
+    BNCH->>BNCH: check every required response
+    alt responses are incomplete or invalid
+        BNCH-->>API: validation errors by question
+        API-->>SPA: display missing or invalid responses
+    else responses are valid
+        BNCH->>DB: save responses and completion state atomically
+        alt database save succeeds
+            DB-->>BNCH: save confirmed
+            BNCH-->>API: assessment completed
+            API-->>SPA: confirmation and updated completion state
+        else database save fails
+            DB-->>BNCH: failure
+            BNCH-->>API: no completion recorded
+            API-->>SPA: understandable retry error and preserve entered responses where feasible
+        end
+    end
+```
+
+This is the first confirmed end-to-end server flow. Completion is returned only after the database has saved both the valid responses and the completion state, so a failed save cannot leave the student marked complete. The browser may retain unsaved responses for retry, but the exact client-storage mechanism remains a design decision; the required behavior is the retry-preservation rule in `UC-BNCH-complete-baseline-assessment` and `ROB-invalid-data`.
+
+### 6.3 AI coaching request — future feature flow
+
+```mermaid
+sequenceDiagram
+    actor S as Student (browser)
+    participant SPA as Web Application
+    participant API as Application API
+    participant Coach as Coach and model gateway
+    participant Content as Course-material gateway
+    participant LLM as Language Model Service
+
+    S->>SPA: submits a chemistry question
+    SPA->>API: request coaching (JSON/HTTPS)
+    API->>Coach: authorized request and student context
+    Coach->>Content: request approved course grounding
+    Content-->>Coach: relevant approved material and provenance
+    Coach->>Coach: apply coaching and answer-safety policy
+    Coach->>LLM: constrained prompt with grounding (HTTPS)
+    alt LLM replies
+        LLM-->>Coach: draft reply
+        Coach->>Coach: check and label response as AI guidance
+        Coach-->>API: safe coaching response
+        API-->>SPA: show coaching response
+    else LLM times out or is unavailable
+        LLM-->>Coach: timeout or failure
+        Coach-->>API: integration unavailable outcome
+        API-->>SPA: understandable error and study features remain usable
+    end
+```
+
+The coach gateway is the only component that contacts the Language Model Service. It obtains only approved course context from the course-material gateway and applies the product's guidance and transparency controls before a response reaches the browser (`SAF-ai-guidance`, `SAF-ai-transparency`). A language-model failure ends only the coaching request; it does not block study-session, assessment, planning, reflection, or progress operations (`ROB-external-service`). This flow is provisional until the coach use case, provider API, and safety-review design are established.
 
 ## 7. Deployment View
 
@@ -217,10 +311,13 @@ _Due: named at Checkpoint 1, detailed at Checkpoint 2._
 
 _[Four short paragraphs. The last three each cite the `SEC-*` requirement they answer:_
 
-- _**Trust boundary:** the line between what you control and what you do not. Name the container that is the boundary and what sits outside it (the browser, every external system). Every request that crosses it is authenticated and authorized, and it covers every path your deployable answers, framework endpoints included. Project Pulse's Security & Compliance section shows the shape in three sentences._
-- _**Authentication:** how a user proves who they are, and who issues the credential (your system, the client's sign-on, a third party)._
-- _**Authorization:** the roles, and the rule for what a user may see beyond their role (a patron sees only their own orders). The second part is where most real breaches happen._
-- _**Sensitive data:** what personal or regulated data the system stores, in which container, and which external systems receive any of it. How long it is kept and how it is disposed of are already in section 7.4 of your specification; cite them._
+**Trust boundary.** The Application container is the trust boundary. The browser running the Web Front End, the Language Model Service, and the Course Material Sources sit outside it. Every request that crosses the boundary is authenticated and authorized, and that covers every path the Application answers, framework endpoints included.
+
+**Authentication.** **TODO(team):** how a student proves who they are, and who issues the credential. This is undecided in the requirements: vision and scope lists it as open (`OI-ANONYMITY`, `OI-PRIVACY`), and `FEAT-account-consent` is still a candidate feature. Whatever is chosen has to satisfy `SEC-authentication`, and `SEC-passwords` applies only if the system stores passwords itself. If the answer tonight is provisional, say so here and name the open issue.
+
+**Authorization.** There are two roles, student and instructor. A student may reach only their own study data (`SEC-student-isolation`), and the Application checks that on every request by the signed-in student's identity, never by an identifier the browser supplies. **TODO(team):** what the instructor may see. Vision and scope 3.1 says an instructor view is "not yet specified"; until it is, state that the instructor sees no individual student's data.
+
+**Sensitive data.** The Database stores each student's baseline responses, study sessions, reflections, and chat history, all identifiable (`RI-privacy-exposure`). The Language Model Service receives the content of a student's chat messages. No grades are stored in the MVP, and none may be imported without the student's explicit choice (`SEC-grade-consent`). **TODO(team):** retention and disposal are not written yet; section 7.4 of the specification is empty and the question is open with the client (`OI-PRIVACY`), so cite 7.4 once it exists. **TODO(team):** say whether anything that identifies the student is sent to the Language Model Service along with the message.
 
 _Secrets (passwords, API keys, connection strings) never appear in this document or in the repository. Say where they will live, not what they are.]_
 
@@ -243,9 +340,26 @@ _One short subsection each: the rule in one sentence, why, and the file that sho
 | _Auditing_ | _Who changed what, and when?_ | _The first "who did this?"_ |
 | _Testing_ | _Which kinds of test, at which layer, with what data?_ | _The first pull request_ |
 
-_Example, from the Cafeteria Ordering System:_
+**8.2.1 Error handling.** _Draft._ Every failure reaches the caller in one error shape produced in one place in the Application, and no response carries an exception's own message. Why: `ROB-external-service` requires an understandable message when an external service is down while the rest of the system stays usable, and an exception's message can reveal what is behind the Application.
 
-**8.2.1 Error handling.** _Every endpoint returns `{ "ok": false, "error": { "code", "message" } }` on failure, produced by one exception handler; no controller builds its own error body, and no response carries an exception's own message. Why: the ordering screen and the menu screen share one error display, and an exception's message can reveal the database behind it. Shown in: `ApiExceptionHandler`._
+**8.2.2 Time and time zones.** _Draft._ The Application's clock decides every timestamp, times are stored in one standard format in UTC, and tests can set the clock. Why: `INT-calendar` requires a standardized date and time format, and the study log records time of day (`FEAT-study-session-log`), which is wrong if each browser's clock is trusted.
+
+**8.2.3 API conventions.** **TODO(team):** the one shape every response takes and how endpoints are named, in one sentence, with the reason. Depends on the stack.
+
+**8.2.4 Code conventions.** **TODO(team):** the libraries and idioms every file uses and the ones that are banned, in one sentence, with the reason. One rule already follows from section 5.2: no component other than Model Gateway calls the Language Model Service.
+
+**8.2.5 Validation.** _Draft._ Input is checked in the Application before anything is saved, and that check is the one that counts; a check in the Web Front End is only a convenience. Why: `ROB-invalid-data` requires invalid or incomplete data to be rejected with a message, and the browser sits outside the trust boundary (section 8.1).
+
+**8.2.6 Configuration and secrets.** _Draft._ Everything that differs between development and production, and every secret, is read from the environment the Application runs in and never committed to the repository. Why: the language model key and the database credentials are secrets (section 8.1), and `MNT-setup` requires a new developer to configure the system from the README. **TODO(team):** name where the values live once hosting is decided (`OI-HOSTING`).
+
+**8.2.7 Logging.** _Draft._ The Application logs events and errors, and never logs the content of chat messages, reflections, or baseline responses. Why: that content is the identifiable student data named in `RI-privacy-exposure`, and a log is a second copy of it that `SEC-student-isolation` does not protect. **TODO(team):** the log levels.
+
+**8.2.8 Persistence and concurrency.** **TODO(team):** where a transaction begins and ends and what happens when two writes meet, in one sentence, with the reason. Depends on the stack. One fact to build on: in the MVP every record belongs to a single student (`SEC-student-isolation`), so two people never edit the same record.
+
+**8.2.9 Auditing.** **TODO(team):** who changed what and when, in one sentence, with the reason. No requirement in the specification asks for an audit trail yet; if the team decides none is needed for the MVP, write that as the rule and say why.
+
+**8.2.10 Testing.** _Draft._ Every pull request runs automated tests, and every release runs the team-maintained adversarial prompt set against the chatbot. Why: `SM-no-answer-leak` is measured by that test set and its target is zero leaks. **TODO(team):** the kinds of test at each layer and the test data, which depend on the stack.
+
 
 ## 9. Architecture Decisions
 
@@ -261,7 +375,11 @@ _List three to six, ranked by importance to your client times difficulty to achi
 
 | Rank | Requirement | Specification handles | Importance × difficulty | Drives |
 |---|---|---|---|---|
-| 1 | _Payroll data confidential_ | _`SEC-payroll-auth`_ | _High × Medium_ | _`KD-payment-isolated`_ |
+| 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | High × High | Model Gateway as the only path to the model (section 5.2) |
+| 2 | A student's data is reached only by that student | `SEC-authentication`, `SEC-student-isolation` | High × Medium | The trust boundary and the authorization rule (section 8.1) |
+| 3 | An external outage does not take the rest down | `ROB-external-service` | Medium × Medium | Model Gateway isolating the Language Model Service (section 5.2) |
+| 4 | The expected load is small and known | `SCA-concurrent-users`, `AVL-uptime` | Medium × Low | `KD-deployment-shape` |
+| 5 | A new developer can set it up from the README | `MNT-setup` | Medium × Low | `KD-deployment-shape` |
 
 ### 9.2 Key decisions
 
@@ -271,21 +389,17 @@ _A decision without a **rejected alternative** is not a decision, it is a descri
 
 _A decision that turns out wrong is not deleted or rewritten. Mark it **Superseded by `KD-<new-slug>`** and write the new decision as its own entry, so the reasoning behind both stays readable._
 
-_Example:]_
-
-**`KD-deployment-shape`: one deployable.** _Accepted._
-
-- **Driving requirements:** _`CO-no-dedicated-ops`; `AVL-lunch-window`._
-- **Context:** _About 400 patrons, one lunch peak a day, and nobody on the client side who can operate infrastructure._
-- **Decision:** _The front end is built into the back end's package and ships as one container to one host, with one managed database._
-- **Rejected:** _Separate services for ordering, menu, and delivery. They would add network calls, three deployments, and failure modes between them, to solve a scaling problem 400 users do not have._
-- **Trade-off:** _The system scales only as a whole, and a bad deploy takes all of it down._
+- **Driving requirements:** **TODO(team):** the candidates in the specification are `SCA-concurrent-users`, `AVL-uptime`, and `MNT-setup`. Name the ones that actually drove the choice.
+- **Context:** About 185 students in one course with one instructor (vision and scope 3.2), and an MVP limited to that course (`AS-freshman-scope`). Nobody has been identified to host or maintain the system after the team graduates (`OI-HOSTING`, `OI-MAINTENANCE`).
+- **Decision:** **TODO(team).**
+- **Rejected:** **TODO(team):** the alternative the team did not choose, and why not.
+- **Trade-off:** **TODO(team):** what the choice costs, and the requirement that would have forced the other answer. A school-wide rollout (`FEAT-school-wide`, postponed) is the kind of requirement to consider.
 
 ## 10. Quality Requirements
 
 ### 10.1 Quality requirements overview
 
-_[Section 9 of your [specification](../requirements/software-requirements-specification.md) is the overview. Link it here; do not copy it.]_
+The quality requirements are in section 9 of the [specification](../requirements/software-requirements-specification.md).
 
 ### 10.2 Quality scenarios
 
@@ -298,7 +412,6 @@ _**Verified by** names the test, or the repeatable manual check, that shows the 
 | ID | Source and stimulus | Environment | Response | Measure | Verified by |
 |---|---|---|---|---|---|
 | _`QS-cross-employee-order-denied`_ | _A signed-on patron requests another patron's order by its ID_ | _Normal operation_ | _Refused before any order data is read_ | _Every such request is refused and returns no order fields (`SEC-employee-own-orders`)_ | _An integration test that signs in as one patron and requests another patron's order_ |
-
 ## 11. Risks and Technical Debt
 
 _Due: Checkpoint 2, kept current after._
@@ -315,7 +428,7 @@ _A risk written as a category ("security", "performance") is not a risk. Write t
 
 ## 12. Glossary
 
-_[Domain terms live in your [project glossary](../requirements/project-glossary.md). Link it and add nothing here unless you need an architecture term your team uses in a special sense.]_
+Domain terms are defined in the [project glossary](../requirements/project-glossary.md).
 
 ---
 
