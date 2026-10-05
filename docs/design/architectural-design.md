@@ -34,7 +34,7 @@ _[These are slugs, like every other identifier in your project, so an inserted d
 
 | Version | Date | Author | Change |
 |---|---|---|---|
-| 0.1 | | | Initial draft for Checkpoint 1 |
+| 0.1 | 2026-10-02 | Team 4 | Initial draft for Checkpoint 1 |
 
 ---
 
@@ -59,7 +59,7 @@ _Example, from the Cafeteria Ordering System:]_
 | Priority | Quality goal | Specification handles | Why it shapes the architecture |
 |---|---|---|---|
 | 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | The client calls an answer leak a "hard stop" (`SM-no-answer-leak`), and it is the product's one difference from general AI tools. The rule lives mainly in instructions to a general-purpose model, which students can get around by rephrasing (`RI-chatbot-gives-answer`). |
-| 2 | A student's study data is seen only by that student | `SEC-authentication`, `SEC-student-isolation` | The system stores identifiable study and reflection data, which is FERPA-protected once combined with grades (`RI-privacy-exposure`). Students already avoid help when they fear judgment, so the coach has to be private. |
+| 2 | A student's study data is seen only by that student and, as usage figures, the instructor | `SEC-authentication`, `SEC-student-isolation` | The system stores identifiable study and reflection data, which is FERPA-protected once combined with grades (`RI-privacy-exposure`). Students already avoid help when they fear judgment, so the content of chats and reflections has to stay private to the student. |
 | 3 | An outage of an external service does not take the rest down | `ROB-external-service` | The chatbot depends on a hosted language model service the team does not control (`AS-llm-service`). The study timer and study log have to keep working when it is unavailable. |
 
 ### 1.3 Stakeholders
@@ -72,8 +72,8 @@ _[The constraints the architecture has to honor. They are already written as `CO
 
 _Your technology stack is a constraint only if something external fixes it: the client's IT department, an existing system, or the person who maintains this after you graduate. A stack your team chose is a decision, and it goes in section 9 with the alternative you rejected.]_
 
-- Students use a web browser on their own laptops and phones, with no installation (vision and scope 3.2 and 4.4). This is an `OE-*` candidate.
-- Who hosts, pays for, and maintains the system after the team graduates is undecided (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5). Vision and scope 4.4 says the answer affects the choice of technology stack, so it is a `CO-*` candidate once the client answers.
+- `OE-web-browser`
+No `CO-*` constraint is recorded. Nothing outside the team fixes the technology stack: Vercel, Supabase, Python, and React are the team's choices (section 4), not constraints. Who hosts, pays for, and maintains the system after the team graduates is still open with the client (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5), and the answer may add a constraint.
 
 ## 3. Context and Scope
 
@@ -93,19 +93,21 @@ Redrawn from the first draft in vision and scope 4.1.
 C4Context
     title System Context: Gen Chem Metacognition Study Assistant
 
-    Person(student, "Student", "General chemistry student who works problems, logs study sessions, and reflects")
-    Person(instructor, "Instructor", "Supplies the course materials")
-
+    Person(instructor, "Instructor", "Owns the course materials and views usage figures")
+    
     System(sa, "Study Assistant", "Coaches students to break down problems themselves, records study sessions, prompts reflection")
 
     System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
     System_Ext(materials, "Course Material Sources", "The client's YouTube lecture videos, D2L materials, and Google Drive content")
+    System_Ext(auth, "Supabase Auth", "Issues sign-in credentials and emails verification codes")
 
     Rel(student, sa, "Chats, logs study sessions, reflects")
-    Rel(instructor, sa, "Supplies course materials")
+    Rel(instructor, sa, "Views usage figures")
+    Rel(materials, sa, "Grounding content, loaded by the team")ials")
     Rel(sa, llm, "Sends prompts and grounding content")
-    Rel(materials, sa, "Grounding content")
+    Rel(sa, auth, "Verifies identity")
 ```
+Behind each external system: the Language Model Service is `DE-llm-service` and `SI-llm-service`, the Course Material Sources are `DE-course-materials`, and Supabase Auth is `DE-supabase-auth`. The team loads the course materials by hand; the system does not fetch them. Reading D2L grades is postponed (`FEAT-d2l-grades-read`), so D2L grades are not a box here.
 
 ## 4. Solution Strategy
 
@@ -115,8 +117,11 @@ _[Three to five bullets: the few moves that shape everything else. arc42 suggest
 
 _Each bullet is one sentence, and it cites what explains it: the key decision in section 9.2 where one exists, and otherwise the quality goal and the building block in section 5 it shapes. Keep it short; the reasoning lives in section 9. A bullet that cites nothing is either not load-bearing, or it is a decision you have not written down yet._
 
-- **One component is the only path to the Language Model Service** (Model Gateway, section 5.2), so the reply check that `RI-chatbot-gives-answer` calls for runs in one place (quality goal 1) and a model outage is contained there (quality goal 3).
-- **Divided by use case area, with identity resolved in one cross-cutting component** (section 5.2), so the rule that a student reaches only their own records is enforced the same way for every area (quality goal 2).
+- **One deployable with one managed database** (`KD-deployment-shape`), because the load is small (`SCA-concurrent-users`) and the future maintainer is unknown (`OI-MAINTENANCE`).
+- **A React and TypeScript single-page application in the browser, with every rule enforced in a Python Application API** (section 5.1), because browser code cannot hold the language model credential or enforce student isolation (quality goal 2).
+- **Sign-in is bought, not built**: Supabase Auth issues credentials and stores passwords (section 8.1), so the system never handles a password itself (`SEC-passwords`).
+- **One component is the only path to the Language Model Service** (Coach and model gateway, section 5.2), so the reply check that `RI-chatbot-gives-answer` calls for runs in one place (quality goal 1) and a model outage is contained there (quality goal 3).
+- **Divided by use case area, with identity resolved in one cross-cutting component** (Identity and access, section 5.2), so the rule that a student reaches only their own records is enforced the same way for every area (quality goal 2).
 
 ## 5. Building Block View
 
@@ -129,26 +134,29 @@ C4Container
     title Container Diagram: Neocortex General Chemistry Study Assistant
 
     Person(student, "Student", "General Chemistry student who plans and records study, reflects, and uses the coach")
-    Person(instructor, "Instructor", "Supplies course material used to ground coaching")
+    Person(instructor, "Instructor", "Owns the course materials and views usage figures")
 
     System_Boundary(neocortex, "Neocortex") {
         Container(spa, "Web Application", "React 19 / TypeScript / Vite", "Browser UI for dashboard, study planning and sessions, coaching, and progress")
-        Container(api, "Application API", "Server technology TBD", "Enforces student-data access, exposes the application API, and mediates external integrations")
-        ContainerDb(db, "Application Database", "Managed relational database TBD", "Student accounts and consent, baseline responses, study sessions, reflections, plans, and conversation metadata")
+        Container(api, "Application API", "Python", "Every business rule; enforces student-data access and is the only container that reaches the database, the language model, and the course materials")
+        ContainerDb(db, "Application Database", "PostgreSQL on Supabase", "Student email, baseline responses, study sessions, confidence ratings, reflections, and compressed chat history")
     }
 
     System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
     System_Ext(materials, "Course Material Sources", "Client YouTube videos, D2L materials, and Google Drive content")
+    System_Ext(auth, "Supabase Auth", "Issues sign-in credentials and emails verification codes")
 
     Rel(student, spa, "Uses", "HTTPS")
-    Rel(instructor, spa, "Supplies or authorizes course material", "HTTPS; workflow TBD")
     Rel(spa, api, "Calls application APIs", "JSON/HTTPS")
-    Rel(api, db, "Reads and writes", "Database protocol TBD")
-    Rel(api, llm, "Requests a grounded coaching reply", "HTTPS; provider API TBD")
-    Rel(api, materials, "Obtains approved grounding material", "Provider API or managed export TBD")
+    Rel(spa, auth, "Signs up and signs in", "HTTPS")
+    Rel(api, auth, "Verifies the session", "HTTPS")
+    Rel(instructor, spa, "Views usage figures", "HTTPS")
+    Rel(api, db, "Reads and writes", "Supabase connection over TLS")
+    Rel(api, llm, "Requests a grounded coaching reply", "HTTPS")
+    Rel(materials, api, "Grounding content", "Loaded by hand by the team")
 ```
 
-Neocortex has three target containers: the React single-page application that runs on the student's device, one server-side application API, and one durable data store. The SPA is already the implemented frontend shell; the API and database are proposed target containers, not present in the current frontend-only milestone. They are separated because browser code cannot safely hold credentials for the language model or enforce server-side student isolation. The final server technology, database product, hosting, and whether the SPA is served by the API remain open under `OI-HOSTING` and `OI-MAINTENANCE`; this view deliberately does not turn those open issues into a premature deployment decision.
+The system is one application and one database because the load is small and nobody is yet identified to operate more (`KD-deployment-shape`). The Web Application is a separate container only because it runs in the browser; it ships in the same Vercel project as the Application API. The browser reaches student data only through the Application API, because browser code cannot safely hold the language model credential or enforce student isolation. The Web Application is already implemented as a front-end shell; the Application API and the Application Database are not built yet.
 
 ### 5.2 Use case areas and components
 
@@ -168,19 +176,21 @@ C4Component
         Component(content, "Course-material gateway", "Cross-cutting integration component", "Obtains, records provenance for, and makes approved grounding material available to the coach")
     }
 
-    ContainerDb(db, "Application Database", "Managed relational database TBD", "Private student data, consent, assessment responses, and study records")
+    ContainerDb(db, "Application Database", "PostgreSQL on Supabase", "Student data and loaded course material")
     System_Ext(llm, "Language Model Service", "Draft coaching replies")
     System_Ext(materials, "Course Material Sources", "YouTube, D2L, and Google Drive course content")
+    System_Ext(auth, "Supabase Auth", "Sign-in credentials and verification codes")            
 
     Rel(spa, identity, "Signs in and sends authenticated requests through", "JSON/HTTPS")
     Rel(identity, baseline, "Passes an authorized student's request to")
     Rel(identity, study, "Passes an authorized student's request to")
     Rel(identity, coach, "Passes an authorized student's request to")
+    Rel(identity, auth, "Verifies the session", "HTTPS")
+    Rel(materials, content, "Grounding content", "Loaded by hand by the team")
     Rel(baseline, db, "Stores and reads student-specific responses", "Database protocol TBD")
     Rel(study, db, "Stores and reads student-specific records", "Database protocol TBD")
     Rel(coach, content, "Requests approved grounding context from")
     Rel(coach, llm, "Requests constrained coaching replies", "HTTPS; provider API TBD")
-    Rel(content, materials, "Obtains approved course materials", "Provider API or managed export TBD")
     Rel(content, db, "Stores material references and provenance", "Database protocol TBD")
 ```
 
@@ -311,14 +321,15 @@ _Due: named at Checkpoint 1, detailed at Checkpoint 2._
 
 _[Four short paragraphs. The last three each cite the `SEC-*` requirement they answer:_
 
-**Trust boundary.** The Application container is the trust boundary. The browser running the Web Front End, the Language Model Service, and the Course Material Sources sit outside it. Every request that crosses the boundary is authenticated and authorized, and that covers every path the Application answers, framework endpoints included.
+**Trust boundary.** The Application API is the trust boundary. The Web Application in the browser, Supabase Auth, the Language Model Service, and the Course Material Sources sit outside it. Every request that crosses it is authenticated and authorized, and that covers every path the Application API answers, framework endpoints included. The Web Application never reads the Application Database directly.
 
-**Authentication.** **TODO(team):** how a student proves who they are, and who issues the credential. This is undecided in the requirements: vision and scope lists it as open (`OI-ANONYMITY`, `OI-PRIVACY`), and `FEAT-account-consent` is still a candidate feature. Whatever is chosen has to satisfy `SEC-authentication`, and `SEC-passwords` applies only if the system stores passwords itself. If the answer tonight is provisional, say so here and name the open issue.
+**Authentication.** _Provisional (`OI-ANONYMITY`)._ A student signs up with their TCU email address and a password, and confirms the address with a verification code sent by email. Supabase Auth issues the credential, stores the password as a hash (`SEC-passwords`), and sends the code. The Application API answers a request for student data only when it carries a valid Supabase session (`SEC-authentication`).
 
-**Authorization.** There are two roles, student and instructor. A student may reach only their own study data (`SEC-student-isolation`), and the Application checks that on every request by the signed-in student's identity, never by an identifier the browser supplies. **TODO(team):** what the instructor may see. Vision and scope 3.1 says an instructor view is "not yet specified"; until it is, state that the instructor sees no individual student's data.
+**Authorization.** _Provisional (`OI-PRIVACY`): the client has not yet specified the instructor view (vision and scope 3.1)._ There are two roles, student and instructor. A student reaches only their own records (`SEC-student-isolation`), and the Application API scopes every request by the signed-in identity, never by an identifier the browser supplies. The instructor sees the number of users and, per student and as class averages, confidence ratings, chatbot usage, and study-session usage. The instructor does not see the content of chats, reflections, or baseline responses.
 
-**Sensitive data.** The Database stores each student's baseline responses, study sessions, reflections, and chat history, all identifiable (`RI-privacy-exposure`). The Language Model Service receives the content of a student's chat messages. No grades are stored in the MVP, and none may be imported without the student's explicit choice (`SEC-grade-consent`). **TODO(team):** retention and disposal are not written yet; section 7.4 of the specification is empty and the question is open with the client (`OI-PRIVACY`), so cite 7.4 once it exists. **TODO(team):** say whether anything that identifies the student is sent to the Language Model Service along with the message.
+**Sensitive data.** The Application Database stores each student's email address, baseline responses, study sessions, confidence ratings, reflections, and a compressed form of their chat history, all identifiable (`RI-privacy-exposure`). How the chat history is compressed is not yet decided. The Language Model Service receives a student's baseline responses and compressed chat history along with the current message, and never the student's email address. No grades are stored in the MVP (`SEC-grade-consent`). Retention and disposal are not yet defined: section 7.4 of the specification is empty and the question is open with the client (`OI-PRIVACY`).
 
+**Secrets.** The Supabase keys and the language model key live in the Vercel project's environment variables and never in the repository.
 _Secrets (passwords, API keys, connection strings) never appear in this document or in the repository. Say where they will live, not what they are.]_
 
 ### 8.2 Other concepts
@@ -340,25 +351,25 @@ _One short subsection each: the rule in one sentence, why, and the file that sho
 | _Auditing_ | _Who changed what, and when?_ | _The first "who did this?"_ |
 | _Testing_ | _Which kinds of test, at which layer, with what data?_ | _The first pull request_ |
 
-**8.2.1 Error handling.** _Draft._ Every failure reaches the caller in one error shape produced in one place in the Application, and no response carries an exception's own message. Why: `ROB-external-service` requires an understandable message when an external service is down while the rest of the system stays usable, and an exception's message can reveal what is behind the Application.
+**8.2.1 Error handling.** Every failure reaches the caller in one error shape produced in one place in the Application API, and no response carries an exception's own message. Why: `ROB-external-service` requires an understandable message when an external service is down while the rest of the system stays usable, and an exception's message can reveal what is behind the Application API.
 
-**8.2.2 Time and time zones.** _Draft._ The Application's clock decides every timestamp, times are stored in one standard format in UTC, and tests can set the clock. Why: `INT-calendar` requires a standardized date and time format, and the study log records time of day (`FEAT-study-session-log`), which is wrong if each browser's clock is trusted.
+**8.2.2 Time and time zones.** The Application API's clock decides every timestamp, times are stored in one standard format in UTC, and tests can set the clock. Why: `INT-calendar` requires a standardized date and time format, and the study log records time of day (`FEAT-study-session-log`), which is wrong if each browser's clock is trusted.
 
-**8.2.3 API conventions.** **TODO(team):** the one shape every response takes and how endpoints are named, in one sentence, with the reason. Depends on the stack.
+**8.2.3 API conventions.** Every Application API endpoint sits under one URL prefix and returns JSON, and a failure uses the error shape in 8.2.1. Why: the Web Application has one way to call the API and one way to read a failure, and the prefix keeps API routes apart from the front end's routes inside one deployable (`KD-deployment-shape`).
 
-**8.2.4 Code conventions.** **TODO(team):** the libraries and idioms every file uses and the ones that are banned, in one sentence, with the reason. One rule already follows from section 5.2: no component other than Model Gateway calls the Language Model Service.
+**8.2.4 Code conventions.** The Web Application is written in TypeScript with React and the Application API in Python; the browser calls only the Application API and Supabase Auth, and no component except Coach and model gateway calls the Language Model Service. Why: the browser cannot hold the model credential (section 5.1), and the reply check has to run in one place (`SAF-ai-guidance`).
 
-**8.2.5 Validation.** _Draft._ Input is checked in the Application before anything is saved, and that check is the one that counts; a check in the Web Front End is only a convenience. Why: `ROB-invalid-data` requires invalid or incomplete data to be rejected with a message, and the browser sits outside the trust boundary (section 8.1).
+**8.2.5 Validation.** Input is checked in the Application API before anything is saved, and that check is the one that counts; a check in the Web Application is only a convenience. Why: `ROB-invalid-data` requires invalid or incomplete data to be rejected with a message, and the browser sits outside the trust boundary (section 8.1).
 
-**8.2.6 Configuration and secrets.** _Draft._ Everything that differs between development and production, and every secret, is read from the environment the Application runs in and never committed to the repository. Why: the language model key and the database credentials are secrets (section 8.1), and `MNT-setup` requires a new developer to configure the system from the README. **TODO(team):** name where the values live once hosting is decided (`OI-HOSTING`).
+**8.2.6 Configuration and secrets.** Everything that differs between development and production, and every secret, is read from environment variables, set in the Vercel project for production and in an uncommitted local file for development. Why: the Supabase keys and the language model key are secrets (section 8.1), and `MNT-setup` requires a new developer to configure the system from the README.
 
-**8.2.7 Logging.** _Draft._ The Application logs events and errors, and never logs the content of chat messages, reflections, or baseline responses. Why: that content is the identifiable student data named in `RI-privacy-exposure`, and a log is a second copy of it that `SEC-student-isolation` does not protect. **TODO(team):** the log levels.
+**8.2.7 Logging.** The Application API logs failures as errors, refused requests and external-service failures as warnings, and sign-ins and completed actions as information, and it never logs the content of chat messages, reflections, or baseline responses. Why: that content is the identifiable student data named in `RI-privacy-exposure`, and a log is a second copy of it that `SEC-student-isolation` does not protect.
 
-**8.2.8 Persistence and concurrency.** **TODO(team):** where a transaction begins and ends and what happens when two writes meet, in one sentence, with the reason. Depends on the stack. One fact to build on: in the MVP every record belongs to a single student (`SEC-student-isolation`), so two people never edit the same record.
+**8.2.8 Persistence and concurrency.** Each request that changes data is one transaction that commits or rolls back as a whole, and the last write to a record wins. Why: `UC-BNCH-complete-baseline-assessment` marks the assessment complete only if the responses were stored, and every record belongs to one student (`SEC-student-isolation`), so two people never edit the same record.
 
-**8.2.9 Auditing.** **TODO(team):** who changed what and when, in one sentence, with the reason. No requirement in the specification asks for an audit trail yet; if the team decides none is needed for the MVP, write that as the rule and say why.
+**8.2.9 Auditing.** Every stored record carries the student who owns it and the time it was created and last changed, and the MVP keeps no separate audit trail. Why: only the owner can change their own records (`SEC-student-isolation`), so the owner and the timestamps already answer who changed what and when.
 
-**8.2.10 Testing.** _Draft._ Every pull request runs automated tests, and every release runs the team-maintained adversarial prompt set against the chatbot. Why: `SM-no-answer-leak` is measured by that test set and its target is zero leaks. **TODO(team):** the kinds of test at each layer and the test data, which depend on the stack.
+**8.2.10 Testing.** Every pull request runs unit tests for the Application API's components and component tests for the Web Application, using made-up student data only, and every release runs the team-maintained adversarial prompt set against the chatbot. Why: `SM-no-answer-leak` is measured by that prompt set with a target of zero leaks, and real student data in a test is the exposure `RI-privacy-exposure` describes.
 
 
 ## 9. Architecture Decisions
@@ -375,9 +386,9 @@ _List three to six, ranked by importance to your client times difficulty to achi
 
 | Rank | Requirement | Specification handles | Importance × difficulty | Drives |
 |---|---|---|---|---|
-| 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | High × High | Model Gateway as the only path to the model (section 5.2) |
-| 2 | A student's data is reached only by that student | `SEC-authentication`, `SEC-student-isolation` | High × Medium | The trust boundary and the authorization rule (section 8.1) |
-| 3 | An external outage does not take the rest down | `ROB-external-service` | Medium × Medium | Model Gateway isolating the Language Model Service (section 5.2) |
+| 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | High × High | Coach and model gateway as the only path to the model (section 5.2) |
+| 2 | A student's data is reached only by that student and, as usage figures, the instructor | `SEC-authentication`, `SEC-student-isolation` | High × Medium | The trust boundary and the authorization rule (section 8.1) |
+| 3 | An external outage does not take the rest down | `ROB-external-service` | Medium × Medium | Coach and model gateway isolating the Language Model Service (section 5.2) |
 | 4 | The expected load is small and known | `SCA-concurrent-users`, `AVL-uptime` | Medium × Low | `KD-deployment-shape` |
 | 5 | A new developer can set it up from the README | `MNT-setup` | Medium × Low | `KD-deployment-shape` |
 
@@ -389,11 +400,13 @@ _A decision without a **rejected alternative** is not a decision, it is a descri
 
 _A decision that turns out wrong is not deleted or rewritten. Mark it **Superseded by `KD-<new-slug>`** and write the new decision as its own entry, so the reasoning behind both stays readable._
 
-- **Driving requirements:** **TODO(team):** the candidates in the specification are `SCA-concurrent-users`, `AVL-uptime`, and `MNT-setup`. Name the ones that actually drove the choice.
-- **Context:** About 185 students in one course with one instructor (vision and scope 3.2), and an MVP limited to that course (`AS-freshman-scope`). Nobody has been identified to host or maintain the system after the team graduates (`OI-HOSTING`, `OI-MAINTENANCE`).
-- **Decision:** **TODO(team).**
-- **Rejected:** **TODO(team):** the alternative the team did not choose, and why not.
-- **Trade-off:** **TODO(team):** what the choice costs, and the requirement that would have forced the other answer. A school-wide rollout (`FEAT-school-wide`, postponed) is the kind of requirement to consider.
+**`KD-deployment-shape`: one deployable.** _Accepted; revisit when `OI-HOSTING` is answered._
+
+- **Driving requirements:** `SCA-concurrent-users`; `MNT-setup`.
+- **Context:** About 185 students in one course with one instructor (vision and scope 3.2), an MVP limited to that course (`AS-freshman-scope`), and nobody yet identified to host or maintain the system after the team graduates (`OI-HOSTING`, `OI-MAINTENANCE`).
+- **Decision:** The Web Application and the Application API ship together as one Vercel project, with one managed database on Supabase. The three containers in section 5.1 remain, but the team deploys only one thing.
+- **Rejected:** Separately deployed services, with the Coach and model gateway running apart from the rest of the Application API. That would add network calls, a second deployment, and failure modes between the two, to solve a scaling problem that the load in `SCA-concurrent-users` does not create. The isolation `ROB-external-service` asks for is met inside one deployable, because the gateway is the only component that calls the Language Model Service (section 5.2).
+- **Trade-off:** The system scales only as a whole, and a bad deploy takes coaching and study recording down together. A scalability requirement well beyond `SCA-concurrent-users`, such as a school-wide rollout (`FEAT-school-wide`, postponed), would have forced separate services.
 
 ## 10. Quality Requirements
 
