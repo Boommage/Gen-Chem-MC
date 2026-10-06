@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gen-chem-mc",
+  "main": "backend/model.ts",
+  "compatibility_date": "2026-10-05",
+
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  }
+}
