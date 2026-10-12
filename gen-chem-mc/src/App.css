@@ -40,6 +40,20 @@
 .send-button { padding: 11px 24px; border: 0; border-radius: 11px; color: #fff; background: var(--green); font: inherit; cursor: pointer; }
 .send-button:hover { background: #285b42; }
 .send-button:disabled { cursor: not-allowed; opacity: 0.55; }
+.message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.coach-pending { margin-top: 19px; }
+.thinking-message { display: flex; align-items: center; gap: 12px; }
+.thinking-dots { display: inline-flex; gap: 5px; }
+.thinking-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: thinking-pulse 1.2s ease-in-out infinite; }
+.thinking-dots i:nth-child(2) { animation-delay: 0.15s; }
+.thinking-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes thinking-pulse { 0%, 80%, 100% { opacity: 0.35; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .thinking-dots i { animation: none; } }
+.coach-error { margin-top: 20px; padding: 16px; border: 1px solid #e2b8ae; border-radius: 14px; background: #fff6f2; color: #7b3526; }
+.coach-error p { margin: 0 0 12px; }
+.coach-error-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.coach-preview { color: var(--muted); font-size: 14px; }
+.suggestion-chip:disabled { opacity: 0.55; cursor: not-allowed; }
 button:focus-visible, input:focus-visible { outline: 3px solid rgba(49, 99, 74, 0.28); outline-offset: 2px; }
 
 @media (max-width: 760px) {

@@ -5,22 +5,34 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "wrangler dev --ip 127.0.0.1 --port 8787",
+    "dev:mock": "node backend/dev-mock.ts",
+    "typecheck:api": "tsc -p tsconfig.backend.json",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck:api && npm test && npm run build",
+    "deploy:team": "wrangler deploy --env team",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   },
   "dependencies": {
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^29.1.1",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
+    "vitest": "^5.0.4",
     "wrangler": "^4.147.0"
   }
 }
