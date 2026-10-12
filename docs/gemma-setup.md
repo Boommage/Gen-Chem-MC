@@ -1,5 +1,7 @@
 # Gemma integration: team setup
 
+This guide covers the stable `gemma-integration-test` text branch. For `codex/image-integration-test`, follow [image setup](gemma-image-setup.md) and deploy the separate image Worker with `deploy:images`.
+
 Branch: **gemma-integration-test**. Based on the team's glm-4.7-flash prototype.
 
 The shared endpoint is deployed, and the endpoint owner confirmed live text replies on October 12, 2026. Teammates can start with the individual-machine steps below. A shareable [Word onboarding guide](gemma-team-onboarding.docx) is included in this branch.

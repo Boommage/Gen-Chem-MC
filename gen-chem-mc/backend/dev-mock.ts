@@ -1,12 +1,15 @@
 import { createServer } from 'node:http'
-import { createHandler, GEMMA_MODEL, type Env } from './model.ts'
+import { createHandler, GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
 
 const env: Env = {
   AI: {
     async run(_model, input) {
       await new Promise((resolve) => setTimeout(resolve, 900))
-      const last = input.messages.at(-1)?.content ?? ''
-      const reply = /study|reflect|exam|habit/i.test(last)
+      const content = input.messages.at(-1)?.content ?? ''
+      const last = typeof content === 'string' ? content : content.filter(part => part.type === 'text').map(part => 'text' in part ? part.text : '').join(' ')
+      const hasImage = Array.isArray(content) && content.some(part => part.type === 'image_url')
+      const reply = hasImage ? 'Mock preview: an image was attached. Which information in it seems relevant, and what have you tried?'
+        : /study|reflect|exam|habit/i.test(last)
         ? 'What did you try during your last study session, and what helped you check your understanding?'
         : 'What information does the problem give you, and what have you tried so far?'
       return { choices: [{ message: { content: reply }, finish_reason: 'stop' }] }
@@ -21,7 +24,7 @@ const server = createServer(async (incoming, outgoing) => {
     let bytes = 0
     for await (const chunk of incoming) {
       bytes += chunk.length
-      if (bytes > 64 * 1024) {
+      if (bytes > MAX_BODY_BYTES) {
         outgoing.writeHead(413, { 'Content-Type': 'application/json' })
         outgoing.end(JSON.stringify({ error: { message: 'The message is too large.' } }))
         return

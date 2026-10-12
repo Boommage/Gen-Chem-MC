@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gen-chem-mc",
-  "main": "backend/model.ts",
+  "main": "backend/worker.ts",
   "compatibility_date": "2026-10-05",
 
   "ai": {
@@ -9,6 +9,10 @@
     "remote": true
   },
   "env": {
+    "images": {
+      "name": "neocortex-gemma-images",
+      "ai": { "binding": "AI", "remote": true }
+    },
     "team": {
       "name": "neocortex-gemma-team",
       "ai": { "binding": "AI", "remote": true }
