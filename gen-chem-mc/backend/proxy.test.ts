@@ -31,3 +31,15 @@ it('rejects unencrypted remote backend addresses', () => {
   vi.stubEnv('COACH_API_TOKEN', 'test-only-token')
   expect(() => configure({ mode: 'development', command: 'serve' })).toThrow('HTTPS')
 })
+
+it.each(['http://127.0.0.1:5173/', 'http://localhost:5173/'])('rejects pointing the coach proxy back at the frontend: %s', (url) => {
+  vi.stubEnv('COACH_API_URL', url)
+  vi.stubEnv('COACH_API_TOKEN', '')
+  expect(() => configure({ mode: 'development', command: 'serve' })).toThrow('points to the frontend')
+})
+
+it('rejects a frontend/API path in the backend origin', () => {
+  vi.stubEnv('COACH_API_URL', 'https://coach.example/api/coach')
+  vi.stubEnv('COACH_API_TOKEN', 'test-only-token')
+  expect(() => configure({ mode: 'development', command: 'serve' })).toThrow('origin only')
+})

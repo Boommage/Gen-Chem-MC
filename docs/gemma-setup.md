@@ -129,6 +129,7 @@ The backend accepts up to 21 alternating text messages, 2,000 characters per mes
 | Shared-mode startup requires a token | Create .env.local with the server-only token; never VITE_COACH_API_TOKEN |
 | 503 / endpoint not configured | Endpoint owner must set TEAM_API_TOKEN on the team Worker |
 | Connection refused / proxy failure | Start dev:mock or dev:api for local mode, or check shared URL |
+| COACH_API_URL points to the frontend | Use the Worker URL for shared mode; port 5173 is the UI, while port 8787 is the local backend |
 | 429 / free allowance reached | Wait for quota/capacity to recover; no automatic paid fallback |
 | Thinking ends with a timeout | Retry later; check provider status and account access |
 | Empty/unusable reply | Retry once; endpoint owner should inspect status metadata without logging private messages |
