@@ -43,7 +43,17 @@ export default function Coach() {
         body: JSON.stringify({ messages: recentConversation(conversation) }),
         signal: controller.signal,
       })
-      const data = await response.json() as { reply?: unknown; preview?: boolean; error?: { message?: unknown } }
+      const responseText = await response.text()
+      let decoded: unknown
+      try {
+        decoded = JSON.parse(responseText)
+      } catch {
+        throw new Error(response.ok
+          ? 'The coach returned an unreadable response. Please retry.'
+          : `The coach backend could not be reached (HTTP ${response.status}). Check COACH_API_URL in .env.local and restart the frontend.`)
+      }
+      if (!decoded || typeof decoded !== 'object') throw new Error('The coach returned an unreadable response. Please retry.')
+      const data = decoded as { reply?: unknown; preview?: boolean; error?: { message?: unknown } }
       if (!response.ok) {
         const message = typeof data.error?.message === 'string' ? data.error.message : 'The coach could not respond. Check your connection and try again.'
         throw new Error(message)

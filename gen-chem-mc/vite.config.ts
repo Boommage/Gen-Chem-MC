@@ -1,7 +1,9 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
+  // A static build does not use the dev proxy or require a development token.
+  if (command === 'build') return { plugins: [react()] }
   // No VITE_ prefix: these values belong to the local server, not the browser.
   const env = loadEnv(mode, process.cwd(), '')
   const target = env.COACH_API_URL || 'http://127.0.0.1:8787'

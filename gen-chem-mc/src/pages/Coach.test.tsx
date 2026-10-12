@@ -68,6 +68,21 @@ describe('Coach requests', () => {
     send()
     expect((await screen.findByRole('alert')).textContent).toContain('empty response')
   })
+  it.each(['', '<html>proxy failure</html>'])('shows a setup error for a non-JSON failure instead of a JSON parser exception', async (body) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 502 })))
+    render(<Coach />)
+    send()
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('COACH_API_URL')
+    expect(alert.textContent).not.toContain('JSON input')
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+  it.each(['', 'null'])('treats malformed successful replies as recoverable failures', async (body) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body)))
+    render(<Coach />)
+    send()
+    expect((await screen.findByRole('alert')).textContent).toContain('unreadable response')
+  })
   it('labels mock replies distinctly from live Gemma output', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ reply: 'Mock question?', preview: true })))
     render(<Coach />)
