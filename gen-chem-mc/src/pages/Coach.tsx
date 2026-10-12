@@ -1,5 +1,7 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react'
 import { MAX_MESSAGE_CHARACTERS, recentConversation, type ChatMessage } from '../../shared/coach'
+import type { ImageAttachment } from '../../shared/images'
+import { readImageFile } from '../lib/imageAttachment'
 import { Icon } from '../components/AppLayout'
 import PageHeader from '../components/PageHeader'
 
@@ -17,12 +19,19 @@ export default function Coach() {
   const [error, setError] = useState<string | null>(null)
   const [failedMessages, setFailedMessages] = useState<ChatMessage[] | null>(null)
   const [preview, setPreview] = useState(false)
+  const [attachment, setAttachment] = useState<ImageAttachment | null>(null)
+  const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  const [isReadingImage, setIsReadingImage] = useState(false)
+  const imageInput = useRef<HTMLInputElement | null>(null)
+  const attachmentJob = useRef(0)
+  const readingImage = useRef(false)
   const activeRequest = useRef<AbortController | null>(null)
   const endOfConversation = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => () => {
     activeRequest.current?.abort()
     activeRequest.current = null
+    attachmentJob.current++
   }, [])
 
   useEffect(() => {
@@ -37,10 +46,17 @@ export default function Coach() {
     setError(null)
     const timeout = setTimeout(() => controller.abort(), 45_000)
     try {
+      const recent = recentConversation(conversation)
+      if (recent.some(message => message.image)) {
+        const health = await fetch('/api/health', { signal: controller.signal })
+        const capabilities = await health.json().catch(() => null) as { capabilities?: { images?: boolean }; error?: { message?: string } } | null
+        if (!health.ok) throw new Error(capabilities?.error?.message || 'The image coach could not be reached. Please retry.')
+        if (!capabilities?.capabilities?.images) throw new Error('Images are not available on this server yet. Edit this message to send text, or use the image test backend.')
+      }
       const response = await fetch('/api/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: recentConversation(conversation) }),
+        body: JSON.stringify({ messages: recent }),
         signal: controller.signal,
       })
       const responseText = await response.text()
@@ -79,20 +95,52 @@ export default function Coach() {
 
   const sendMessage = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const content = input.trim()
-    if (!content || activeRequest.current || failedMessages) return
-    const conversation: ChatMessage[] = [...messages, { role: 'user', content }]
+    const content = input.trim() || (attachment ? 'Help me think through the problem in this image.' : '')
+    if (!content || activeRequest.current || failedMessages || readingImage.current) return
+    const conversation: ChatMessage[] = [...messages, { role: 'user', content, ...(attachment ? { image: attachment } : {}) }]
     setMessages(conversation)
     setInput('')
+    setAttachment(null)
+    setAttachmentError(null)
     void generate(conversation)
   }
 
   const editFailedMessage = () => {
     if (!failedMessages || activeRequest.current) return
     setInput(failedMessages.at(-1)?.content ?? '')
+    setAttachment(failedMessages.at(-1)?.image ?? null)
     setMessages(failedMessages.slice(0, -1))
     setFailedMessages(null)
     setError(null)
+  }
+
+  const chooseImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || activeRequest.current || failedMessages) return
+    const job = ++attachmentJob.current
+    readingImage.current = true
+    setIsReadingImage(true)
+    setAttachmentError(null)
+    try {
+      const image = await readImageFile(file)
+      if (attachmentJob.current === job) setAttachment(image)
+    } catch (caught) {
+      if (attachmentJob.current === job) setAttachmentError(caught instanceof Error ? caught.message : 'The image could not be attached.')
+    } finally {
+      if (attachmentJob.current === job) {
+        readingImage.current = false
+        setIsReadingImage(false)
+      }
+    }
+  }
+
+  const removeImage = () => {
+    attachmentJob.current++
+    readingImage.current = false
+    setIsReadingImage(false)
+    setAttachment(null)
+    setAttachmentError(null)
   }
 
   return (
@@ -106,7 +154,10 @@ export default function Coach() {
           {messages.map((message, index) => (
             <div className={'message-row ' + (message.role === 'user' ? 'student' : 'coach')} key={index}>
               {message.role === 'assistant' && <span className="coach-avatar" aria-hidden="true" />}
-              <div className="message">{message.content}</div>
+              <div className="message">
+                {message.image && <img className="chat-image" src={message.image.dataUrl} alt={'Attached image ' + message.image.name} />}
+                {message.content}
+              </div>
             </div>
           ))}
           <div ref={endOfConversation} />
@@ -125,10 +176,24 @@ export default function Coach() {
         <div className="suggestions" aria-label="Suggested prompts">
           {suggestions.map((suggestion) => <button className="suggestion-chip" type="button" key={suggestion} disabled={isGenerating || !!failedMessages} onClick={() => setInput(suggestion)}>{suggestion}</button>)}
         </div>
-        <form className="message-form" onSubmit={sendMessage} aria-busy={isGenerating}>
-          <input className="message-input" aria-label="Message to coach" placeholder="Share what you’re thinking..." maxLength={MAX_MESSAGE_CHARACTERS} value={input} disabled={isGenerating || !!failedMessages} onChange={(event) => setInput(event.target.value)} />
-          <button className="send-button" type="submit" disabled={!input.trim() || isGenerating || !!failedMessages}>{isGenerating ? 'Thinking…' : 'Send'}</button>
+        {attachmentError && <p className="attachment-error" role="alert">{attachmentError}</p>}
+        {isReadingImage && <p className="attachment-help" role="status">Preparing image…</p>}
+        <form className="message-form image-message-form" onSubmit={sendMessage} aria-busy={isGenerating || isReadingImage}>
+          {attachment && <div className="attachment-preview">
+            <img src={attachment.dataUrl} alt="Attachment preview" />
+            <span>{attachment.name}</span>
+            <button type="button" className="suggestion-chip" aria-label="Remove image" disabled={isGenerating} onClick={removeImage}>Remove</button>
+          </div>}
+          <div className="composer-row">
+            <button type="button" className="attach-button" aria-label="Attach image" title="Attach a JPEG or PNG" disabled={isGenerating || !!failedMessages || isReadingImage} onClick={() => imageInput.current?.click()}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8" cy="8" r="1.5" /><path d="m4 17 5-5 4 4 3-3 5 5" /></svg>
+            </button>
+            <input className="message-input" aria-label="Message to coach" placeholder={attachment ? 'Ask about this image…' : 'Share what you’re thinking...'} maxLength={MAX_MESSAGE_CHARACTERS} value={input} disabled={isGenerating || !!failedMessages} onChange={(event) => setInput(event.target.value)} />
+            <button className="send-button" type="submit" disabled={(!input.trim() && !attachment) || isGenerating || !!failedMessages || isReadingImage}>{isGenerating ? 'Thinking…' : 'Send'}</button>
+          </div>
+          <input ref={imageInput} type="file" accept="image/jpeg,image/png" aria-label="Choose a JPEG or PNG image" hidden disabled={isGenerating || !!failedMessages || isReadingImage} onChange={event => { void chooseImage(event) }} />
         </form>
+        <p className="attachment-help">Attach one JPEG or PNG up to 2 MB. Images are sent to the AI coach with your message.</p>
       </section>
     </>
   )
