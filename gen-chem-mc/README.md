@@ -31,12 +31,14 @@ npm ci
 
 Full setup, the one-time shared backend deployment, and troubleshooting: **[Gemma team setup](../docs/gemma-setup.md)**.
 
+Shareable four-page Word guide: **[Team onboarding document](../docs/gemma-team-onboarding.docx)**. Live text replies through the shared endpoint were confirmed by the endpoint owner on October 12, 2026.
+
 ### Shared live backend
 
-Copy `.env.example` to `.env.local` and fill in the actual team endpoint:
+Copy `.env.example` to `.env.local`. The working endpoint is already filled in; add the development token supplied privately by the endpoint owner:
 
 ```dotenv
-COACH_API_URL=https://YOUR-TEAM-WORKER.YOUR-SUBDOMAIN.workers.dev
+COACH_API_URL=https://neocortex-gemma-team.neocortexmc.workers.dev
 COACH_API_TOKEN=YOUR-TEAM-DEVELOPMENT-TOKEN
 ```
 
@@ -48,7 +50,7 @@ Open http://127.0.0.1:5173/coach. The token is read by Vite's local proxy; it is
 
 ### Mock mode
 
-Leave the endpoint at `http://127.0.0.1:8787` and the token empty in your local configuration. Open two terminals in `gen-chem-mc`:
+Change the endpoint to `http://127.0.0.1:8787` and leave the token empty in your local configuration. Open two terminals in `gen-chem-mc`:
 
 ```bash
 # Terminal 1
@@ -70,7 +72,7 @@ npx wrangler whoami
 npm run dev:api
 ```
 
-In a second terminal, run `npm run dev`. Leave the local endpoint/token defaults. Wrangler runs the Worker locally, but the AI binding connects to Cloudflare; internet access and free inference quota are required.
+In a second terminal, run `npm run dev`. Set `COACH_API_URL=http://127.0.0.1:8787` and leave `COACH_API_TOKEN` empty in `.env.local`. Wrangler runs the Worker locally, but the AI binding connects to Cloudflare; internet access and free inference quota are required.
 
 ## Verification
 

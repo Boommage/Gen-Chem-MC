@@ -2,6 +2,8 @@
 
 Branch: **gemma-integration-test**. Based on the team's glm-4.7-flash prototype.
 
+The shared endpoint is deployed, and the endpoint owner confirmed live text replies on October 12, 2026. Teammates can start with the individual-machine steps below. A shareable [Word onboarding guide](gemma-team-onboarding.docx) is included in this branch.
+
 ## Recommended: one shared live backend
 
 Only the endpoint owner signs into Cloudflare and deploys. Teammates run Vite locally, which forwards requests to that backend with a development access token. Each teammate can run the code without a Cloudflare login.
@@ -58,7 +60,7 @@ Create your uncommitted .env.local:
 Set the actual endpoint and development token:
 
 ```dotenv
-COACH_API_URL=https://ACTUAL-ENDPOINT-FROM-TEAM-OWNER
+COACH_API_URL=https://neocortex-gemma-team.neocortexmc.workers.dev
 COACH_API_TOKEN=ACTUAL-TEAM-DEVELOPMENT-TOKEN
 ```
 
@@ -72,7 +74,7 @@ Open http://127.0.0.1:5173/coach and send a message. No Cloudflare account, Wran
 
 ## Alternative: no-account mock mode
 
-Use the local .env defaults: COACH_API_URL=http://127.0.0.1:8787 and an empty token. Run these in two terminals:
+Change .env.local to COACH_API_URL=http://127.0.0.1:8787 and an empty token. Run these in two terminals:
 
 ```bash
 npm run dev:mock
@@ -86,7 +88,7 @@ The mock waits briefly so you can see the thinking animation, then returns a can
 
 ## Alternative: each developer's local Worker
 
-Use the local .env defaults. The developer must have Workers AI access on the intended account.
+Set COACH_API_URL=http://127.0.0.1:8787 and leave COACH_API_TOKEN empty in .env.local. The developer must have Workers AI access on the intended account.
 
 ```bash
 npx wrangler login
