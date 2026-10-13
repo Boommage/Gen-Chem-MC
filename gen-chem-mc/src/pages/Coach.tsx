@@ -32,7 +32,7 @@ export default function Coach() {
     setMessages(updatedMessages)
     setInput('')
     try {
-        const response = await fetch('http://localhost:8787', {
+      const response = await fetch(import.meta.env.VITE_AI_API_URL || 'http://localhost:8787', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
