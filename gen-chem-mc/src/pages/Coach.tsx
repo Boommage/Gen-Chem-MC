@@ -1,4 +1,6 @@
 import { type FormEvent, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Icon } from '../components/AppLayout'
 import PageHeader from '../components/PageHeader'
 
@@ -72,7 +74,23 @@ export default function Coach() {
         <div className="conversation" aria-live="polite">
           <div className="message-row student"><div className="message">I don’t know where to start with this chemistry problem.</div></div>
           <div className="message-row coach"><span className="coach-avatar" aria-hidden="true" /><div className="message">Let’s work through your thinking. What information does the problem give you?</div></div>
-          {messages.map((message, index) => (<div className= {`message-row ${message.role === 'user' ? 'student' : 'coach'}`} key={index}> {message.role === 'assistant' && (<span className="coach-avatar" aria-hidden="true" />)}<div className="message">{message.content}</div></div>))}
+          {messages.map((message, index) => (
+              <div className= {
+                  `message-row ${message.role === 'user' ? 'student' : 'coach'
+                      }`
+                  }
+                  key={index}> {message.role === 'assistant' &&
+                      (<span className="coach-avatar" aria-hidden="true" />)
+                      }<div className="message">
+                         {message.role === 'assistant' ? (
+                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                             {message.content}
+                           </ReactMarkdown>
+                         ) : (
+                           message.content
+                         )}
+                       </div>
+                  </div>))}
         </div>
         <div className="suggestions" aria-label="Suggested prompts">
           {suggestions.map((suggestion) => <button className="suggestion-chip" type="button" key={suggestion} onClick={() => setInput(suggestion)}>{suggestion}</button>)}
