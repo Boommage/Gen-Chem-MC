@@ -32,7 +32,7 @@ export default function Coach() {
     setMessages(updatedMessages)
     setInput('')
     try {
-        const response = await fetch('http://localhost:8787', {
+        const response = await fetch('https://gen-chem-mc.amarachichiemela63.workers.dev', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
