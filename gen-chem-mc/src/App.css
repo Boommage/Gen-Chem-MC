@@ -40,6 +40,39 @@
 .send-button { padding: 11px 24px; border: 0; border-radius: 11px; color: #fff; background: var(--green); font: inherit; cursor: pointer; }
 .send-button:hover { background: #285b42; }
 .send-button:disabled { cursor: not-allowed; opacity: 0.55; }
+.message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.message.markdown-message { min-width: 0; white-space: normal; line-height: 1.55; }
+.markdown-message > :first-child { margin-top: 0; }
+.markdown-message > :last-child { margin-bottom: 0; }
+.markdown-message p, .markdown-message ul, .markdown-message ol, .markdown-message blockquote, .markdown-message pre, .markdown-message table { margin: 0 0 0.8em; }
+.markdown-message ul, .markdown-message ol { padding-left: 1.4em; }
+.markdown-message li + li { margin-top: 0.3em; }
+.markdown-message li > p { margin-bottom: 0.3em; }
+.markdown-message :is(h1, h2, h3, h4, h5, h6) { margin: 1em 0 0.4em; font-size: 1.05em; line-height: 1.3; }
+.markdown-message a { color: var(--green); text-underline-offset: 0.15em; }
+.markdown-message blockquote { padding-left: 0.8em; border-left: 3px solid #b5cbbc; }
+.markdown-message code { padding: 0.1em 0.25em; border-radius: 4px; background: #dfe9dc; font-size: 0.88em; }
+.markdown-message pre { max-width: 100%; padding: 0.7em; overflow-x: auto; border-radius: 8px; background: #dfe9dc; }
+.markdown-message pre code { padding: 0; white-space: pre; }
+.markdown-message table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.markdown-message th, .markdown-message td { padding: 0.35em 0.6em; border: 1px solid #b5cbbc; text-align: left; }
+.markdown-message .katex { font-size: 1.08em; }
+.markdown-message p > .katex, .markdown-message li > .katex { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding-block: 0.2em; vertical-align: middle; }
+.markdown-message .katex-display { max-width: 100%; margin: 0.8em 0; padding-block: 0.25em; overflow-x: auto; overflow-y: hidden; }
+.markdown-message .katex-error { color: inherit; white-space: pre-wrap; }
+.coach-pending { margin-top: 19px; }
+.thinking-message { display: flex; align-items: center; gap: 12px; }
+.thinking-dots { display: inline-flex; gap: 5px; }
+.thinking-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: thinking-pulse 1.2s ease-in-out infinite; }
+.thinking-dots i:nth-child(2) { animation-delay: 0.15s; }
+.thinking-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes thinking-pulse { 0%, 80%, 100% { opacity: 0.35; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .thinking-dots i { animation: none; } }
+.coach-error { margin-top: 20px; padding: 16px; border: 1px solid #e2b8ae; border-radius: 14px; background: #fff6f2; color: #7b3526; }
+.coach-error p { margin: 0 0 12px; }
+.coach-error-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.coach-preview { color: var(--muted); font-size: 14px; }
+.suggestion-chip:disabled { opacity: 0.55; cursor: not-allowed; }
 button:focus-visible, input:focus-visible { outline: 3px solid rgba(49, 99, 74, 0.28); outline-offset: 2px; }
 
 @media (max-width: 760px) {
