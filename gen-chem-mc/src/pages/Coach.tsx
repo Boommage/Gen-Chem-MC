@@ -9,18 +9,11 @@ const suggestions = [
   'Help me understand my study habits',
 ]
 
-// Local Worker started with `npx wrangler dev`. Override with VITE_COACH_URL in .env.local.
+// The Worker started by `npx wrangler dev`. Override with VITE_COACH_URL in .env.local.
 const COACH_URL = import.meta.env.VITE_COACH_URL ?? 'http://localhost:8787'
 
-type ChatMessage = {
-  role: 'user' | 'assistant'
-  content: string
-}
-
-type CoachResponse = {
-  reply?: string
-  error?: string
-}
+type ChatMessage = { role: 'user' | 'assistant'; content: string }
+type CoachResponse = { reply?: string; error?: string }
 
 export default function Coach() {
   const [input, setInput] = useState('')
@@ -45,16 +38,14 @@ export default function Coach() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedMessages }),
       })
-      const data = (await response.json()) as CoachResponse
-      if (!response.ok || !data.reply) {
-        throw new Error(data.error ?? `Coach request failed (${response.status})`)
-      }
+      const data = (await response.json().catch(() => ({}))) as CoachResponse
+      if (!data.reply) throw new Error(data.error ?? 'The coach could not respond. Please try again.')
       const reply = data.reply
       setMessages((current) => [...current, { role: 'assistant', content: reply }])
     } catch (err) {
-      console.error('Coach error:', err)
-      setError('The coach could not respond. Check that the backend is running, then try again.')
-      // Remove the unanswered message and put it back in the input so the student can retry.
+      // fetch throws a TypeError when the backend can't be reached.
+      setError(err instanceof TypeError ? 'The coach could not respond. Check that the backend is running.' : (err as Error).message)
+      // Put the unanswered message back in the input so the student can retry.
       setMessages(messages)
       setInput(message)
     } finally {

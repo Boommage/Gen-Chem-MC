@@ -3,14 +3,8 @@
   "name": "gen-chem-mc-llama",
   "main": "backend/model.ts",
   "compatibility_date": "2026-10-05",
-
-  "ai": {
-    "binding": "AI",
-    "remote": true
-  },
-
   "vars": {
-    // Change this to try another Workers AI model without editing code.
+    // The Workers AI model the coach uses. Change it to compare models.
     "COACH_MODEL": "@cf/meta/llama-3.1-8b-instruct-fp8-fast"
   }
 }
