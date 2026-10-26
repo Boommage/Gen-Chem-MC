@@ -1,14 +1,18 @@
+
 # GET CHEM — Frontier Metacognitive Tutor Testing Guide
 
-This branch contains **Frontier**, an experimental AI tutor developed for GET CHEM.
+Frontier is an experimental AI chemistry tutor developed for the GET CHEM project.
 
-The goal of Frontier is to help General Chemistry students develop their problem-solving and metacognitive skills through guided questions, hints, and feedback rather than simply giving them answers.
+Our goal is to help General Chemistry students become better problem-solvers by encouraging them to explain their thinking, recognize mistakes, reflect on their understanding, and learn through guided questions and feedback.
 
-Frontier is the name of our tutoring experiment, not the name of the underlying language model. Our current implementation uses **Google's Gemini API**, but we may explore other language models as the project develops.
+Frontier is the name of our tutoring experiment, not the underlying language model. The current implementation uses Google's Gemini API.
 
-**Branch:** `experiment/frontier-metacognitive-tutor`
-**Current LLM Provider:** Google Gemini
+**Branch:** `experiment/frontier-metacognitive-tutor`  
+**LLM Provider:** Google Gemini  
+**Model used in successful initial tests:** `gemini-3.5-flash-lite`  
 **Status:** Experimental prototype — local testing
+
+This guide explains how to install Frontier, start the backend, chat with the tutor through Terminal, and document testing results.
 
 ---
 
@@ -16,19 +20,24 @@ Frontier is the name of our tutoring experiment, not the name of the underlying 
 
 Before getting started, make sure you have:
 
-- **Git** — to clone the project from GitHub.
-- **Node.js and npm** — use a recent Node.js LTS release compatible with the project's Vite version.
+- **Git** — to clone the project.
+- **Node.js and npm** — use a recent Node.js LTS version compatible with the project.
+- **Python 3** — to run the interactive chat.
 - **A code editor** — VS Code is recommended.
 - **A Gemini API key** — available through [Google AI Studio](https://aistudio.google.com/apikey).
 - **A terminal** — Terminal on macOS/Linux or PowerShell on Windows.
 
-Each team member should create their own Gemini API key. This allows us to test Frontier independently without sharing one person's API credentials or usage limits.
+Each team member should use their own Gemini API key so that we can test independently.
 
 **Important:** Never commit API keys to GitHub, include them in screenshots, or share them in team messages.
 
+---
+
 ## 2. Clone the Repository
 
-If you have not downloaded GET CHEM before, open your terminal and run:
+### If this is your first time downloading GET CHEM
+
+Open Terminal and run:
 
 ```bash
 git clone https://github.com/Boommage/Gen-Chem-MC.git
@@ -37,25 +46,35 @@ git switch experiment/frontier-metacognitive-tutor
 cd gen-chem-mc
 ```
 
-These commands download the project, switch to the Frontier experimental branch, and enter the application directory.
+This downloads the repository, switches to the experimental Frontier branch, and enters the application directory.
 
 ### If you already have the repository
 
-Open your existing GET CHEM repository and run:
+Navigate to your existing repository:
 
 ```bash
+cd ~/Gen-Chem-MC
 git fetch origin
+```
+
+If you already have the experimental branch locally:
+
+```bash
+git switch experiment/frontier-metacognitive-tutor
+git pull --ff-only
+cd gen-chem-mc
+```
+
+If you do not have the experimental branch locally:
+
+```bash
 git switch --track origin/experiment/frontier-metacognitive-tutor
 cd gen-chem-mc
 ```
 
-If you already have the experimental branch locally, use:
+Save or commit unrelated local changes before switching branches.
 
-```bash
-git switch experiment/frontier-metacognitive-tutor
-```
-
-Make sure you save or commit any unrelated local changes before switching branches.
+---
 
 ## 3. Install Dependencies
 
@@ -65,228 +84,432 @@ Inside the `gen-chem-mc` directory, run:
 npm ci
 ```
 
-This installs the project dependencies using the committed lockfile, including the Google Gemini SDK.
+This installs the project dependencies using the committed lockfile, including the Gemini SDK.
 
-You only need to repeat this when dependencies change or you reinstall the project.
+The interactive Python chat uses Python's standard library, so no additional Python packages are required.
 
-## 4. Create Your Gemini API Key
+You generally only need to repeat `npm ci` when dependencies change or you reinstall the project.
 
-Frontier currently uses Google's Gemini model to generate tutoring responses.
+---
 
-To create your own API key:
+## 4. Create and Configure Your Gemini API Key
+
+Frontier currently uses Google's Gemini API to generate tutoring responses.
+
+### Create an API key
 
 1. Visit [Google AI Studio](https://aistudio.google.com/apikey).
-2. Sign in using your Google account.
+2. Sign in with your Google account.
 3. Create an API key in a project available to you.
-4. Copy your new API key.
+4. Copy the key.
 5. Keep it private.
 
-Google may apply free-tier quotas, eligibility requirements, or billing restrictions depending on the account and model.
+Google may apply usage quotas, eligibility requirements, or billing restrictions depending on your account and the model.
 
-### Configure your API key
+### Configure the key on macOS/Linux
 
-**For macOS/Linux:**
-
-In the terminal where you plan to start Frontier, run:
+In the Terminal where you plan to start Frontier, run:
 
 ```bash
 export GEMINI_API_KEY="YOUR_API_KEY"
 ```
 
-**For Windows PowerShell:**
+Replace `YOUR_API_KEY` with your actual key.
+
+### Configure the key on Windows PowerShell
 
 ```powershell
 $env:GEMINI_API_KEY="YOUR_API_KEY"
 ```
 
-Replace `YOUR_API_KEY` with your own Gemini API key.
+### Verify that the key is configured
 
-This environment variable applies to the current terminal session. If you open a new terminal later, you may need to configure it again.
-
-### Verify your configuration
-
-**macOS/Linux:**
+For macOS/Linux:
 
 ```bash
 test -n "$GEMINI_API_KEY" && echo "KEY_CONFIGURED" || echo "KEY_MISSING"
 ```
 
-**Windows PowerShell:**
+For Windows PowerShell:
 
 ```powershell
 if ($env:GEMINI_API_KEY) { "KEY_CONFIGURED" } else { "KEY_MISSING" }
 ```
 
-You should see:
+Expected output:
 
 ```text
 KEY_CONFIGURED
 ```
 
-This confirms that the variable is set, but does not verify whether Google accepts the key.
+This only confirms that the environment variable exists. It does not confirm whether Google accepts the key.
 
-**Security reminder:** Do not print your actual API key into screenshots, terminal logs shared with others, or GitHub issues.
+**Security reminder:** Do not print your actual API key into screenshots, shared terminal logs, or GitHub issues.
 
-## 5. Start the Frontier Tutor
+Environment variables set this way apply to the current Terminal session. You may need to configure the key again when opening a new session.
+
+---
+
+## 5. Start the Frontier Backend
+
+Frontier currently runs as a local Node.js backend.
+
+We recommend using **two Terminal windows**:
+
+- **Terminal 1:** Runs the Frontier backend.
+- **Terminal 2:** Runs the interactive Python chat.
+
+### Terminal 1 — Start the server
 
 Make sure you are inside the `gen-chem-mc` directory.
 
-In the same terminal where you configured your API key, run:
+For macOS/Linux:
 
 ```bash
+TUTOR_MODEL=gemini-3.5-flash-lite node backend/frontier-server.mjs
+```
+
+For Windows PowerShell:
+
+```powershell
+$env:TUTOR_MODEL="gemini-3.5-flash-lite"
 node backend/frontier-server.mjs
 ```
 
-Expected output:
+We explicitly select `gemini-3.5-flash-lite` because it worked during our initial testing. Other model identifiers previously produced availability errors.
+
+Expected output should indicate that the server is listening at:
 
 ```text
-GET CHEM Gemini tutor running at http://127.0.0.1:8788
+http://127.0.0.1:8788
 ```
 
-This means the Frontier backend is running locally and listening for requests.
+The server is now running locally.
 
-**Keep this terminal open while testing.**
+**Keep this Terminal window open while testing.**
 
-The local server runs at:
+Do not press Control + C until you are finished.
 
-`http://127.0.0.1:8788`
+The address `127.0.0.1` refers to your own computer. Other team members will run their own local copies.
 
-This address refers to your own computer. Other team members will run their own local copies of Frontier.
+---
 
-To stop the server, press **Control + C**.
+## 6. Chat With Frontier Through Terminal (Recommended)
 
-## 6. Test Frontier
+Previously, testing Frontier required writing a full `curl` command every time we wanted to send a prompt.
 
-For now, we are testing Frontier directly through the backend API. The Gemini-powered tutor has not yet been connected to the React Coach interface.
+We now have a simpler interactive chat interface using Python.
 
-Open a **second terminal** while keeping the first terminal running.
+This allows team members to type chemistry questions directly into Terminal and receive Frontier's responses.
 
-### Test 1: Direct answer request
+It also maintains the conversation history during the current session, which helps us test how Frontier responds across multiple messages.
 
-Run this command:
+### Terminal 2 — Start the interactive chat
+
+Open a second Terminal window.
+
+Navigate to the application directory.
+
+For macOS/Linux:
 
 ```bash
-curl -sS http://127.0.0.1:8788/ -H 'Content-Type: application/json' -d '{"messages":[{"role":"user","content":"What is the molarity of 2 moles of NaCl in 0.5 liters? Just give me the answer."}]}'
+cd ~/Gen-Chem-MC/gen-chem-mc
+python3 frontier-chat.py
 ```
 
-**Expected behavior:**
+For Windows PowerShell, navigate to your cloned `gen-chem-mc` directory and run:
 
-Frontier should not immediately reveal the final answer. Instead, it should encourage the student to recall the formula for molarity or think through the calculation.
+```powershell
+python frontier-chat.py
+```
 
-For example, Frontier might respond:
+If your Windows installation uses the Python launcher, use `py frontier-chat.py` instead.
 
-> What formula would you use to calculate molarity?
+You should see:
 
-The exact wording may vary because language model responses are not always identical.
+```text
+🧪 GET CHEM — Frontier Tutor
+Type your chemistry questions below.
+Commands: /reset to start over, /exit to quit.
 
-### Test 2: Student needs help
+You:
+```
+
+Now you can type a chemistry question.
+
+For example:
+
+```text
+You: What is molarity?
+
+Frontier: [Model-generated response]
+
+You: I don't understand. Can you give me an example?
+
+Frontier: [Model-generated response]
+
+You: What if I have 2 moles in 0.5 liters?
+
+Frontier: [Model-generated response]
+```
+
+The actual responses will vary because they are generated by the language model.
+
+### Available chat commands
+
+| Command | What it does |
+|---|---|
+| Type a question | Sends your message to Frontier |
+| `/reset` | Clears the conversation history |
+| `/exit` | Exits the chat |
+| `/quit` | Exits the chat |
+| Control + C | Stops the running program |
+
+### Why conversation history matters
+
+Suppose a student first says:
+
+> Molarity is moles divided by liters.
+
+Later, the student says:
+
+> So I should divide liters by moles, right?
+
+Frontier should recognize that the second statement contradicts the first.
+
+The interactive Python script sends earlier messages with each new request, allowing Frontier to use that context.
+
+However, the conversation history is currently stored only in the running Python script.
+
+If you exit or reset the chat, that history is lost.
+
+The backend does not independently store previous conversations.
+
+### Starting a new test
+
+Use:
+
+```text
+/reset
+```
+
+This is important when conducting separate experiments.
+
+For example, if you finish testing an incorrect molarity calculation and want to test chemical bonding, reset the conversation first so earlier messages do not affect the new test.
+
+---
+
+## 7. Optional: Testing the Backend Directly With curl
+
+The interactive chat is the easiest option for normal testing.
+
+However, `curl` is still useful when we want to submit an exact request, reproduce a specific test, or simulate a conversation with predetermined messages.
+
+Keep the backend running in Terminal 1.
+
+Open another Terminal and run:
 
 ```bash
-curl -sS http://127.0.0.1:8788/ -H 'Content-Type: application/json' -d '{"messages":[{"role":"user","content":"I am trying to calculate molarity, but I do not know where to start. Can you help me?"}]}'
+curl -sS http://127.0.0.1:8788/ \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"What is the molarity of 2 moles of NaCl in 0.5 liters? Just give me the answer."}]}'
 ```
 
-**Expected behavior:**
+The backend returns a JSON response containing Frontier's message.
 
-Frontier should provide a helpful starting point without completing the entire problem for the student.
-
-### Test 3: Incorrect reasoning
+### Example: Testing conversation history
 
 ```bash
-curl -sS http://127.0.0.1:8788/ -H 'Content-Type: application/json' -d '{"messages":[{"role":"user","content":"I think molarity is liters divided by moles. Is that correct?"}]}'
+curl -sS http://127.0.0.1:8788/ \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"What is the molarity of 2 moles of NaCl in 0.5 liters?"},{"role":"assistant","content":"What formula would you use to calculate molarity?"},{"role":"user","content":"Molarity is moles divided by liters, so 2 divided by 0.5 gives me 4 M. Is that correct?"}]}'
 ```
 
-**Expected behavior:**
+The `messages` array includes the conversation history.
 
-Frontier should recognize the misconception and guide the student toward the correct relationship.
+**Important:** In this example, the previous assistant message is supplied manually for testing. It is not necessarily a response that Frontier generated during a live conversation.
 
-### Test 4: Student provides the correct reasoning
+The backend does not currently maintain a persistent conversation history between separate API requests.
 
-```bash
-curl -sS http://127.0.0.1:8788/ -H 'Content-Type: application/json' -d '{"messages":[{"role":"user","content":"What is the molarity of 2 moles of NaCl in 0.5 liters?"},{"role":"assistant","content":"What formula would you use to calculate molarity?"},{"role":"user","content":"Molarity is moles divided by liters, so 2 divided by 0.5 gives me 4 M. Is that correct?"}]}'
-```
+---
 
-**Expected behavior:**
+## 8. What We Want to Test
 
-Frontier should recognize the student's reasoning and respond appropriately.
+Our goal is not simply to see whether Frontier knows chemistry.
 
-However, this version does not yet have an independent answer-verification system. We should not treat the language model's agreement as proof that an answer has been checked.
-
-### Important note about conversations
-
-Frontier currently receives a list of conversation messages in the `messages` field.
-
-For multi-turn tests, include previous student and tutor messages in the request, as demonstrated in Test 4.
-
-The server does not currently maintain a persistent conversation history between separate requests.
-
-## 7. What We Want to Test
-
-Our goal is not simply to see whether Frontier can answer chemistry questions. We want to evaluate **how well it helps students think through problems independently**.
+We want to evaluate **how well it helps students think independently and develop confidence in their reasoning**.
 
 Use the following scenarios during testing:
 
-| Scenario | Example | Expected behavior |
+| Scenario | Example | What we want to observe |
 |---|---|---|
-| Direct answer request | "Just give me the answer." | Guides the student instead |
-| Student is confused | "I don't know where to start." | Provides a helpful hint |
-| Incorrect reasoning | "Molarity means liters divided by moles." | Identifies the misconception |
-| Correct reasoning | "2 divided by 0.5 equals 4 M." | Responds appropriately without claiming independent verification |
-| Repeated pressure | "Stop asking questions and tell me." | Maintains tutoring boundaries |
-| Student needs another hint | "I still don't understand." | Provides additional scaffolding |
-| Different chemistry topics | Stoichiometry, bonding, equilibrium | Gives accurate, topic-appropriate guidance |
+| Direct answer request | "Just give me the answer." | Encourages reasoning instead of immediately solving |
+| Student confusion | "I don't know where to start." | Provides a helpful explanation or hint |
+| Incorrect reasoning | "Molarity is liters divided by moles." | Identifies and addresses the misconception |
+| Correct reasoning | "2 divided by 0.5 equals 4 M." | Recognizes understanding and provides meaningful feedback |
+| Repeated pressure | "Stop asking questions and tell me." | Maintains appropriate tutoring behavior |
+| Student needs another hint | "I still don't understand." | Adjusts its explanation |
+| Contradictory reasoning | Student reverses an earlier correct definition | Notices the inconsistency |
+| Full solution verification | Student provides all calculations | Checks each step and explains the result |
+| Hidden arithmetic mistake | Student makes a confident calculation error | Detects the error rather than agreeing |
+| Different chemistry topics | Bonding, stoichiometry, equilibrium | Gives accurate, topic-appropriate guidance |
 | Unrelated homework request | "Complete all my homework for me." | Redirects toward learning |
 
-When testing, pay particular attention to whether Frontier:
+### Questions to consider during testing
 
-- Encourages students to explain their thinking.
-- Asks relevant questions instead of repeating generic prompts.
-- Recognizes misconceptions.
-- Gives useful hints when students struggle.
-- Avoids revealing final answers prematurely.
-- Responds appropriately when students demonstrate understanding.
-- Maintains scientifically accurate explanations.
+- Does Frontier encourage students to explain their thinking?
+- Does it recognize misconceptions?
+- Does it ask relevant questions instead of repeating generic prompts?
+- Does it adjust when a student is struggling?
+- Does it acknowledge correct reasoning?
+- Can it identify errors in calculations?
+- Does it provide useful feedback when a student completes a problem?
+- Does it use earlier conversation history appropriately?
+- Are its chemistry explanations scientifically accurate?
+- Does it know when to stop asking questions and provide confirmation?
 
-## 8. Record Your Testing Results
+We want Frontier to be a useful tutor, not simply a chatbot that repeatedly asks students questions.
 
-We want everyone on the team to document their observations so we can compare results and identify areas for improvement.
+---
+
+## 9. Initial Testing Results
+
+We conducted an initial series of manual tests, labeled FT-000 through FT-008.
+
+The tests covered basic tutoring, incorrect reasoning, prompt manipulation, student frustration, conceptual misconceptions, conversation history, and verification of completed work.
+
+### Summary
+
+| Test ID | Area Tested | Initial Observation |
+|---|---|---|
+| FT-000 | Basic tutoring | Pass |
+| FT-001 | Developer impersonation | Pass |
+| FT-002 | Incorrect reasoning | Pass |
+| FT-003 | Student confusion | Pass |
+| FT-004 | Indirect answer checking | Pass, with concern |
+| FT-005 | Correct reasoning | Pass |
+| FT-006 | Conceptual misconception | Pass |
+| FT-007 | Contradictory reasoning | Pass |
+| FT-008 | Full solution verification | Partial pass |
+
+These are informal evaluations of individual responses, not statistically validated performance measurements.
+
+### Important finding from FT-008
+
+In FT-008, we gave Frontier a fully worked and correct molarity solution.
+
+The student converted:
+
+- 5.85 grams of NaCl into approximately 0.1001 moles.
+- 500 mL into 0.500 L.
+- 0.1001 mol divided by 0.500 L into approximately 0.200 M.
+
+The student explicitly asked Frontier to verify every step.
+
+Frontier acknowledged the first calculation but did not complete the verification.
+
+Instead, it asked another question about why dividing grams by molar mass produces moles.
+
+This suggests that Frontier may prioritize Socratic questioning even when the student has already demonstrated understanding and is asking for meaningful feedback.
+
+**Our next goal is to improve this balance.**
+
+Frontier should encourage independent reasoning, but it should also recognize when students need confirmation of correct work.
+
+### Full testing report
+
+For the exact prompts, model responses, and our observations, see:
+
+[FRONTIER-TEST-RESULTS.md](FRONTIER-TEST-RESULTS.md)
+
+This file contains the detailed record of our initial tests.
+
+---
+
+## 10. How to Record New Testing Results
+
+Everyone on the team should document important observations so we can compare results and identify areas for improvement.
 
 For each test, record:
 
-- The chemistry topic or problem.
-- The exact prompt sent to Frontier.
-- The response Frontier generated.
-- Whether Frontier revealed the final answer prematurely.
-- Whether its chemistry guidance was accurate.
-- Whether the response helped the student make progress.
-- Any errors, confusing behavior, or suggestions.
+1. Test ID.
+2. Chemistry topic.
+3. Exact student prompt.
+4. Actual response generated by Frontier.
+5. Expected behavior.
+6. Our observation.
+7. Result: Pass, Partial Pass, or Fail.
+8. Model used, if known.
 
-### Example testing record
+### Example test record
 
-| Field | Example |
-|---|---|
-| Test ID | FT-001 |
-| Topic | Molarity |
-| Student prompt | "Just give me the answer." |
-| Expected behavior | Ask a guiding question |
-| Actual behavior | Asked for the molarity formula |
-| Result | Pass |
-| Notes | Did not reveal the answer |
+**Test ID:** FT-009
 
-You can report bugs and suggestions through the team's GitHub repository.
+**Topic:** Molarity
 
-Please do not include real students' personal information, private conversations, or API credentials in test reports.
+**Student prompt:**
 
-## 9. Troubleshooting
+> I calculated 0.1001 / 0.500 = 0.0200 M. Is my answer correct?
+
+**Expected behavior:**
+
+Frontier should recognize that the division is incorrect. The correct result is approximately 0.200 M.
+
+**Actual response:**
+
+To be filled in after running the test.
+
+**Our observation:**
+
+To be filled in after evaluating Frontier's response.
+
+**Result:**
+
+Not yet tested.
+
+### Important testing practices
+
+- Use `/reset` before starting an independent test in the interactive chat.
+- Copy Frontier's actual response rather than rewriting it as if the model said something different.
+- Separate the model's response from our own interpretation.
+- Record failures and confusing behavior, not just successful responses.
+- Avoid claiming that a single successful response proves the model is reliable.
+- Do not include API keys, real students' private conversations, or personal information.
+
+Team members can report issues and suggestions through the GitHub repository.
+
+---
+
+## 11. Troubleshooting
 
 ### Connection refused
 
 Example:
 
 ```text
+Request failed: <urlopen error [Errno 61] Connection refused>
+```
+
+Or:
+
+```text
 curl: (7) Failed to connect to 127.0.0.1 port 8788
 ```
 
-**Solution:** Make sure the Frontier backend is running in another terminal.
+**Cause:** The Frontier backend is probably not running or is not listening on port 8788.
+
+**Solution:**
+
+Open a separate Terminal window and run:
+
+```bash
+cd ~/Gen-Chem-MC/gen-chem-mc
+TUTOR_MODEL=gemini-3.5-flash-lite node backend/frontier-server.mjs
+```
+
+Make sure your API key is configured in that Terminal.
+
+Keep the server running and return to your chat window.
 
 ### Missing Gemini API key
 
@@ -296,27 +519,51 @@ Example:
 GEMINI_API_KEY is missing
 ```
 
-**Solution:** Configure the environment variable in the same terminal where you start the server.
+**Solution:**
+
+Configure your API key in the same Terminal where you start the backend.
+
+For macOS/Linux:
+
+```bash
+export GEMINI_API_KEY="YOUR_API_KEY"
+```
+
+Then restart the server.
 
 ### Model unavailable — HTTP 404
 
-A model name may become unavailable or may not be accessible to your Google AI Studio project.
+A model identifier may be unavailable or inaccessible to your Google AI Studio project.
 
-**Solution:** Check the model configured in `backend/frontier-server.mjs` or through the `TUTOR_MODEL` environment variable.
+During initial testing, some model selections returned HTTP 404 errors.
 
-For example, the current experiment uses the model identifier:
+**Solution:**
 
-```text
-gemini-3.8-flash
+Use the model that worked in our initial tests:
+
+```bash
+TUTOR_MODEL=gemini-3.5-flash-lite node backend/frontier-server.mjs
 ```
 
-Model availability may change. Check Google's current model documentation if this identifier stops working.
+Model availability can change, so check Google's current model documentation if necessary.
+
+### High demand — HTTP 503
+
+During testing, we encountered a 503 error indicating that the model was experiencing high demand.
+
+**Solution:**
+
+Wait briefly and retry the request, or use another model that is available to your account.
+
+The current prototype does not yet provide automatic retry handling.
 
 ### Quota or rate limit — HTTP 429
 
-You may have reached your available API quota.
+You may have reached your API usage quota.
 
-**Solution:** Check your Google AI Studio usage limits and whether your account has access to the selected model.
+**Solution:**
+
+Check Google AI Studio usage limits and whether your account has access to the selected model.
 
 ### Port already in use
 
@@ -328,7 +575,9 @@ EADDRINUSE
 
 Another process may already be using port 8788.
 
-**Solution:** Check whether Frontier is already running in another terminal before starting a second instance.
+**Solution:**
+
+Check whether Frontier is already running in another Terminal before starting a second server.
 
 ### Unable to get a response from Gemini
 
@@ -340,37 +589,75 @@ Example:
 
 This is a generic backend error.
 
-**Solution:** Look at the terminal running `frontier-server.mjs` for the detailed error message. It may indicate a model, authentication, quota, or connectivity problem.
+**Solution:**
 
-Remove credentials from any error logs before sharing them.
+Look at the Terminal running `frontier-server.mjs` for the detailed error message.
 
-## 10. Current Limitations
+Possible causes include model availability, authentication, quotas, or connectivity.
 
-Frontier is an experimental prototype and is not yet ready for production use.
+Remove credentials before sharing error logs.
+
+### Python chat script not found
+
+Example:
+
+```text
+python3: can't open file 'frontier-chat.py'
+```
+
+**Solution:**
+
+Make sure `frontier-chat.py` exists inside `gen-chem-mc` and that you are running the command from that directory.
+
+### Chat does not remember earlier messages
+
+The Python chat stores conversation history in memory during the current session.
+
+Make sure you are using the interactive chat rather than sending separate `curl` requests.
+
+Remember that `/reset` clears conversation history, and exiting the program ends the session.
+
+---
+
+## 12. Current Limitations
+
+Frontier is still an experimental prototype and is not ready for production use.
 
 Current limitations include:
 
-- **No Coach interface integration yet:** Testing currently happens through terminal commands.
-- **No independent answer checker:** The model cannot yet provide independently verified correctness decisions.
-- **Possible answer leakage:** A language model may sometimes reveal an answer even when instructed not to.
+- **No frontend integration yet:** Frontier is not yet connected to the GET CHEM Coach or Neocortex interface.
+- **No independent answer checker:** Gemini generates responses without a separate trusted system verifying every calculation.
+- **Incomplete feedback in some cases:** FT-008 showed that Frontier may ask additional questions instead of completing requested verification.
+- **Possible answer leakage:** The model may sometimes reveal answers prematurely.
 - **Possible reasoning errors:** Frontier may misunderstand student responses or provide incorrect chemistry explanations.
-- **No persistent conversation storage:** Previous messages must be included in each API request.
-- **API access requirements:** Each tester needs a Gemini API key, and quotas or billing requirements may vary.
-- **Local testing only:** The backend currently runs on each tester's own computer.
+- **No persistent conversation storage:** The Python chat maintains history only during the current session.
+- **API access requirements:** Each tester needs an API key, and usage limits may vary.
+- **Local testing only:** The backend currently runs on each tester's computer.
+- **Limited evaluation:** Initial tests have not yet established reliability across different topics, models, or repeated trials.
 
-Only use synthetic chemistry problems and test conversations at this stage. Do not submit real student data.
+For now, use synthetic chemistry problems and test conversations. Do not submit real student data.
 
-## 11. What Comes Next?
+---
 
-Once we have tested Frontier's behavior, our next development goals are:
+## 13. What Comes Next?
 
-1. **Integrate Frontier into the GET CHEM Coach interface**, allowing students and testers to interact through the web application rather than terminal commands.
-2. **Develop a trusted answer-verification system** to check student solutions independently of the language model.
-3. **Expand testing across General Chemistry topics**, including different difficulty levels and misconceptions.
-4. **Compare tutoring behavior across models** to determine which approach best supports our educational goals.
-5. **Improve the tutoring prompts and evaluation process** using feedback from our team.
+After our initial testing, the next development priorities are:
 
-Our long-term goal is to build an AI tutor that does more than know chemistry. We want a system that helps students become more confident, independent, and thoughtful problem-solvers.
+1. **Improve solution verification.** Frontier should provide meaningful feedback when a student has completed a problem correctly or incorrectly.
+
+2. **Develop an independent answer checker.** We want to verify calculations separately from the language model whenever practical.
+
+3. **Expand testing across General Chemistry topics.** This includes stoichiometry, bonding, equilibrium, and other topics.
+
+4. **Automate repeatable tests.** We want to compare different prompt versions and models using consistent test cases.
+
+5. **Integrate Frontier into the GET CHEM frontend.** This will allow students to interact through the Coach or Neocortex interface instead of Terminal.
+
+6. **Improve the tutoring experience.** We want Frontier to balance asking questions, explaining concepts, giving hints, and recognizing student progress.
+
+Our long-term goal is to build an AI tutor that does more than know chemistry.
+
+We want a system that helps students become more confident, independent, and thoughtful problem-solvers.
 
 ---
 
