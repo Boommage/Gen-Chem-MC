@@ -9,6 +9,21 @@ function send(text = 'Help me study') {
 }
 
 describe('Coach requests', () => {
+  it('formats assistant replies while keeping student input and sent history literal', async () => {
+    const reply = String.raw`Think about **units** and $\lambda$.`
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ reply }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { container } = render(<Coach />)
+    send(String.raw`What does **this** mean: $\lambda$?`)
+    await waitFor(() => expect(container.querySelector('.coach .katex')).toBeTruthy())
+    expect(container.querySelector('.coach strong')?.textContent).toBe('units')
+    expect(container.querySelector('.student .message')?.textContent).toBe(String.raw`What does **this** mean: $\lambda$?`)
+    expect(container.querySelector('.student .katex, .student strong')).toBeNull()
+    send('What should I check?')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).messages[1]).toEqual({ role: 'assistant', content: reply })
+  })
+
   it('shows thinking, prevents duplicates, and displays a reply', async () => {
     let resolve!: (value: Response) => void
     const fetchMock = vi.fn().mockReturnValue(new Promise<Response>((done) => { resolve = done }))

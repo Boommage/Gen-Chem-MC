@@ -41,6 +41,25 @@
 .send-button:hover { background: #285b42; }
 .send-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.message.markdown-message { min-width: 0; white-space: normal; line-height: 1.55; }
+.markdown-message > :first-child { margin-top: 0; }
+.markdown-message > :last-child { margin-bottom: 0; }
+.markdown-message p, .markdown-message ul, .markdown-message ol, .markdown-message blockquote, .markdown-message pre, .markdown-message table { margin: 0 0 0.8em; }
+.markdown-message ul, .markdown-message ol { padding-left: 1.4em; }
+.markdown-message li + li { margin-top: 0.3em; }
+.markdown-message li > p { margin-bottom: 0.3em; }
+.markdown-message :is(h1, h2, h3, h4, h5, h6) { margin: 1em 0 0.4em; font-size: 1.05em; line-height: 1.3; }
+.markdown-message a { color: var(--green); text-underline-offset: 0.15em; }
+.markdown-message blockquote { padding-left: 0.8em; border-left: 3px solid #b5cbbc; }
+.markdown-message code { padding: 0.1em 0.25em; border-radius: 4px; background: #dfe9dc; font-size: 0.88em; }
+.markdown-message pre { max-width: 100%; padding: 0.7em; overflow-x: auto; border-radius: 8px; background: #dfe9dc; }
+.markdown-message pre code { padding: 0; white-space: pre; }
+.markdown-message table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.markdown-message th, .markdown-message td { padding: 0.35em 0.6em; border: 1px solid #b5cbbc; text-align: left; }
+.markdown-message .katex { font-size: 1.08em; }
+.markdown-message p > .katex, .markdown-message li > .katex { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding-block: 0.2em; vertical-align: middle; }
+.markdown-message .katex-display { max-width: 100%; margin: 0.8em 0; padding-block: 0.25em; overflow-x: auto; overflow-y: hidden; }
+.markdown-message .katex-error { color: inherit; white-space: pre-wrap; }
 .coach-pending { margin-top: 19px; }
 .thinking-message { display: flex; align-items: center; gap: 12px; }
 .thinking-dots { display: inline-flex; gap: 5px; }

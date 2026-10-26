@@ -1,8 +1,8 @@
 # Neocortex
 
-Team 4's General Chemistry metacognition project. This `codex/image-integration-test` branch adds image attachments to the working Gemma Coach: previews/removal, multimodal requests, follow-up context, and attachment-preserving retry/edit recovery. Text chat and thinking remain available.
+Team 4's General Chemistry metacognition project. This `codex/image-integration-test` branch adds image attachments to the working Gemma Coach: previews/removal, multimodal requests, follow-up context, and attachment-preserving retry/edit recovery. Text chat and the Thinking animation remain available. Assistant replies now render Markdown and math, hidden model reasoning is disabled, and the gateway emits sanitized token-usage logs.
 
-**Use an image-enabled backend.** The existing shared text Worker has not been redeployed. Follow [image setup](../docs/gemma-image-setup.md) for local live testing or a separate shared image Worker.
+**Use an image-enabled backend.** The shared text Worker does not accept images. Follow [image setup](../docs/gemma-image-setup.md) for local live testing or a separate shared image Worker.
 
 ## Get this branch
 

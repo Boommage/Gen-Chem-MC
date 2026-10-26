@@ -21,6 +21,32 @@ function healthyFetch() {
 }
 
 describe('Coach image attachments', () => {
+  it('formats the image coach reply while preserving the uploaded student image', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(url === '/api/health'
+      ? Response.json({ capabilities: { images: true } })
+      : Response.json({ reply: String.raw`Check **units** for $\lambda$ and $H_2O$.` }))))
+    const { container } = render(<Coach />)
+    await attach()
+    fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }))
+    await waitFor(() => expect(container.querySelectorAll('.coach .katex')).toHaveLength(2))
+    expect(container.querySelector('.coach strong')?.textContent).toBe('units')
+    expect(screen.getByAltText('Attached image worksheet.png')).toBeTruthy()
+  })
+
+  it('explains how to start the backend when the image health check cannot be reached', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 502 }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<Coach />)
+    await attach()
+    fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }))
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('HTTP 502')
+    expect(alert.textContent).toContain('npm run dev:api')
+    expect(alert.textContent).toContain('COACH_API_URL')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(screen.getByAltText('Attached image worksheet.png')).toBeTruthy()
+  })
+
   it('previews and removes an attachment before sending', async () => {
     render(<Coach />)
     await attach()

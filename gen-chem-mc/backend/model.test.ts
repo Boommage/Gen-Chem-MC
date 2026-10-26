@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createHandler, GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
 import { PNG_IMAGE } from '../shared/imageFixtures.ts'
 import { COACH_INSTRUCTIONS } from './policy.ts'
@@ -14,13 +14,72 @@ function request(messages: unknown = [{ role: 'user', content: 'Help me study' }
 }
 
 describe('Gemma coach gateway', () => {
+  beforeEach(() => { vi.spyOn(console, 'log').mockImplementation(() => {}) })
+  afterEach(() => { vi.restoreAllMocks() })
+
+  it('logs only reported token counts and safe metadata, keeping the API response unchanged', async () => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ ...answer, usage: { prompt_tokens: 120, completion_tokens: 30, total_tokens: 150, private_extra: 'do not log' } })
+    const response = await createHandler().fetch(request(undefined, 'https://coach.example/api/coach', 'test-only-secret'), { ...env, TEAM_API_TOKEN: 'test-only-secret' })
+    expect(await response.json()).toEqual({ reply: 'What have you tried?', model: GEMMA_MODEL })
+    expect(console.log).toHaveBeenCalledExactlyOnceWith({
+      event: 'coach_usage', model: GEMMA_MODEL, outcome: 'success', duration_ms: expect.any(Number),
+      prompt_tokens: 120, completion_tokens: 30, total_tokens: 150,
+    })
+  })
+
+  it.each([undefined, null, 'private', { prompt_tokens: -1, completion_tokens: 'private', total_tokens: 1.5 }, { prompt_tokens: Infinity, completion_tokens: NaN, total_tokens: Number.MAX_SAFE_INTEGER + 1 }])('marks missing or invalid usage as unavailable: %j', async (usage) => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ ...answer, usage })
+    expect((await createHandler().fetch(request(), env)).status).toBe(200)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ prompt_tokens: null, completion_tokens: null, total_tokens: null }))
+  })
+
+  it('preserves valid zero and partial counts without inventing a total', async () => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ ...answer, usage: { prompt_tokens: 0, completion_tokens: 4 } })
+    await createHandler().fetch(request(), env)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ prompt_tokens: 0, completion_tokens: 4, total_tokens: null }))
+  })
+
+  it('logs consumption even when the returned answer is unusable', async () => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ choices: [], usage: { prompt_tokens: 120, completion_tokens: 30, total_tokens: 150 } })
+    expect((await createHandler().fetch(request(), env)).status).toBe(502)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: 'invalid_reply', total_tokens: 150 }))
+  })
+
+  it.each([[{ status: 429, message: 'private provider error' }, 'quota_exhausted', 429], [new Error('private provider error'), 'provider_error', 503]] as const)('logs sanitized provider failures without inventing counts', async (error, outcome, status) => {
+    const { run, env } = setup()
+    run.mockRejectedValueOnce(error)
+    expect((await createHandler().fetch(request(), env)).status).toBe(status)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith({ event: 'coach_usage', model: GEMMA_MODEL, outcome, duration_ms: expect.any(Number), prompt_tokens: null, completion_tokens: null, total_tokens: null })
+  })
+
+  it('does not log inference usage for unauthorized requests or health checks', async () => {
+    const { env } = setup()
+    await createHandler().fetch(request(undefined, 'https://coach.example/api/coach', 'wrong'), { ...env, TEAM_API_TOKEN: 'test-only-secret' })
+    await createHandler().fetch(new Request('http://localhost/api/health'), env)
+    expect(console.log).not.toHaveBeenCalled()
+  })
+
   it('adds the server policy, preserves valid history and returns final text only', async () => {
     const { run, env } = setup()
     const messages = [{ role: 'user', content: 'Help' }, { role: 'assistant', content: 'What have you tried?' }, { role: 'user', content: 'I reread notes' }]
     const response = await createHandler().fetch(request(messages), env)
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ reply: 'What have you tried?', model: GEMMA_MODEL })
-    expect(run).toHaveBeenCalledWith(GEMMA_MODEL, { messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...messages], max_completion_tokens: 1024, stream: false })
+    expect(run).toHaveBeenCalledWith(GEMMA_MODEL, { messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...messages], max_completion_tokens: 1024, chat_template_kwargs: { enable_thinking: false }, stream: false })
+  })
+  it('keeps model reasoning disabled even if a client attempts to turn it on', async () => {
+    const { run, env } = setup()
+    const response = await createHandler().fetch(new Request('http://localhost/api/coach', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'Help me reflect on wavelength units' }], chat_template_kwargs: { enable_thinking: true }, max_completion_tokens: 100000 }),
+    }), env)
+    expect(response.status).toBe(200)
+    expect(run).toHaveBeenCalledExactlyOnceWith(GEMMA_MODEL, expect.objectContaining({ max_completion_tokens: 1024, chat_template_kwargs: { enable_thinking: false } }))
+    expect(await response.text()).not.toContain('secret internal reasoning')
   })
   it.each([
     [],
@@ -98,6 +157,7 @@ describe('Gemma coach gateway', () => {
     const { run, env } = setup()
     run.mockImplementationOnce(() => new Promise(() => {}))
     expect((await createHandler(10).fetch(request(), env)).status).toBe(504)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: 'timeout', prompt_tokens: null, completion_tokens: null, total_tokens: null }))
   })
   it('maps uploaded image bytes to Gemma multimodal messages', async () => {
     const { run, env } = setup()
@@ -105,6 +165,8 @@ describe('Gemma coach gateway', () => {
     expect(response.status).toBe(200)
     const sent = run.mock.calls[0][1].messages[1]
     expect(sent).toEqual({ role: 'user', content: [{ type: 'text', text: 'Help me reason through this' }, { type: 'image_url', image_url: { url: PNG_IMAGE.dataUrl } }] })
+    expect(run.mock.calls[0][1].chat_template_kwargs).toEqual({ enable_thinking: false })
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain(PNG_IMAGE.dataUrl)
   })
   it('retains an earlier image on a text follow-up', async () => {
     const { run, env } = setup()

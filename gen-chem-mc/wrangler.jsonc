@@ -4,6 +4,15 @@
   "main": "backend/worker.ts",
   "compatibility_date": "2026-10-05",
 
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  },
+
   "ai": {
     "binding": "AI",
     "remote": true
@@ -11,11 +20,27 @@
   "env": {
     "images": {
       "name": "neocortex-gemma-images",
-      "ai": { "binding": "AI", "remote": true }
+      "ai": { "binding": "AI", "remote": true },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      }
     },
     "team": {
       "name": "neocortex-gemma-team",
-      "ai": { "binding": "AI", "remote": true }
+      "ai": { "binding": "AI", "remote": true },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      }
     }
   }
 }

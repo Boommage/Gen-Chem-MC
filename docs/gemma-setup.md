@@ -125,6 +125,39 @@ The bearer token is **team development access**, not student authentication. Do 
 
 The backend accepts up to 21 alternating text messages, 2,000 characters per message, and 12,000 total history characters, with a 64 KiB body cap. The frontend trims oldest complete pairs. The model output budget is 1,024 completion tokens. Backend wait limit is 30 seconds; browser wait limit is 45 seconds. Timeout does not guarantee already-running cloud inference is cancelled.
 
+## Coach reply formatting
+
+Assistant messages use react-markdown, remark-gfm, remark-math, and rehype-katex with bundled KaTeX styles/fonts. Bold text, lists, tables, inline math (`$\lambda$`, `$H_2O$`, `$x^2$`), and display math (`$$` on separate lines) render in the chat bubble. Student messages and model history remain literal source text. Code spans stay literal; raw HTML and model-generated image embeds are disabled. Invalid math falls back to readable source instead of breaking the conversation. Long display equations and tables scroll inside their bubbles on narrow screens.
+
+Run `npm ci` after pulling the dependency changes, restart `npm run dev`, and refresh the Coach page. The endpoint owner must redeploy with `npm run deploy:team` after changing the backend formatting instructions; that command does not start the local frontend. The shared endpoint's formatting instructions were deployed and verified on October 26, 2026.
+
+All math plugins use the patched direct KaTeX version via the package override so the renderer and stylesheet stay in sync. No hosted font service or extra model request is needed for formatting.
+
+The gateway explicitly sends `chat_template_kwargs: { enable_thinking: false }`. Cloudflare enables Gemma reasoning by default; it can consume the 1,024-token completion budget before producing any final reply. Disabling model reasoning keeps that budget for the concise coaching response. The frontend Thinking animation still indicates a pending request; it does not display model reasoning. Incomplete replies remain rejected, with no automatic extra inference request. See the [official Gemma input schema](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/sync-input.json).
+
+## Logs and token usage
+
+The Wrangler configuration enables persisted invocation and custom logs at a sampling rate of 1 for both the default Worker and the team environment. Deploy these changes to the shared endpoint with `npm run deploy:team` from `gen-chem-mc`; restarting Vite alone does not update the hosted Worker. The dedicated `backend/worker.ts` entrypoint exports only the fetch handler.
+
+In Cloudflare, open **Workers & Pages > neocortex-gemma-team > Observability**, choose the time range, and filter custom logs for `event = coach_usage`. Alternatively, stream new events from the app folder:
+
+```bash
+npx wrangler tail --env team --format json
+```
+
+Send a message through the Coach UI with the shared endpoint configured. Each inference attempt emits one `coach_usage` event with:
+
+- `prompt_tokens`: provider-reported input tokens, including system instructions and sent conversation history.
+- `completion_tokens`: provider-reported output tokens.
+- `total_tokens`: provider-reported total tokens.
+- `model`, `outcome`, and `duration_ms`: model name, success/failure category, and gateway elapsed time.
+
+Sum the numeric token fields over the selected time range to inspect usage; include attempts with `outcome = invalid_reply`, since an unusable answer can still consume tokens. Missing/invalid counts are logged as `null`, never as zero or an estimate. Errors and timeouts have unavailable counts; timed-out inference may continue on the provider, so logged totals are not a complete billing ledger. For account-wide allowance and billing, use Cloudflare's Workers AI usage dashboard; token counts and Neurons are different measures. Local `dev:api` requests print custom events in the local terminal, not the hosted Worker's log list. The mock does not report real Gemma token usage.
+
+Custom usage events never include chat text, instructions, responses, reasoning, request headers, access tokens, or raw provider errors. Invocation logs still contain Cloudflare's standard request metadata. Workers Logs retention and ingestion limits apply; keep sampling at 1 for this pilot and do not treat retained logs as permanent accounting.
+
+References: [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), [Gemma response usage schema](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/sync-output.json).
+
 ## Troubleshooting
 
 | Symptom | Action |

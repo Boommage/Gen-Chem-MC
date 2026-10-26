@@ -4,6 +4,8 @@ Branch: `codex/image-integration-test`, based on the working `gemma-integration-
 
 This branch adds one JPEG or PNG attachment per Coach message, removable previews, submitted-image display, and multimodal Gemma requests. Text chat, thinking, follow-ups, and retry/edit recovery remain available. The shared text Worker is unchanged; images require this branch's backend.
 
+It also includes the text branch's Markdown/KaTeX formatting and token usage logs. Gemma's hidden reasoning is disabled with `chat_template_kwargs: { enable_thinking: false }` for both text and image requests so it does not exhaust the 1,024-token completion budget before producing a final reply. The Thinking animation remains visible during generation. Student uploads and captions stay unchanged; assistant replies render symbols, fractions, subscripts, superscripts, bold text, lists, and tables.
+
 ## Get the branch
 
 Use Node 22.18+ (24 LTS recommended). From your repository root:
@@ -42,6 +44,8 @@ npm run dev
 
 Open http://127.0.0.1:5173/coach. Attach a clear JPEG/PNG, add your question, and send. An image-only message uses a default coaching question. Thinking appears while the model responds.
 
+On Windows, use `npx.cmd wrangler login`, `npm.cmd run dev:api`, and `npm.cmd run dev` if PowerShell blocks npm scripts. Keep both terminals running. `npm run dev` starts only the frontend; `npm run dev:api` starts only the local backend on port 8787. Save `.env.local` inside this checkout's `gen-chem-mc` folder, not a different clone, and restart Vite after changing it. To check the local backend without generating a reply, open http://127.0.0.1:8787/api/health and confirm `capabilities.images` is `true`.
+
 The Worker executes locally; its remote AI binding calls real Gemma and consumes the account's allocation. Do not use the stable text Worker URL for images. Coach checks image capability before sending and reports when that server lacks image support.
 
 ## Shared image backend
@@ -68,6 +72,10 @@ COACH_API_TOKEN=THE-IMAGE-WORKER-DEVELOPMENT-TOKEN
 Restart `npm run dev`. Do not use a `VITE_` prefix. Use the base origin without `/api/coach` or a frontend port. Keep this file uncommitted.
 
 Use `deploy:images` for this test. The stable text branch and Worker remain separate; `deploy:team` is not provided on this image branch.
+
+After updating this branch, the endpoint owner must rerun `npm run deploy:images` for the hidden-reasoning fix and log configuration to take effect on the shared image backend. Each teammate pulls the branch, runs `npm ci`, and restarts `npm run dev` for the formatting dependencies. Do not deploy this code to the shared text Worker.
+
+For image token usage, open **Workers & Pages > neocortex-gemma-images > Observability** and filter for `coach_usage`, or run `npx wrangler tail --env images --format json`. Persisted logs are enabled for the image environment. Custom events contain reported token counts, model, outcome, and timing; they omit uploaded bytes, captions, responses, reasoning, and credentials. Missing counts stay `null`, and failed/timed-out requests can make totals incomplete. Local Worker custom logs appear in its terminal rather than the hosted Worker's log list.
 
 ## No-account mock mode
 
@@ -110,6 +118,7 @@ Manual checklist:
 | Symptom | Action |
 |---|---|
 | Images are not available on this server | Run the image branch's local Worker or use the separate image Worker URL; restart Vite |
+| The image coach could not be reached / HTTP 502 / connection refused | In local mode, run `npm run dev:api` in a second terminal and use `http://127.0.0.1:8787` in this checkout's `.env.local`. For shared mode, check the actual image Worker URL and token. Restart Vite, then Retry. |
 | Image cannot be opened | Choose a valid JPEG/PNG or crop/resize the photo |
 | 401 or 503 on the shared image backend | Set/check TEAM_API_TOKEN on the image Worker; the text secret is separate |
 | 502 or timeout | Check the origin, retry later, and inspect status metadata without logging private messages |

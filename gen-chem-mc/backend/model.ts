@@ -14,6 +14,7 @@ export interface Env {
     run(model: string, input: {
       messages: ProviderMessage[]
       max_completion_tokens: number
+      chat_template_kwargs: { enable_thinking: false }
       stream: false
     }): Promise<unknown>
   }
@@ -98,6 +99,27 @@ function isQuotaError(error: unknown): boolean {
   return record.status === 429 || record.statusCode === 429 || record.code === 429 || record.code === 3040 || record.code === 3043 || /\b(429|3040|3043)\b|quota|rate.?limit|out of capacity/i.test(String(record.message ?? ''))
 }
 
+type InferenceOutcome = 'success' | 'invalid_reply' | 'timeout' | 'quota_exhausted' | 'provider_error'
+
+function logUsage(result: unknown, outcome: InferenceOutcome, startedAt: number) {
+  const usage = result && typeof result === 'object' && 'usage' in result && result.usage && typeof result.usage === 'object'
+    ? result.usage as Record<string, unknown>
+    : {}
+  function count(value: unknown): number | null {
+    return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null
+  }
+  // Allowlist metadata: never log the request, provider response, errors, or credentials.
+  console.log({
+    event: 'coach_usage',
+    model: GEMMA_MODEL,
+    outcome,
+    duration_ms: Math.max(0, Date.now() - startedAt),
+    prompt_tokens: count(usage.prompt_tokens),
+    completion_tokens: count(usage.completion_tokens),
+    total_tokens: count(usage.total_tokens),
+  })
+}
+
 export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
@@ -132,12 +154,15 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
         ] : message.content,
       }))
 
+      const startedAt = Date.now()
       let timer: ReturnType<typeof setTimeout> | undefined
       try {
         const result = await Promise.race([
           env.AI.run(GEMMA_MODEL, {
             messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...providerMessages],
             max_completion_tokens: 1024,
+            // Gemma defaults to reasoning mode, which can exhaust this short reply budget before any final text.
+            chat_template_kwargs: { enable_thinking: false },
             stream: false,
           }),
           new Promise<never>((_, reject) => {
@@ -145,9 +170,11 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
           }),
         ])
         const reply = finalReply(result)
+        logUsage(result, reply ? 'success' : 'invalid_reply', startedAt)
         if (!reply) return failure('INVALID_REPLY', 'The coach could not finish a usable response. Please retry.', 502)
         return json({ reply, model: GEMMA_MODEL })
       } catch (error) {
+        logUsage(null, error instanceof Error && error.message === 'PROVIDER_TIMEOUT' ? 'timeout' : isQuotaError(error) ? 'quota_exhausted' : 'provider_error', startedAt)
         if (error instanceof Error && error.message === 'PROVIDER_TIMEOUT') return failure('TIMEOUT', 'The coach is taking too long. Please retry in a moment.', 504)
         if (isQuotaError(error)) return failure('QUOTA_EXHAUSTED', 'The coach is busy or its free allowance has been reached. Try again later.', 429)
         return failure('COACH_UNAVAILABLE', 'The coach is unavailable right now. Please try again shortly.', 503)

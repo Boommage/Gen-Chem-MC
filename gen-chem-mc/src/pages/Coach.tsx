@@ -3,6 +3,7 @@ import { MAX_MESSAGE_CHARACTERS, recentConversation, type ChatMessage } from '..
 import type { ImageAttachment } from '../../shared/images'
 import { readImageFile } from '../lib/imageAttachment'
 import { Icon } from '../components/AppLayout'
+import CoachMessage from '../components/CoachMessage'
 import PageHeader from '../components/PageHeader'
 
 const suggestions = [
@@ -50,7 +51,9 @@ export default function Coach() {
       if (recent.some(message => message.image)) {
         const health = await fetch('/api/health', { signal: controller.signal })
         const capabilities = await health.json().catch(() => null) as { capabilities?: { images?: boolean }; error?: { message?: string } } | null
-        if (!health.ok) throw new Error(capabilities?.error?.message || 'The image coach could not be reached. Please retry.')
+        if (!health.ok) throw new Error(typeof capabilities?.error?.message === 'string'
+          ? capabilities.error.message
+          : `The image coach could not be reached (HTTP ${health.status}). For local mode, start npm run dev:api. Check COACH_API_URL in .env.local and restart the frontend.`)
         if (!capabilities?.capabilities?.images) throw new Error('Images are not available on this server yet. Edit this message to send text, or use the image test backend.')
       }
       const response = await fetch('/api/coach', {
@@ -154,10 +157,12 @@ export default function Coach() {
           {messages.map((message, index) => (
             <div className={'message-row ' + (message.role === 'user' ? 'student' : 'coach')} key={index}>
               {message.role === 'assistant' && <span className="coach-avatar" aria-hidden="true" />}
-              <div className="message">
-                {message.image && <img className="chat-image" src={message.image.dataUrl} alt={'Attached image ' + message.image.name} />}
-                {message.content}
-              </div>
+              {message.role === 'assistant'
+                ? <CoachMessage content={message.content} />
+                : <div className="message">
+                  {message.image && <img className="chat-image" src={message.image.dataUrl} alt={'Attached image ' + message.image.name} />}
+                  {message.content}
+                </div>}
             </div>
           ))}
           <div ref={endOfConversation} />
