@@ -1,9 +1,12 @@
 // Coach backend: a Cloudflare Worker that guides students without giving answers.
-// It calls Workers AI through the REST API using the run-only token in .dev.vars.
+// The model runs either on your own computer with Ollama (OLLAMA_URL in .dev.vars)
+// or on Cloudflare Workers AI (WORKERS_AI_ACCOUNT_ID and WORKERS_AI_TOKEN in .dev.vars).
 // Request:  POST { messages: [{ role: 'user' | 'assistant', content }] }, last message from the user
 // Response: { reply, rewritten, model }  or  { error }
 
 export interface Env {
+  OLLAMA_URL?: string
+  OLLAMA_MODEL?: string
   WORKERS_AI_ACCOUNT_ID?: string
   WORKERS_AI_TOKEN?: string
   COACH_MODEL?: string
@@ -15,7 +18,9 @@ type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 class ModelError extends Error {}
 
 const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8-fast'
-const MAX_MESSAGES = 40
+const DEFAULT_OLLAMA_MODEL = 'llama3.1:8b'
+// Only the most recent messages go to the model, so long chats keep working and stay cheap.
+const HISTORY_LIMIT = 20
 const MAX_CONTENT_LENGTH = 4000
 
 const corsHeaders = {
@@ -105,12 +110,46 @@ function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: corsHeaders })
 }
 
+const usesOllama = (env: Env) => Boolean(env.OLLAMA_URL?.trim())
+
 function missingConfig(env: Env): string | null {
+  if (usesOllama(env)) return null
   const missing = (['WORKERS_AI_ACCOUNT_ID', 'WORKERS_AI_TOKEN'] as const).filter((key) => !env[key]?.trim())
-  return missing.length ? `Missing ${missing.join(' and ')} in gen-chem-mc/.dev.vars.` : null
+  return missing.length
+    ? `Missing settings in gen-chem-mc/.dev.vars: set OLLAMA_URL to run locally, or ${missing.join(' and ')} for Cloudflare.`
+    : null
 }
 
-async function ask(env: Env, model: string, messages: ChatMessage[], temperature = 0.3, maxTokens = 256) {
+function ask(env: Env, model: string, messages: ChatMessage[], temperature = 0.3, maxTokens = 256) {
+  return usesOllama(env)
+    ? askOllama(env, model, messages, temperature, maxTokens)
+    : askWorkersAI(env, model, messages, temperature, maxTokens)
+}
+
+// Ollama's OpenAI-compatible chat endpoint on your own computer.
+async function askOllama(env: Env, model: string, messages: ChatMessage[], temperature: number, maxTokens: number) {
+  const response = await fetch(`${env.OLLAMA_URL!.trim().replace(/\/$/, '')}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, stream: false }),
+  }).catch(() => {
+    throw new ModelError('Could not reach Ollama. Make sure the Ollama app is running.')
+  })
+
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    console.error(`Ollama request failed (${response.status}):`, JSON.stringify(data?.error ?? data))
+    throw new ModelError(
+      response.status === 404 ? `Ollama doesn't have ${model} yet. Run: ollama pull ${model}` : `Ollama request failed (${response.status}).`,
+    )
+  }
+
+  const text = data?.choices?.[0]?.message?.content
+  if (typeof text !== 'string') throw new ModelError('Ollama returned an unexpected response.')
+  return text.trim()
+}
+
+async function askWorkersAI(env: Env, model: string, messages: ChatMessage[], temperature: number, maxTokens: number) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${env.WORKERS_AI_ACCOUNT_ID!.trim()}/ai/run/${model}`
 
   const response = await fetch(url, {
@@ -141,7 +180,6 @@ async function givesAwayAnswer(env: Env, model: string, question: string, reply:
 function parseMessages(body: unknown): ChatMessage[] | string {
   const messages = (body as { messages?: unknown })?.messages
   if (!Array.isArray(messages) || messages.length === 0) return 'messages must be a non-empty array'
-  if (messages.length > MAX_MESSAGES) return `messages can hold at most ${MAX_MESSAGES} entries`
 
   for (const m of messages) {
     const { role, content } = (m ?? {}) as { role?: unknown; content?: unknown }
@@ -154,11 +192,13 @@ function parseMessages(body: unknown): ChatMessage[] | string {
 }
 
 export async function coachReply(env: Env, history: ChatMessage[]) {
-  const model = env.COACH_MODEL || DEFAULT_MODEL
+  const model = usesOllama(env) ? env.OLLAMA_MODEL || DEFAULT_OLLAMA_MODEL : env.COACH_MODEL || DEFAULT_MODEL
   const question = history[history.length - 1].content.trim()
+  const recent = history.slice(-HISTORY_LIMIT, -1)
+  while (recent[0]?.role === 'assistant') recent.shift() // the model expects the history to start with the student
   const toSend: ChatMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
-    ...history.slice(0, -1),
+    ...recent,
     { role: 'user', content: question + REMINDER },
   ]
 

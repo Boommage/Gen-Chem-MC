@@ -4,7 +4,8 @@
   "main": "backend/model.ts",
   "compatibility_date": "2026-10-05",
   "vars": {
-    // The Workers AI model the coach uses. Change it to compare models.
+    // The model the coach uses: OLLAMA_MODEL when running locally, COACH_MODEL on Cloudflare.
+    "OLLAMA_MODEL": "llama3.1:8b",
     "COACH_MODEL": "@cf/meta/llama-3.1-8b-instruct-fp8-fast"
   }
 }

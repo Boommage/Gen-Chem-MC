@@ -1,3 +1,8 @@
-# Copy to .dev.vars in this folder and fill in both values. Never commit .dev.vars.
-WORKERS_AI_ACCOUNT_ID=paste_account_id_here
-WORKERS_AI_TOKEN=paste_run_only_token_here
+# Copy to .dev.vars in this folder. Never commit .dev.vars.
+
+# Option A: run the model on your own computer with Ollama (no token needed).
+OLLAMA_URL=http://127.0.0.1:11434
+
+# Option B: run the model on Cloudflare. Delete the OLLAMA_URL line above and fill in both values.
+# WORKERS_AI_ACCOUNT_ID=paste_account_id_here
+# WORKERS_AI_TOKEN=paste_run_only_token_here
