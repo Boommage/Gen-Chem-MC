@@ -68,7 +68,17 @@ describe('Gemma coach gateway', () => {
     const response = await createHandler().fetch(request(messages), env)
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ reply: 'What have you tried?', model: GEMMA_MODEL })
-    expect(run).toHaveBeenCalledWith(GEMMA_MODEL, { messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...messages], max_completion_tokens: 1024, stream: false })
+    expect(run).toHaveBeenCalledWith(GEMMA_MODEL, { messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...messages], max_completion_tokens: 1024, chat_template_kwargs: { enable_thinking: false }, stream: false })
+  })
+  it('keeps model reasoning disabled even if a client attempts to turn it on', async () => {
+    const { run, env } = setup()
+    const response = await createHandler().fetch(new Request('http://localhost/api/coach', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'Help me reflect on wavelength units' }], chat_template_kwargs: { enable_thinking: true }, max_completion_tokens: 100000 }),
+    }), env)
+    expect(response.status).toBe(200)
+    expect(run).toHaveBeenCalledExactlyOnceWith(GEMMA_MODEL, expect.objectContaining({ max_completion_tokens: 1024, chat_template_kwargs: { enable_thinking: false } }))
+    expect(await response.text()).not.toContain('secret internal reasoning')
   })
   it.each([
     [],

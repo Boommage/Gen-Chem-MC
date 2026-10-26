@@ -10,6 +10,7 @@ export interface Env {
     run(model: string, input: {
       messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
       max_completion_tokens: number
+      chat_template_kwargs: { enable_thinking: false }
       stream: false
     }): Promise<unknown>
   }
@@ -140,6 +141,8 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
           env.AI.run(GEMMA_MODEL, {
             messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...messages],
             max_completion_tokens: 1024,
+            // Gemma defaults to reasoning mode, which can exhaust this short reply budget before any final text.
+            chat_template_kwargs: { enable_thinking: false },
             stream: false,
           }),
           new Promise<never>((_, reject) => {

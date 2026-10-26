@@ -131,6 +131,8 @@ Run `npm ci` after pulling the dependency changes, restart `npm run dev`, and re
 
 All math plugins use the patched direct KaTeX version via the package override so the renderer and stylesheet stay in sync. No hosted font service or extra model request is needed for formatting.
 
+The gateway explicitly sends `chat_template_kwargs: { enable_thinking: false }`. Cloudflare enables Gemma reasoning by default; it can consume the 1,024-token completion budget before producing any final reply. Disabling model reasoning keeps that budget for the concise coaching response. The frontend Thinking animation still indicates a pending request; it does not display model reasoning. Incomplete replies remain rejected, with no automatic extra inference request. See the [official Gemma input schema](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/sync-input.json).
+
 ## Logs and token usage
 
 The Wrangler configuration enables persisted invocation and custom logs at a sampling rate of 1 for both the default Worker and the team environment. Deploy these changes to the shared endpoint with `npm run deploy:team` from `gen-chem-mc`; restarting Vite alone does not update the hosted Worker. The dedicated `backend/worker.ts` entrypoint exports only the fetch handler.
