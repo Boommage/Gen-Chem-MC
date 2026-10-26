@@ -1,13 +1,15 @@
 # Neocortex
 
-Team 4's General Chemistry metacognition project. The `gemma-integration-test` branch adds text coaching through Cloudflare-hosted Gemma 4 26B, an accessible thinking animation, conversation context, and retry/edit recovery.
+Team 4's General Chemistry metacognition project. This `codex/image-integration-test` branch adds image attachments to the working Gemma Coach: previews/removal, multimodal requests, follow-up context, and attachment-preserving retry/edit recovery. Text chat and the Thinking animation remain available. Assistant replies now render Markdown and math, hidden model reasoning is disabled, and the gateway emits sanitized token-usage logs.
+
+**Use an image-enabled backend.** The shared text Worker does not accept images. Follow [image setup](../docs/gemma-image-setup.md) for local live testing or a separate shared image Worker.
 
 ## Get this branch
 
 Use Node.js **22.18 or newer** (Node 24 LTS recommended), npm, and Git.
 
 ```bash
-git clone --branch gemma-integration-test https://github.com/Boommage/Gen-Chem-MC.git
+git clone --branch codex/image-integration-test https://github.com/Boommage/Gen-Chem-MC.git
 cd Gen-Chem-MC/gen-chem-mc
 npm ci
 ```
@@ -16,7 +18,8 @@ Already cloned?
 
 ```bash
 git fetch origin
-git switch gemma-integration-test
+git switch codex/image-integration-test
+git pull --ff-only origin codex/image-integration-test
 cd gen-chem-mc
 npm ci
 ```
@@ -29,16 +32,16 @@ npm ci
 | Local mock | No | Canned responses for UI testing; not Gemma |
 | Local Worker with live Gemma | Yes | Your own Cloudflare login with access to the intended account |
 
-Full setup, the one-time shared backend deployment, and troubleshooting: **[Gemma team setup](../docs/gemma-setup.md)**.
+Image-branch setup, deployment, and troubleshooting: **[Gemma image setup](../docs/gemma-image-setup.md)**.
 
-Shareable four-page Word guide: **[Team onboarding document](../docs/gemma-team-onboarding.docx)**. Live text replies through the shared endpoint were confirmed by the endpoint owner on October 12, 2026.
+The [Word onboarding document](../docs/gemma-team-onboarding.docx) covers the stable text branch. Use the image guide above for this branch.
 
 ### Shared live backend
 
-Copy `.env.example` to `.env.local`. The working endpoint is already filled in; add the development token supplied privately by the endpoint owner:
+After the endpoint owner deploys the separate image Worker, set its actual origin and privately shared token in `.env.local`:
 
 ```dotenv
-COACH_API_URL=https://neocortex-gemma-team.neocortexmc.workers.dev
+COACH_API_URL=https://ACTUAL-IMAGE-WORKER-URL
 COACH_API_TOKEN=YOUR-TEAM-DEVELOPMENT-TOKEN
 ```
 
@@ -94,17 +97,19 @@ Runs lint, backend TypeScript checking, automated tests, and the frontend produc
 | npm run lint | Oxlint |
 | npm run build | Frontend TypeScript checks and production bundle |
 | npm run check | All automated checks |
-| npm run deploy:team | Deploy the shared Worker; endpoint owner only |
+| npm run deploy:images | Deploy a separate shared image Worker; endpoint owner only |
 
 ## Implementation
 
 ```text
 docs/gemma-setup.md             Team setup and live acceptance
 gen-chem-mc/
-  backend/model.ts             Gemma gateway, validation, shared-endpoint access
+  backend/worker.ts            Cloudflare runtime entry point
+  backend/model.ts             Gemma gateway, validation, multimodal mapping
   backend/policy.ts            Coaching instructions
   backend/dev-mock.ts          Local mock server
   shared/coach.ts              Chat contract and history bounds
+  shared/images.ts             Upload limits and image-header validation
   src/pages/Coach.tsx          Chat, thinking state, error recovery
   vite.config.ts              Local proxy, server-only development token
   wrangler.jsonc              Local and team Worker configurations
@@ -115,7 +120,7 @@ Gemma model: `@cf/google/gemma-4-26b-a4b-it`. The server prepends its own policy
 ## Scope and limitations
 
 - This branch is a **team development text prototype**, not a student production deployment.
-- No image upload interface yet. Add it after the live text acceptance checklist passes.
+- One JPEG/PNG per message, up to 2 MB; up to two images in recent context. Images are not stored persistently by the application.
 - No instructor-approved course retrieval, persistent chat database, student authentication, or analytics.
 - The shared development token protects the hosted Worker; it is not student identity or authorization.
 - Coaching instructions and basic output validation do not guarantee no answer leakage. Test with the instructor/TA before a student pilot.

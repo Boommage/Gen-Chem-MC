@@ -10,7 +10,7 @@
     "typecheck:api": "tsc -p tsconfig.backend.json",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck:api && npm test && npm run build",
-    "deploy:team": "wrangler deploy --env team",
+    "deploy:images": "wrangler deploy --env images",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"

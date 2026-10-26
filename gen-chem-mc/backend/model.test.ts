@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createHandler, GEMMA_MODEL, type Env } from './model.ts'
+import { createHandler, GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
+import { PNG_IMAGE } from '../shared/imageFixtures.ts'
 import { COACH_INSTRUCTIONS } from './policy.ts'
 
 const answer = { choices: [{ message: { content: 'What have you tried?', reasoning_content: 'secret internal reasoning' }, finish_reason: 'stop' }] }
@@ -105,7 +106,7 @@ describe('Gemma coach gateway', () => {
   })
   it('bounds actual request bytes even without a Content-Length header', async () => {
     const { run, env } = setup()
-    expect((await createHandler().fetch(new Request('http://localhost/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: ' '.repeat(65537) }), env)).status).toBe(413)
+    expect((await createHandler().fetch(new Request('http://localhost/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: ' '.repeat(MAX_BODY_BYTES + 1) }), env)).status).toBe(413)
     expect(run).not.toHaveBeenCalled()
   })
   it('rejects non-JSON requests and unsupported routes/methods', async () => {
@@ -130,7 +131,7 @@ describe('Gemma coach gateway', () => {
   it('provides an authenticated health check without spending inference quota', async () => {
     const { run, env } = setup()
     const response = await createHandler().fetch(new Request('http://localhost/api/health'), env)
-    expect(await response.json()).toEqual({ status: 'ok', model: GEMMA_MODEL })
+    expect(await response.json()).toEqual({ status: 'ok', model: GEMMA_MODEL, capabilities: { images: true } })
     expect(run).not.toHaveBeenCalled()
   })
   it.each([{}, { choices: [] }, { choices: [{ message: { content: '' } }] }, { choices: [{ message: { content: '<think>private work</think>hi' } }] }, { choices: [{ message: { content: 'unfinished' }, finish_reason: 'length' }] }])('rejects unusable provider responses: %j', async (value) => {
@@ -157,5 +158,31 @@ describe('Gemma coach gateway', () => {
     run.mockImplementationOnce(() => new Promise(() => {}))
     expect((await createHandler(10).fetch(request(), env)).status).toBe(504)
     expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: 'timeout', prompt_tokens: null, completion_tokens: null, total_tokens: null }))
+  })
+  it('maps uploaded image bytes to Gemma multimodal messages', async () => {
+    const { run, env } = setup()
+    const response = await createHandler().fetch(request([{ role: 'user', content: 'Help me reason through this', image: PNG_IMAGE }]), env)
+    expect(response.status).toBe(200)
+    const sent = run.mock.calls[0][1].messages[1]
+    expect(sent).toEqual({ role: 'user', content: [{ type: 'text', text: 'Help me reason through this' }, { type: 'image_url', image_url: { url: PNG_IMAGE.dataUrl } }] })
+    expect(run.mock.calls[0][1].chat_template_kwargs).toEqual({ enable_thinking: false })
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain(PNG_IMAGE.dataUrl)
+  })
+  it('retains an earlier image on a text follow-up', async () => {
+    const { run, env } = setup()
+    const messages = [{ role: 'user', content: 'Help', image: PNG_IMAGE }, { role: 'assistant', content: 'What do you notice?' }, { role: 'user', content: 'I see a volume' }]
+    expect((await createHandler().fetch(request(messages), env)).status).toBe(200)
+    expect(run.mock.calls[0][1].messages[1].content).toEqual([{ type: 'text', text: 'Help' }, { type: 'image_url', image_url: { url: PNG_IMAGE.dataUrl } }])
+    expect(run.mock.calls[0][1].messages[3].content).toBe('I see a volume')
+  })
+  it.each([
+    [{ role: 'user', content: 'Help', image: { name: 'remote.png', dataUrl: 'https://private.example/image.png' } }],
+    [{ role: 'user', content: 'Help', image: { name: 'bad.svg', dataUrl: 'data:image/svg+xml;base64,PHN2Zy8+' } }],
+    [{ role: 'user', content: 'Help' }, { role: 'assistant', content: 'bad', image: PNG_IMAGE }, { role: 'user', content: 'next' }],
+    Array.from({ length: 5 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: 'hi', ...(i % 2 ? {} : { image: PNG_IMAGE }) })),
+  ])('rejects forbidden attachments before inference: %j', async (messages) => {
+    const { run, env } = setup()
+    expect((await createHandler().fetch(request(messages), env)).status).toBe(400)
+    expect(run).not.toHaveBeenCalled()
   })
 })

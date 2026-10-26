@@ -1,14 +1,18 @@
 import { MAX_HISTORY_CHARACTERS, MAX_MESSAGE_CHARACTERS, MAX_MESSAGES, type ChatMessage } from '../shared/coach.ts'
 import { COACH_INSTRUCTIONS } from './policy.ts'
+import { inspectImage, MAX_HISTORY_IMAGES, MAX_IMAGE_BYTES } from '../shared/images.ts'
 
 export const GEMMA_MODEL = '@cf/google/gemma-4-26b-a4b-it'
-const MAX_BODY_BYTES = 64 * 1024
+export const MAX_BODY_BYTES = Math.ceil(MAX_HISTORY_IMAGES * MAX_IMAGE_BYTES * 4 / 3) + 64 * 1024
 const PROVIDER_TIMEOUT_MS = 30_000
+
+type ProviderPart = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }
+export type ProviderMessage = { role: 'system' | 'user' | 'assistant'; content: string | ProviderPart[] }
 
 export interface Env {
   AI: {
     run(model: string, input: {
-      messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
+      messages: ProviderMessage[]
       max_completion_tokens: number
       chat_template_kwargs: { enable_thinking: false }
       stream: false
@@ -55,6 +59,7 @@ function validateMessages(body: unknown): ChatMessage[] | null {
   if (!messages.length || messages.length > MAX_MESSAGES || messages.length % 2 === 0) return null
   const validated: ChatMessage[] = []
   let total = 0
+  let images = 0
   for (let i = 0; i < messages.length; i++) {
     const message: unknown = messages[i]
     if (!message || typeof message !== 'object' || !('role' in message) || !('content' in message)) return null
@@ -64,7 +69,14 @@ function validateMessages(body: unknown): ChatMessage[] | null {
     if (!content || content.length > MAX_MESSAGE_CHARACTERS) return null
     total += content.length
     if (total > MAX_HISTORY_CHARACTERS) return null
-    validated.push({ role: expectedRole, content })
+    let attachment
+    if ('image' in message) {
+      if (expectedRole !== 'user') return null
+      const inspected = inspectImage(message.image)
+      if (!inspected || ++images > MAX_HISTORY_IMAGES) return null
+      attachment = inspected.image
+    }
+    validated.push({ role: expectedRole, content, ...(attachment ? { image: attachment } : {}) })
   }
   return validated
 }
@@ -118,7 +130,7 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
       if (env.TEAM_API_TOKEN && request.headers.get('Authorization') !== `Bearer ${env.TEAM_API_TOKEN}`) {
         return failure('UNAUTHORIZED', 'The team coach access token is missing or incorrect. Check your local setup.', 401)
       }
-      if (url.pathname === '/api/health' && request.method === 'GET') return json({ status: 'ok', model: GEMMA_MODEL })
+      if (url.pathname === '/api/health' && request.method === 'GET') return json({ status: 'ok', model: GEMMA_MODEL, capabilities: { images: true } })
       if (url.pathname !== '/api/coach') return failure('NOT_FOUND', 'This endpoint does not exist.', 404)
       if (request.method !== 'POST') return failure('METHOD_NOT_ALLOWED', 'Send a POST request to the coach.', 405)
       if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) {
@@ -128,18 +140,26 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
       try {
         body = await readBody(request)
       } catch (error) {
-        if (error instanceof Error && error.message === 'BODY_TOO_LARGE') return failure('BODY_TOO_LARGE', 'The message is too large. Send a shorter message.', 413)
+        if (error instanceof Error && error.message === 'BODY_TOO_LARGE') return failure('BODY_TOO_LARGE', 'The message is too large. Use a smaller image or shorter message.', 413)
         return failure('INVALID_BODY', 'The coach request could not be read.', 400)
       }
       const messages = validateMessages(body)
-      if (!messages) return failure('INVALID_MESSAGES', 'Use a shorter text message and a valid conversation history.', 400)
+      if (!messages) return failure('INVALID_MESSAGES', 'Use valid text and JPEG or PNG attachments under 2 MB, with no more than two images in the recent conversation.', 400)
+
+      const providerMessages: ProviderMessage[] = messages.map(message => ({
+        role: message.role,
+        content: message.image ? [
+          { type: 'text', text: message.content },
+          { type: 'image_url', image_url: { url: message.image.dataUrl } },
+        ] : message.content,
+      }))
 
       const startedAt = Date.now()
       let timer: ReturnType<typeof setTimeout> | undefined
       try {
         const result = await Promise.race([
           env.AI.run(GEMMA_MODEL, {
-            messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...messages],
+            messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...providerMessages],
             max_completion_tokens: 1024,
             // Gemma defaults to reasoning mode, which can exhaust this short reply budget before any final text.
             chat_template_kwargs: { enable_thinking: false },
