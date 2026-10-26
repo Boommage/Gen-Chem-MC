@@ -1,8 +1,17 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gen-chem-mc",
-  "main": "backend/model.ts",
+  "main": "backend/worker.ts",
   "compatibility_date": "2026-10-05",
+
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  },
 
   "ai": {
     "binding": "AI",
@@ -11,7 +20,15 @@
   "env": {
     "team": {
       "name": "neocortex-gemma-team",
-      "ai": { "binding": "AI", "remote": true }
+      "ai": { "binding": "AI", "remote": true },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      }
     }
   }
 }

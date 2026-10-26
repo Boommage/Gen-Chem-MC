@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createHandler, GEMMA_MODEL, type Env } from './model.ts'
 import { COACH_INSTRUCTIONS } from './policy.ts'
 
@@ -13,6 +13,55 @@ function request(messages: unknown = [{ role: 'user', content: 'Help me study' }
 }
 
 describe('Gemma coach gateway', () => {
+  beforeEach(() => { vi.spyOn(console, 'log').mockImplementation(() => {}) })
+  afterEach(() => { vi.restoreAllMocks() })
+
+  it('logs only reported token counts and safe metadata, keeping the API response unchanged', async () => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ ...answer, usage: { prompt_tokens: 120, completion_tokens: 30, total_tokens: 150, private_extra: 'do not log' } })
+    const response = await createHandler().fetch(request(undefined, 'https://coach.example/api/coach', 'test-only-secret'), { ...env, TEAM_API_TOKEN: 'test-only-secret' })
+    expect(await response.json()).toEqual({ reply: 'What have you tried?', model: GEMMA_MODEL })
+    expect(console.log).toHaveBeenCalledExactlyOnceWith({
+      event: 'coach_usage', model: GEMMA_MODEL, outcome: 'success', duration_ms: expect.any(Number),
+      prompt_tokens: 120, completion_tokens: 30, total_tokens: 150,
+    })
+  })
+
+  it.each([undefined, null, 'private', { prompt_tokens: -1, completion_tokens: 'private', total_tokens: 1.5 }, { prompt_tokens: Infinity, completion_tokens: NaN, total_tokens: Number.MAX_SAFE_INTEGER + 1 }])('marks missing or invalid usage as unavailable: %j', async (usage) => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ ...answer, usage })
+    expect((await createHandler().fetch(request(), env)).status).toBe(200)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ prompt_tokens: null, completion_tokens: null, total_tokens: null }))
+  })
+
+  it('preserves valid zero and partial counts without inventing a total', async () => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ ...answer, usage: { prompt_tokens: 0, completion_tokens: 4 } })
+    await createHandler().fetch(request(), env)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ prompt_tokens: 0, completion_tokens: 4, total_tokens: null }))
+  })
+
+  it('logs consumption even when the returned answer is unusable', async () => {
+    const { run, env } = setup()
+    run.mockResolvedValueOnce({ choices: [], usage: { prompt_tokens: 120, completion_tokens: 30, total_tokens: 150 } })
+    expect((await createHandler().fetch(request(), env)).status).toBe(502)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: 'invalid_reply', total_tokens: 150 }))
+  })
+
+  it.each([[{ status: 429, message: 'private provider error' }, 'quota_exhausted', 429], [new Error('private provider error'), 'provider_error', 503]] as const)('logs sanitized provider failures without inventing counts', async (error, outcome, status) => {
+    const { run, env } = setup()
+    run.mockRejectedValueOnce(error)
+    expect((await createHandler().fetch(request(), env)).status).toBe(status)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith({ event: 'coach_usage', model: GEMMA_MODEL, outcome, duration_ms: expect.any(Number), prompt_tokens: null, completion_tokens: null, total_tokens: null })
+  })
+
+  it('does not log inference usage for unauthorized requests or health checks', async () => {
+    const { env } = setup()
+    await createHandler().fetch(request(undefined, 'https://coach.example/api/coach', 'wrong'), { ...env, TEAM_API_TOKEN: 'test-only-secret' })
+    await createHandler().fetch(new Request('http://localhost/api/health'), env)
+    expect(console.log).not.toHaveBeenCalled()
+  })
+
   it('adds the server policy, preserves valid history and returns final text only', async () => {
     const { run, env } = setup()
     const messages = [{ role: 'user', content: 'Help' }, { role: 'assistant', content: 'What have you tried?' }, { role: 'user', content: 'I reread notes' }]
@@ -97,5 +146,6 @@ describe('Gemma coach gateway', () => {
     const { run, env } = setup()
     run.mockImplementationOnce(() => new Promise(() => {}))
     expect((await createHandler(10).fetch(request(), env)).status).toBe(504)
+    expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: 'timeout', prompt_tokens: null, completion_tokens: null, total_tokens: null }))
   })
 })

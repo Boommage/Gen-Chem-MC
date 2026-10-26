@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { MAX_MESSAGE_CHARACTERS, recentConversation, type ChatMessage } from '../../shared/coach'
 import { Icon } from '../components/AppLayout'
+import CoachMessage from '../components/CoachMessage'
 import PageHeader from '../components/PageHeader'
 
 const suggestions = [
@@ -106,7 +107,9 @@ export default function Coach() {
           {messages.map((message, index) => (
             <div className={'message-row ' + (message.role === 'user' ? 'student' : 'coach')} key={index}>
               {message.role === 'assistant' && <span className="coach-avatar" aria-hidden="true" />}
-              <div className="message">{message.content}</div>
+              {message.role === 'assistant'
+                ? <CoachMessage content={message.content} />
+                : <div className="message">{message.content}</div>}
             </div>
           ))}
           <div ref={endOfConversation} />
