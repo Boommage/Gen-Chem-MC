@@ -1,13 +1,13 @@
-# _[Area name]_ Design
+# Baseline Assessment Design
 
-**Project:** _[Your project name]_
-**Team:** _[Team NN]_
-**Area:** _[`UC-<AREA>`, for example `ORD`]_
+**Project:** Gen Chem Metacognition
+**Team:** Team #4
+**Area:** `UC-BNCH`
 
-> **Realizes:** _[every `UC-<AREA>-<slug>` and `FR-<AREA>-<slug>` this document designs, appended as each is designed]_
-> **Depends on:** _[the business rules, constraints, and cross-cutting `FR-*` it builds on, by identifier]_
-> **See:** _[links to the use cases, the specification, and your [architecture-of-record](architectural-design.md)]_
-> **Designed against:** _[the commit of `main` you read the code at, for example `a1b2c3d`]_
+> **Realizes:** `UC-BNCH-complete-baseline-assessment`. No `FR-BNCH-*` requirement exists yet.
+> **Depends on:** `FEAT-benchmark-quiz`; `SEC-authentication`; `SEC-student-isolation`; `ROB-invalid-data` (applied to this area by architecture-of-record section 6.2). The use case cites no business rules.
+> **See:** [use cases](../requirements/use-cases.md#uc-bnch-complete-baseline-assessment-the-student-completes-a-baseline-assessment), [specification](../requirements/software-requirements-specification.md), [architecture-of-record](architectural-design.md)
+> **Designed against:** `main` at `4257888`
 
 ---
 
@@ -33,139 +33,183 @@ _**Write it in this order.** Each step is one person's or one pair's work, and t
 
 ## Overview
 
-_[One paragraph: what this area does, which components of your [architecture-of-record](architectural-design.md) it lives in, and what it reads from or calls in other areas. Link the container diagram rather than redrawing it. If this design changes the architecture-of-record, say so here and list the change under "Changes to the architecture-of-record" below._
+_[One paragraph: what this area does, which components of your [architecture-of-record](architectural-design.md) it lives in, and what it reads from or calls in other areas. Link the container diagram rather than redrawing it. If this design changes the architecture-of-record, say so here and list the change under "Changes to the architecture-of-record" below.]_
 
-_Example, from the Cafeteria Ordering System:_
-
-_Ordering takes a patron's meal order from menu selection to a confirmed, payroll-charged order. It is the `ORD` area of the API ([containers](architectural-design.md#51-containers), [use case areas](architectural-design.md#52-use-case-areas-and-components)), reads the day's menu from `menu`, and asks the Payroll System to authorize the deduction before an order is stored (`DE-payroll-integration`).]_
+The baseline assessment records a student's current study habits and preferences in a short initial survey (`FEAT-benchmark-quiz`), so the system has a starting point for that student. It is the `BNCH` area of the Application API: the **Baseline assessment** component ([containers](architectural-design.md#51-containers), [use case areas and components](architectural-design.md#52-use-case-areas-and-components)). It gets the caller's identity from **Identity and access** and stores responses and completion state in the Application Database. The **Coach and model gateway** later reads the student's baseline responses, because the Language Model Service receives them with each coaching request (architecture-of-record 8.1, Sensitive data). On `main`, the Web Application has no baseline page yet (its routes are `/dashboard`, `/study`, `/coach`, and `/progress`), and the Application API and Application Database are not built (architecture-of-record 5.1). This design does not change the architecture-of-record.
 
 ## Components & classes
 
 _[One class diagram for the whole area, and one line per class or file saying what it does and whether it is **new** or **reused**. Show only what a reader needs to see how the parts relate: classes, their key methods, their dependencies. Fields and getters belong to the code._
 
-_**If your repository has no code for this area yet**, which is the normal case for your proving slice, list the files you expect the agent to create, with the paths your architecture-of-record's conventions give them, and mark them all new. The agent then builds into the structure you chose rather than one it improvised._
+_**If your repository has no code for this area yet**, which is the normal case for your proving slice, list the files you expect the agent to create, with the paths your architecture-of-record's conventions give them, and mark them all new. The agent then builds into the structure you chose rather than one it improvised.]_
 
-_Example:_]
+No code exists for this area. The Application API's package layout and framework are not yet fixed (section 5.2 lists the server technology as TBD, and 8.2.4 names Python), so the parts below are named by responsibility. File names are left for the team to choose under these conventions.
 
 ```mermaid
 classDiagram
     direction LR
-    class OrderController {
+    class BaselinePage {
+        <<new, Web Application>>
+    }
+    class AppLayout {
+        <<reused, Web Application>>
+    }
+    class IdentityAndAccess {
+        <<new, cross-cutting>>
+    }
+    class BaselineAssessment {
+        <<new, BNCH>>
+    }
+    class ApplicationDatabase {
         <<new>>
-        +placeOrder(PlaceOrderRequest) Response
     }
-    class OrderService {
-        <<new>>
-        +placeOrder(patronId, items, deliverySlot) Order
-    }
-    class PayrollClient {
-        <<new>>
-        +authorizeDeduction(patronId, amount) Authorization
-    }
-    class MenuService {
-        <<reused, menu>>
-        +findAvailableItems(date) List~MenuItem~
-    }
-    OrderController --> OrderService
-    OrderService --> MenuService
-    OrderService --> PayrollClient
+    BaselinePage --> AppLayout
+    BaselinePage --> IdentityAndAccess : authenticated requests
+    IdentityAndAccess --> BaselineAssessment : authorized student
+    BaselineAssessment --> ApplicationDatabase
 ```
 
-- _`ordering/OrderController` (new): the HTTP entry point; validates the request shape and nothing else._
-- _`ordering/OrderService` (new): checks the cut-off, availability, and payroll authorization, then stores the order._
-- _`ordering/PayrollClient` (new): the only class that talks to the Payroll System._
-- _`menu/MenuService` (reused): called through its service, never its repository._
+- **Baseline page** (new): a page under `gen-chem-mc/src/pages/`, the folder the project README assigns to page-specific code. It shows the explanation and questions, collects answers, lets the student review before submitting, and shows the per-question errors and retry message the API returns.
+- **`AppLayout` and `PageHeader`** (reused): the shared shell in `gen-chem-mc/src/components/`. The project README says to reuse it rather than duplicate sidebar or header markup.
+- **Identity and access** (new, cross-cutting): authenticates the caller and scopes the request to that student (architecture-of-record 5.2, 8.1). It is shared with every area, not owned by `BNCH`.
+- **Baseline assessment** (new): owns the assessment questions, response validation, the association with the student, and completion state (architecture-of-record 5.2).
+- **Application Database** (new): PostgreSQL on Supabase (architecture-of-record 5.1).
 
 ## Sequence
 
-_[One sequence diagram per use case for its main success scenario, plus one for each extension that does not just return an error. **Label each interaction with the use case step it implements**, so a reviewer can check that every step is realized and nothing extra was invented. Use `alt` blocks for extensions that branch off the main flow. Give each use case its own `###` heading; that heading is the anchor your traceability matrix cites._
+_[One sequence diagram per use case for its main success scenario, plus one for each extension that does not just return an error. **Label each interaction with the use case step it implements**, so a reviewer can check that every step is realized and nothing extra was invented. Use `alt` blocks for extensions that branch off the main flow. Give each use case its own `###` heading; that heading is the anchor your traceability matrix cites.]_
 
-_Example:]_
+### UC-BNCH-complete-baseline-assessment: completing the baseline assessment
 
-### _UC-ORD-place-order: placing an order_
+Steps 3 to 8 happen in the Web Application and responses are sent once, at submission, as in architecture-of-record 6.2. Whether step 6 ("records the response") must also save each answer on the server is open (see Open questions).
 
 ```mermaid
 sequenceDiagram
-    actor P as Patron
-    participant WEB as Web front end
-    participant OC as OrderController
-    participant OS as OrderService
-    participant MS as MenuService
-    participant PC as PayrollClient
-    P->>WEB: Choose items and a delivery slot (steps 3 to 5)
-    WEB->>OC: POST /api/orders
-    OC->>OS: placeOrder(patronId from the session, items, slot)
-    alt after the 10:00 cut-off (3a)
-        OS-->>OC: refused, CUTOFF_PASSED
-    else
-        OS->>MS: findAvailableItems(today)
-        alt an item sold out (4a)
-            OS-->>OC: refused, ITEM_UNAVAILABLE, with the item
+    actor S as Student
+    participant WEB as Web Application
+    participant ID as Identity and access
+    participant BA as Baseline assessment
+    participant DB as Application Database
+    S->>WEB: Begin the assessment (step 1)
+    WEB->>ID: Request the assessment questions
+    ID->>BA: Authorized student
+    BA-->>WEB: Explanation and questions (step 2)
+    S->>WEB: Begin, answer each question (steps 3 to 7)
+    WEB-->>S: Completed assessment for review (step 8)
+    S->>WEB: Submit (step 9)
+    WEB->>ID: Submit responses
+    ID->>BA: Responses for the authorized student
+    BA->>BA: Validate required responses (step 10)
+    alt a required response is missing (10a)
+        BA-->>WEB: Errors naming the unanswered questions (10a1)
+        WEB-->>S: Ask for the missing responses; rejoin at step 10 (10a2, 10a3)
+    else all required responses present
+        BA->>DB: Store responses and completion state in one transaction (step 11)
+        alt the save fails (11a)
+            DB-->>BA: Failure
+            BA-->>WEB: Save error; nothing marked complete (11a1)
+            WEB-->>S: Could not save; entered responses kept for a retry (11a1, 11a2)
+        else saved
+            DB-->>BA: Saved
+            BA-->>WEB: Completed
+            WEB-->>S: Confirm completion (step 11)
         end
-        OS->>PC: authorizeDeduction(patronId, total) (step 7)
-        alt patron not registered for deduction (7a)
-            PC-->>OS: declined
-            OS-->>OC: refused, PAYROLL_NOT_REGISTERED
-        end
-        OS->>OS: store the order (step 8)
-        OS-->>OC: order number, delivery slot
     end
-    OC-->>WEB: 201, or the error for the extension
-    WEB-->>P: Confirmation (step 9), or what to fix
 ```
 
 ## API contract
 
-_[One row per endpoint, scheduled job, or message this area adds or changes, appended per use case. **This section is never dropped**: before the code exists it is the only thing the person (or agent session) building the front end and the one building the back end both read. Name the caller and who may call it, the request fields, the success response, and the error each extension returns. Leave field types and exact JSON to the agent unless a wrong guess would break something, such as a format another system depends on. Use the error shape your architecture-of-record's section 8.2 fixes; do not invent one here._
+_[One row per endpoint, scheduled job, or message this area adds or changes, appended per use case. **This section is never dropped**: before the code exists it is the only thing the person (or agent session) building the front end and the one building the back end both read. Name the caller and who may call it, the request fields, the success response, and the error each extension returns. Leave field types and exact JSON to the agent unless a wrong guess would break something, such as a format another system depends on. Use the error shape your architecture-of-record's section 8.2 fixes; do not invent one here.]_
 
-_Example:]_
+The URL prefix (8.2.3) and the error shape (8.2.1) are required by the architecture-of-record but not yet defined there, so the operations below have no paths or status codes yet.
 
-| Endpoint or job | Caller (who may) | Request | Success | Errors, by extension |
+| Operation | Caller (who may) | Request | Success | Errors, by extension |
 |---|---|---|---|---|
-| _`POST /api/orders`_ | _A signed-in patron, for herself only; the patron comes from the session, never the body_ | _Menu item ids and quantities, delivery slot id_ | _`201`: order number, total, delivery slot_ | _3a: `409 CUTOFF_PASSED`. 4a: `409 ITEM_UNAVAILABLE` naming the item. 7a: `402 PAYROLL_NOT_REGISTERED`. Not signed in: `401`._ |
-| _`GET /api/orders/{orderId}`_ | _The patron who placed it, or cafeteria staff_ | _None_ | _`200`: items, total, slot, status_ | _Another patron's order: `404`, so the response does not reveal that the order exists (`QS-cross-employee-order-denied`)._ |
+| Get the assessment (step 2) | A signed-in student; identity from the Supabase session, never from the request (8.1) | None | The explanation and the questions, marking which are required | Not signed in: refused (`SEC-authentication`). |
+| Submit responses (steps 9 to 11) | A signed-in student, for themselves only; identity from the session, never from the request (8.1) | A response for each question | Completion confirmed | 10a: validation error naming each unanswered required question, nothing stored. 11a: save error, nothing stored and not marked complete. Not signed in: refused (`SEC-authentication`). |
 
 ## Key decisions
 
 _[Only the decisions a reader could not recover from the code: an invariant, who may do this and how it is enforced, a trade-off you chose, a reason you reused something rather than writing it. **Each one names what you chose, what you rejected, and why.** If you cannot name an alternative you considered, it probably was not a decision; leave it out._
 
-_A decision that affects the whole system rather than this area is an architecture decision. It belongs in your architecture-of-record as a `KD-*` entry, not here._
+_A decision that affects the whole system rather than this area is an architecture decision. It belongs in your architecture-of-record as a `KD-*` entry, not here.]_
 
-_Example:]_
-
-**_When the payroll deduction is authorized._** _Before the order is stored, in the same request. Rejected: storing the order first and charging later in a batch, because a declined deduction would then cancel an order the kitchen has already started (`ROB-order-persisted` promises the patron that a confirmed order stands)._
-
-**_How the cut-off is checked._** _On the server, against the injected clock, in the cafeteria's time zone (architecture-of-record 8.2, time). Rejected: hiding the order button after 10:00 in the browser, because the browser's clock is the patron's and the check would be advisory._
+**When the assessment is marked complete.** In the same transaction that stores the validated responses (architecture-of-record 6.2, 8.2.8). Rejected: storing responses and setting completion in separate steps, because a failure between them could mark a student complete without their responses, which `UC-BNCH-complete-baseline-assessment` forbids (POST-2, extension 11a, and the completion-status rule in its Associated Information).
 
 ## Data model
 
 _[The **change** this area makes to the data: new tables or entities, new columns, the migration that adds them. Draw an ER diagram when there is more than one new table. Do not redraw the domain model; your [specification](../requirements/software-requirements-specification.md) owns it, so link it and show only the change. If the area changes nothing, say "No change" and give the reason in one line; that is a design decision too.]_
 
+The specification's domain model (section 7.1) still holds only the template example, so this lists what the area must store rather than tables:
+
+- **Baseline responses**, each belonging to one student: a selection or text, required for required questions, visible only to that student and authorized system functions (use case, Associated Information).
+- **Completion state** for each student: set only after all required responses are stored (use case, Associated Information).
+- Each record carries its owning student and its created and last-changed times, in UTC (architecture-of-record 8.2.9, 8.2.2).
+
+Not yet decided, and changing the model: whether the questions themselves are stored in the database, and whether retakes keep earlier responses (see Open questions).
+
 ## Reuse & cross-cutting
 
 _[Which existing services, components, and conventions this area uses rather than rebuilding: authentication, the error handler, email, the clock, another area's service. Cite your architecture-of-record's section 8.2 for each convention by name rather than restating it.]_
 
+- **Authentication and authorization**: Identity and access with Supabase Auth (8.1). The instructor never sees baseline response content (8.1, Authorization).
+- **Error handling**: one error shape from one place (8.2.1).
+- **API conventions**: one URL prefix, JSON responses (8.2.3).
+- **Validation**: the Application API's check is the one that counts; any check in the Baseline page is a convenience (8.2.5).
+- **Logging**: never log baseline response content (8.2.7).
+- **Persistence**: one transaction per submission (8.2.8).
+- **Auditing**: owner and timestamps on every record (8.2.9).
+- **Time**: the Application API's clock, stored in UTC (8.2.2).
+- **Configuration and secrets**: environment variables, never in the repository (8.2.6).
+- **Testing**: made-up student data only (8.2.10).
+- **Web Application shell**: `AppLayout` and `PageHeader` (project README, Development guidelines).
+
 ## Tests
 
-_[One row per flow: the main success scenario and **every** extension of every use case this document realizes, appended per use case. Name the level (unit or integration) and what the test asserts. No code. This list is the definition of done that the reviewer approves; the agent writes these tests when it builds, and a reviewer can see at a glance whether an extension has no test._
-
-_Example:]_
+_[One row per flow: the main success scenario and **every** extension of every use case this document realizes, appended per use case. Name the level (unit or integration) and what the test asserts. No code. This list is the definition of done that the reviewer approves; the agent writes these tests when it builds, and a reviewer can see at a glance whether an extension has no test.]_
 
 | Use case, flow | Level | Asserts |
 |---|---|---|
-| _UC-ORD-place-order main_ | _integration_ | _A registered patron's order before 10:00 is stored, charged once, and returned with an order number_ |
-| _UC-ORD-place-order 3a_ | _unit_ | _At 10:00:01 by the injected clock the order is refused with `CUTOFF_PASSED` and nothing is stored or charged_ |
-| _UC-ORD-place-order 4a_ | _unit_ | _A sold-out item refuses the whole order and names the item_ |
-| _UC-ORD-place-order 7a_ | _integration_ | _A declined deduction stores no order_ |
-| _Authorization_ | _integration_ | _A patron requesting another patron's order gets `404`_ |
+| UC-BNCH-complete-baseline-assessment main | unit (Application API) | Complete, valid responses are stored for the signed-in student and the assessment is marked complete |
+| UC-BNCH-complete-baseline-assessment 10a | unit (Application API) | A missing required response is rejected with errors naming each unanswered question, and nothing is stored |
+| UC-BNCH-complete-baseline-assessment 10a | component (Web Application) | The Baseline page shows which questions to complete and keeps the answers already given |
+| UC-BNCH-complete-baseline-assessment 11a | unit (Application API) | When the save fails, no responses are stored and the assessment is not marked complete |
+| UC-BNCH-complete-baseline-assessment 11a | component (Web Application) | The Baseline page shows the save error and keeps the entered responses for a retry |
+| Authentication | unit (Application API) | A request without a valid session is refused and returns no assessment data (`SEC-authentication`) |
+| Student isolation | unit (Application API) | Responses are stored for, and read back only by, the student in the session; a student identifier in the request is ignored (`SEC-student-isolation`) |
+| Logging | unit (Application API) | No log entry written during a submission contains response content (8.2.7) |
 
 ## Changes to the architecture-of-record
 
 _[Designing an area against real code is when the architecture's guesses meet reality. If this design needs a component the map does not have, moves a responsibility, or adds a dependency, **change [the architecture-of-record](architectural-design.md) in the same pull request** and list each change here in one line. If nothing changed, write "None". A design that silently disagrees with the architecture leaves two maps, and the agent will follow whichever it reads last.]_
 
+None.
+
 ## Open questions & risks
 
 _[What this design could not settle and who can, and what could go wrong that you are accepting. A question for the client also goes in [`OPEN-ISSUES.md`](../requirements/OPEN-ISSUES.md).]_
+
+**For the client** (also to add to `OPEN-ISSUES.md`, which has no entries yet):
+
+- Is completing the assessment mandatory? (use case, Open Issues)
+- Can students retake it, and if so, are earlier responses kept? This changes the data model and the API. (use case, Open Issues and Frequency of Use)
+- What are the exact questions and answer options? `FEAT-benchmark-quiz` names preferred time of day, session length, and methods; the use case also mentions print versus digital study and office-hours use; which study methods to list is open (`OI-STUDY-METHODS`).
+- Must students sign in at all (`OI-ANONYMITY`, `OI-PRIVACY`)? Anonymous use would change how responses are associated with a student. Sign-in in 8.1 is provisional.
+- How long are baseline responses kept, and when are they deleted (`OI-PRIVACY`; specification 7.4 is empty)?
+
+**For the team:**
+
+- Does step 6 ("records the response") mean saving each answer on the server as the student goes, or holding answers in the Web Application until submission, as architecture-of-record 6.2 shows?
+- Where do the questions live: in the database or in code?
+- How does the Web Application keep entered responses for a retry after a failed save (architecture-of-record 6.2 leaves the client-storage mechanism open)?
+- Define the URL prefix (8.2.3) and the error shape (8.2.1) before the API contract rows can name paths and status codes.
+- Settle the Application API's server technology: section 5.2 says TBD while 8.2.4 says Python, and the chatbot prototypes on unmerged branches run as TypeScript Cloudflare Workers.
+- The use case cites the glossary terms "Study habits" and "Baseline assessment", but the project glossary does not define them yet.
+
+**Risks accepted:**
+
+- Students may guess or answer dishonestly, so self-reported habits may not match logged behavior (`RI-benchmark-survey-noise`). The vision's mitigation is a short assessment of about 5 questions, compared with the first two weeks of logged sessions.
+- Baseline responses are identifiable student data (`RI-privacy-exposure`) and are also sent to the Language Model Service (architecture-of-record 8.1).
 
 ---
 
