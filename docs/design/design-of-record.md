@@ -102,13 +102,13 @@ sequenceDiagram
     BA->>BA: Validate required responses (step 10)
     alt a required response is missing (10a)
         BA-->>WEB: Errors naming the unanswered questions (10a1)
-        WEB-->>S: Ask for the missing responses; rejoin at step 10 (10a2, 10a3)
+        WEB-->>S: Ask for the missing responses, then rejoin at step 10 (10a2, 10a3)
     else all required responses present
         BA->>DB: Store responses and completion state in one transaction (step 11)
         alt the save fails (11a)
             DB-->>BA: Failure
-            BA-->>WEB: Save error; nothing marked complete (11a1)
-            WEB-->>S: Could not save; entered responses kept for a retry (11a1, 11a2)
+            BA-->>WEB: Save error, nothing marked complete (11a1)
+            WEB-->>S: Could not save, entered responses kept for a retry (11a1, 11a2)
         else saved
             DB-->>BA: Saved
             BA-->>WEB: Completed
