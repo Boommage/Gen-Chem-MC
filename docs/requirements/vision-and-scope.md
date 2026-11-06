@@ -296,9 +296,11 @@ flowchart LR
 
 **In scope for the MVP (December):** `FEAT-guided-chatbot`, `FEAT-course-grounding`, `FEAT-benchmark-quiz`, `FEAT-pomodoro-timer`, `FEAT-study-session-log`, `FEAT-reflection`.
 
+The Checkpoint 2 prototype demonstrates Gemma Coach with text and images. See the [checkpoint review](../checkpoint-2-review.md) for what is built and the [traceability matrix](../traceability.md#scope-gaps-for-review) for MVP items that still need use cases.
+
 **Candidates, pending client decision:**
 - `FEAT-chat-modes`: the client responded positively but did not commit (`OI-MODES`).
-- `FEAT-study-planning`: appears in the frontend (Study page, "Help me plan for my exam"). Needs client confirmation that it stays within `BR-no-content-teaching`.
+- `FEAT-study-planning`: appears as a Coach starter prompt ("Help me plan for my exam"). A dedicated planning workflow is future scope. Needs client confirmation that it stays within `BR-no-content-teaching`.
 - `FEAT-account-consent`: the client wants identifiable data for research and possibly anonymous use; the model is not decided (`OI-ANONYMITY`, `OI-PRIVACY`).
 - `FEAT-safety-escalation`: requires a policy decision on who is alerted and when (`OI-SAFETY-ESCALATION`). Must be decided explicitly, not left out by default.
 

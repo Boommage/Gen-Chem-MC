@@ -59,7 +59,7 @@ _Example, from the Cafeteria Ordering System:]_
 | Priority | Quality goal | Specification handles | Why it shapes the architecture |
 |---|---|---|---|
 | 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | The client calls an answer leak a "hard stop" (`SM-no-answer-leak`), and it is the product's one difference from general AI tools. The rule lives mainly in instructions to a general-purpose model, which students can get around by rephrasing (`RI-chatbot-gives-answer`). |
-| 2 | A student's study data is seen only by that student and, as usage figures, the instructor | `SEC-authentication`, `SEC-student-isolation` | The system stores identifiable study and reflection data, which is FERPA-protected once combined with grades (`RI-privacy-exposure`). Students already avoid help when they fear judgment, so the content of chats and reflections has to stay private to the student. |
+| 2 | A student's study data is seen only by that student and, as usage figures, the instructor | `SEC-authentication`, `SEC-student-isolation` | The target system may store identifiable study and reflection data (`RI-privacy-exposure`). Students already avoid help when they fear judgment, so the content of chats and reflections has to stay private to the student. |
 | 3 | An outage of an external service does not take the rest down | `ROB-external-service` | The chatbot depends on a hosted language model service the team does not control (`AS-llm-service`). The study timer and study log have to keep working when it is unavailable. |
 
 ### 1.3 Stakeholders
@@ -73,7 +73,7 @@ _[The constraints the architecture has to honor. They are already written as `CO
 _Your technology stack is a constraint only if something external fixes it: the client's IT department, an existing system, or the person who maintains this after you graduate. A stack your team chose is a decision, and it goes in section 9 with the alternative you rejected.]_
 
 - `OE-web-browser`
-No `CO-*` constraint is recorded. Nothing outside the team fixes the technology stack: Vercel, Supabase, Python, and React are the team's choices (section 4), not constraints. Who hosts, pays for, and maintains the system after the team graduates is still open with the client (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5), and the answer may add a constraint.
+No `CO-*` constraint is recorded. The prototype stack is a team choice (section 4). Who hosts, pays for, and maintains the system after the team graduates is still open with the client (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5), and the answer may add a constraint.
 
 ## 3. Context and Scope
 
@@ -97,7 +97,7 @@ C4Context
     
     System(sa, "Study Assistant", "Coaches students to break down problems themselves, records study sessions, prompts reflection")
 
-    System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
+    System_Ext(llm, "Cloudflare Workers AI / Gemma", "Produces coaching replies from text and images")
     System_Ext(materials, "Course Material Sources", "The client's YouTube lecture videos, D2L materials, and Google Drive content")
     System_Ext(auth, "Supabase Auth", "Issues sign-in credentials and emails verification codes")
 
@@ -117,10 +117,9 @@ _[Three to five bullets: the few moves that shape everything else. arc42 suggest
 
 _Each bullet is one sentence, and it cites what explains it: the key decision in section 9.2 where one exists, and otherwise the quality goal and the building block in section 5 it shapes. Keep it short; the reasoning lives in section 9. A bullet that cites nothing is either not load-bearing, or it is a decision you have not written down yet._
 
-- **One deployable with one managed database** (`KD-deployment-shape`), because the load is small (`SCA-concurrent-users`) and the future maintainer is unknown (`OI-MAINTENANCE`).
-- **A React and TypeScript single-page application in the browser, with every rule enforced in a Python Application API** (section 5.1), because browser code cannot hold the language model credential or enforce student isolation (quality goal 2).
-- **Sign-in is bought, not built**: Supabase Auth issues credentials and stores passwords (section 8.1), so the system never handles a password itself (`SEC-passwords`).
-- **One component is the only path to the Language Model Service** (Coach and model gateway, section 5.2), so the reply check that `RI-chatbot-gives-answer` calls for runs in one place (quality goal 1) and a model outage is contained there (quality goal 3).
+- **Checkpoint 2 runs a React/TypeScript browser app and a separate TypeScript Cloudflare Worker** (`KD-typescript-worker`). Vite and Node.js support local development.
+- **The Coach gateway makes the model call.** It sends text and images to hosted Gemma through a Workers AI binding, applies the coaching prompt, and checks the response shape. Semantic verification remains open.
+- **Future student data goes through an authenticated API.** Managed authentication and PostgreSQL on Supabase are design candidates. Identity, persistence, and access control are future work.
 - **Divided by use case area, with identity resolved in one cross-cutting component** (Identity and access, section 5.2), so the rule that a student reaches only their own records is enforced the same way for every area (quality goal 2).
 
 ## 5. Building Block View
@@ -128,6 +127,8 @@ _Each bullet is one sentence, and it cites what explains it: the key decision in
 _Due: Checkpoint 1. This section is most of what your TA checks._
 
 ### 5.1 Containers
+
+The diagram describes the target system. For the checkpoint implementation, see the [as-built runtime](#checkpoint-2-prototype-as-built).
 
 ```mermaid
 C4Container
@@ -138,11 +139,11 @@ C4Container
 
     System_Boundary(neocortex, "Neocortex") {
         Container(spa, "Web Application", "React 19 / TypeScript / Vite", "Browser UI for dashboard, study planning and sessions, coaching, and progress")
-        Container(api, "Application API", "Python", "Every business rule; enforces student-data access and is the only container that reaches the database, the language model, and the course materials")
-        ContainerDb(db, "Application Database", "PostgreSQL on Supabase", "Student email, baseline responses, study sessions, confidence ratings, reflections, and compressed chat history")
+        Container(api, "Application API", "TypeScript Worker", "Coach requests today; future student-data access and grounding")
+        ContainerDb(db, "Application Database (proposed)", "PostgreSQL on Supabase", "Future student-owned records; chat retention and representation are open")
     }
 
-    System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
+    System_Ext(llm, "Cloudflare Workers AI / Gemma", "Produces coaching replies from text and images")
     System_Ext(materials, "Course Material Sources", "Client YouTube videos, D2L materials, and Google Drive content")
     System_Ext(auth, "Supabase Auth", "Issues sign-in credentials and emails verification codes")
 
@@ -156,11 +157,11 @@ C4Container
     Rel(materials, api, "Grounding content", "Loaded by hand by the team")
 ```
 
-The system is one application and one database because the load is small and nobody is yet identified to operate more (`KD-deployment-shape`). The Web Application is a separate container only because it runs in the browser; it ships in the same Vercel project as the Application API. The browser reaches student data only through the Application API, because browser code cannot safely hold the language model credential or enforce student isolation. The Web Application is already implemented as a front-end shell; the Application API and the Application Database are not built yet.
+Checkpoint 2 has a working Coach API and page shells for Dashboard, Study, and Progress. The Application Database, student identity, reporting, and grounding shown in the target diagram are future work. The future API must authorize access to student records server-side.
 
 ### 5.2 Use case areas and components
 
-The component view zooms into the proposed Application API. `BNCH` is the only use-case area currently defined in [the use-case list](../requirements/use-cases.md#3-use-case-list); the remaining rows are cross-cutting homes for the external systems and system-wide rules already in scope. They are all provisional until a use case establishes and tests their boundaries. The React implementation currently has page-level prototype components under `gen-chem-mc/src/`; it has no API packages yet, so these names are responsibilities rather than claimed code packages.
+The component view describes planned Application API responsibilities. The current use cases are listed in the [requirements](../requirements/use-cases.md#2-use-case-list). The prototype Worker implements Coach; the student identity, database, and course-material components shown here are future design.
 
 ```mermaid
 C4Component
@@ -168,7 +169,7 @@ C4Component
 
     Container(spa, "Web Application", "React 19 / TypeScript", "Student dashboard, study, coach, and progress views")
 
-    Container_Boundary(api, "Application API (server technology TBD)") {
+    Container_Boundary(api, "Application API (TypeScript Worker)") {
         Component(identity, "Identity and access", "Authentication and authorization", "Identifies the caller, records consent, and applies student-level access control")
         Component(baseline, "Baseline assessment", "BNCH use-case component", "Presents the study-habits assessment, validates responses, and records completion")
         Component(study, "Study record", "Future feature component", "Owns study-session, plan, reflection, and progress records when their use cases are specified")
@@ -190,7 +191,7 @@ C4Component
     Rel(baseline, db, "Stores and reads student-specific responses", "Database protocol TBD")
     Rel(study, db, "Stores and reads student-specific records", "Database protocol TBD")
     Rel(coach, content, "Requests approved grounding context from")
-    Rel(coach, llm, "Requests constrained coaching replies", "HTTPS; provider API TBD")
+    Rel(coach, llm, "Requests constrained coaching replies", "Workers AI binding")
     Rel(content, db, "Stores material references and provenance", "Database protocol TBD")
 ```
 
@@ -208,7 +209,7 @@ The other components exist because their responsibilities cut across individual 
 
 ## 6. Runtime View
 
-Key runtime scenarios show how Neocortex's building blocks collaborate. The physical topology belongs in [Deployment View](#7-deployment-view). The current frontend prototype has no authentication, API, database, or external integrations, so these are target flows derived from the confirmed use case and quality requirements; the API routes, identity mechanism, and provider contracts remain to be designed.
+Sections 6.1–6.3 are target flows. Section 6.2 records the original baseline submission design. The required first-sign-in gate, saved draft, and default study preferences need design review before implementation.
 
 ### 6.1 Authentication and an authorized request
 
@@ -267,7 +268,7 @@ sequenceDiagram
     end
 ```
 
-This is the first confirmed end-to-end server flow. Completion is returned only after the database has saved both the valid responses and the completion state, so a failed save cannot leave the student marked complete. The browser may retain unsaved responses for retry, but the exact client-storage mechanism remains a design decision; the required behavior is the retry-preservation rule in `UC-BNCH-complete-baseline-assessment` and `ROB-invalid-data`.
+This is the original baseline submission design. Completion is returned only after the database has saved both the valid responses and the completion state, so a failed save cannot leave the student marked complete. The browser may retain unsaved responses for retry, but the exact client-storage mechanism remains a design decision; the required behavior is the retry-preservation rule in `UC-BNCH-complete-baseline-assessment` and `ROB-invalid-data`.
 
 ### 6.3 AI coaching request — future feature flow
 
@@ -299,9 +300,20 @@ sequenceDiagram
     end
 ```
 
-The coach gateway is the only component that contacts the Language Model Service. It obtains only approved course context from the course-material gateway and applies the product's guidance and transparency controls before a response reaches the browser (`SAF-ai-guidance`, `SAF-ai-transparency`). A language-model failure ends only the coaching request; it does not block study-session, assessment, planning, reflection, or progress operations (`ROB-external-service`). This flow is provisional until the coach use case, provider API, and safety-review design are established.
+The coach gateway is the only component that contacts the Language Model Service. It obtains only approved course context from the course-material gateway and applies the product's guidance and transparency controls before a response reaches the browser (`SAF-ai-guidance`, `SAF-ai-transparency`). A language-model failure ends only the coaching request; it does not block study-session, assessment, planning, reflection, or progress operations (`ROB-external-service`). The grounding and safety-review steps in this target flow still need design and verification.
+
+### Checkpoint 2 prototype as built
+
+1. The browser posts to `/api/coach`. The local Vite proxy forwards the request to the team Worker with the server-side team token.
+2. The Worker checks authorization and validates input. It sends a bounded window of recent turns, including permitted images, to `@cf/google/gemma-4-26b-a4b-it` through the Workers AI binding. The gateway requests the final reply with model thinking disabled.
+3. The Worker checks completion and reply shape and can emit a `coach_usage` event with operational metadata. The UI shows a Thinking indicator while waiting, formats the returned reply with Markdown and KaTeX, and offers retry or edit when a request fails.
+4. The transcript lives in the current Coach view. Reloading or leaving it clears the conversation. Student identity, history storage, course retrieval, and semantic answer checking are future work.
+
+[Coach page](../../gen-chem-mc/src/pages/Coach.tsx) · [Worker gateway](../../gen-chem-mc/backend/model.ts) · [Wrangler configuration](../../gen-chem-mc/wrangler.jsonc)
 
 ## 7. Deployment View
+
+For Checkpoint 2, the browser app runs through Vite on the teammate's machine and the shared Coach Worker runs on Cloudflare. Teammates use the existing team URL and token from the [setup guide](../gemma-setup.md); Worker deployment is an owner operation. Reloading clears the in-memory chat. Production frontend hosting, student-data storage, and ownership are open ([OI-8](../requirements/OPEN-ISSUES.md#open)).
 
 _Due: Checkpoint 3. [Filled in once your pipeline exists, after week 11. Three things:_
 
@@ -321,15 +333,17 @@ _Due: named at Checkpoint 1, detailed at Checkpoint 2._
 
 _[Four short paragraphs. The last three each cite the `SEC-*` requirement they answer:_
 
-**Trust boundary.** The Application API is the trust boundary. The Web Application in the browser, Supabase Auth, the Language Model Service, and the Course Material Sources sit outside it. Every request that crosses it is authenticated and authorized, and that covers every path the Application API answers, framework endpoints included. The Web Application never reads the Application Database directly.
+**Prototype trust boundary.** The Worker protects Coach with the shared team token. The local Vite proxy injects the token outside the browser bundle. The token authorizes a team request and identifies no student. The browser has no direct Workers AI credentials.
+
+**Future trust boundary.** The Application API must authenticate student-data requests, enforce ownership and role permissions, and mediate browser access to the database.
 
 **Authentication.** _Provisional (`OI-ANONYMITY`)._ A student signs up with their TCU email address and a password, and confirms the address with a verification code sent by email. Supabase Auth issues the credential, stores the password as a hash (`SEC-passwords`), and sends the code. The Application API answers a request for student data only when it carries a valid Supabase session (`SEC-authentication`).
 
-**Authorization.** _Provisional (`OI-PRIVACY`): the client has not yet specified the instructor view (vision and scope 3.1)._ There are two roles, student and instructor. A student reaches only their own records (`SEC-student-isolation`), and the Application API scopes every request by the signed-in identity, never by an identifier the browser supplies. The instructor sees the number of users and, per student and as class averages, confidence ratings, chatbot usage, and study-session usage. The instructor does not see the content of chats, reflections, or baseline responses.
+**Future authorization.** A student can access only their own records (`SEC-student-isolation`), scoped by verified session identity. The instructor sees approved per-student metrics and class averages. When a student chooses Private, their metrics appear under a pseudonym. Chat content, reflections, and baseline answers remain private in every mode. The team still needs client review of the metrics, visibility outside Private, and retention ([OI-3](../requirements/OPEN-ISSUES.md#open)).
 
-**Sensitive data.** The Application Database stores each student's email address, baseline responses, study sessions, confidence ratings, reflections, and a compressed form of their chat history, all identifiable (`RI-privacy-exposure`). How the chat history is compressed is not yet decided. The Language Model Service receives a student's baseline responses and compressed chat history along with the current message, and never the student's email address. No grades are stored in the MVP (`SEC-grade-consent`). Retention and disposal are not yet defined: section 7.4 of the specification is empty and the question is open with the client (`OI-PRIVACY`).
+**Sensitive data.** The prototype forwards bounded chat text and images to hosted Gemma and has no application database. The future model context, history representation, and retention are open. Use baseline answers to initialize study preferences. Sending baseline answers to the model would require a separate data-use decision. See [specification §7.4](../requirements/software-requirements-specification.md#74-data-acquisition-integrity-retention-and-disposal).
 
-**Secrets.** The Supabase keys and the language model key live in the Vercel project's environment variables and never in the repository.
+**Secrets.** For the prototype, the team token is held in an ignored local environment file and a Cloudflare Worker secret. The Worker invokes Gemma using its Workers AI binding. Future database and identity credentials belong in server-side configuration.
 _Secrets (passwords, API keys, connection strings) never appear in this document or in the repository. Say where they will live, not what they are.]_
 
 ### 8.2 Other concepts
@@ -355,13 +369,13 @@ _One short subsection each: the rule in one sentence, why, and the file that sho
 
 **8.2.2 Time and time zones.** The Application API's clock decides every timestamp, times are stored in one standard format in UTC, and tests can set the clock. Why: `INT-calendar` requires a standardized date and time format, and the study log records time of day (`FEAT-study-session-log`), which is wrong if each browser's clock is trusted.
 
-**8.2.3 API conventions.** Every Application API endpoint sits under one URL prefix and returns JSON, and a failure uses the error shape in 8.2.1. Why: the Web Application has one way to call the API and one way to read a failure, and the prefix keeps API routes apart from the front end's routes inside one deployable (`KD-deployment-shape`).
+**8.2.3 API conventions.** The Worker uses the `/api` prefix. Coach errors use JSON with `error.code` and `error.message`. Future APIs should use the same convention.
 
-**8.2.4 Code conventions.** The Web Application is written in TypeScript with React and the Application API in Python; the browser calls only the Application API and Supabase Auth, and no component except Coach and model gateway calls the Language Model Service. Why: the browser cannot hold the model credential (section 5.1), and the reply check has to run in one place (`SAF-ai-guidance`).
+**8.2.4 Code conventions.** The React browser app and Coach Worker use TypeScript. Node.js runs local tooling and the mock server. Cloudflare runs the deployed Worker. The model call and coaching prompt belong in the server gateway.
 
 **8.2.5 Validation.** Input is checked in the Application API before anything is saved, and that check is the one that counts; a check in the Web Application is only a convenience. Why: `ROB-invalid-data` requires invalid or incomplete data to be rejected with a message, and the browser sits outside the trust boundary (section 8.1).
 
-**8.2.6 Configuration and secrets.** Everything that differs between development and production, and every secret, is read from environment variables, set in the Vercel project for production and in an uncommitted local file for development. Why: the Supabase keys and the language model key are secrets (section 8.1), and `MNT-setup` requires a new developer to configure the system from the README.
+**8.2.6 Configuration and secrets.** See the [Gemma setup guide](../gemma-setup.md) for Wrangler configuration and server-only local settings. Keep secrets out of version control and browser code (`MNT-setup`).
 
 **8.2.7 Logging.** The Application API logs failures as errors, refused requests and external-service failures as warnings, and sign-ins and completed actions as information, and it never logs the content of chat messages, reflections, or baseline responses. Why: that content is the identifiable student data named in `RI-privacy-exposure`, and a log is a second copy of it that `SEC-student-isolation` does not protect.
 
@@ -369,7 +383,7 @@ _One short subsection each: the rule in one sentence, why, and the file that sho
 
 **8.2.9 Auditing.** Every stored record carries the student who owns it and the time it was created and last changed, and the MVP keeps no separate audit trail. Why: only the owner can change their own records (`SEC-student-isolation`), so the owner and the timestamps already answer who changed what and when.
 
-**8.2.10 Testing.** Every pull request runs unit tests for the Application API's components and component tests for the Web Application, using made-up student data only, and every release runs the team-maintained adversarial prompt set against the chatbot. Why: `SM-no-answer-leak` is measured by that prompt set with a target of zero leaks, and real student data in a test is the exposure `RI-privacy-exposure` describes.
+**8.2.10 Testing.** CI runs lint, type checks, automated tests, and the frontend build. Tests use fabricated inputs. Model behavior needs a repeatable adversarial set with text, images, and multi-turn prompts before the team can evaluate `SM-no-answer-leak`. See [OI-5](../requirements/OPEN-ISSUES.md#open).
 
 
 ## 9. Architecture Decisions
@@ -400,13 +414,20 @@ _A decision without a **rejected alternative** is not a decision, it is a descri
 
 _A decision that turns out wrong is not deleted or rewritten. Mark it **Superseded by `KD-<new-slug>`** and write the new decision as its own entry, so the reasoning behind both stays readable._
 
-**`KD-deployment-shape`: one deployable.** _Accepted; revisit when `OI-HOSTING` is answered._
+**`KD-deployment-shape`: one deployable.** _Superseded for Checkpoint 2 by `KD-typescript-worker`. The original decision is preserved below._
 
 - **Driving requirements:** `SCA-concurrent-users`; `MNT-setup`.
 - **Context:** About 185 students in one course with one instructor (vision and scope 3.2), an MVP limited to that course (`AS-freshman-scope`), and nobody yet identified to host or maintain the system after the team graduates (`OI-HOSTING`, `OI-MAINTENANCE`).
 - **Decision:** The Web Application and the Application API ship together as one Vercel project, with one managed database on Supabase. The three containers in section 5.1 remain, but the team deploys only one thing.
 - **Rejected:** Separately deployed services, with the Coach and model gateway running apart from the rest of the Application API. That would add network calls, a second deployment, and failure modes between the two, to solve a scaling problem that the load in `SCA-concurrent-users` does not create. The isolation `ROB-external-service` asks for is met inside one deployable, because the gateway is the only component that calls the Language Model Service (section 5.2).
 - **Trade-off:** The system scales only as a whole, and a bad deploy takes coaching and study recording down together. A scalability requirement well beyond `SCA-concurrent-users`, such as a school-wide rollout (`FEAT-school-wide`, postponed), would have forced separate services.
+
+**`KD-typescript-worker`: Keep the working TypeScript Coach and hosted Gemma.** _Checkpoint 2 prototype decision, November 6, 2026._
+
+- **Context.** The merged prototype runs text and images on one team endpoint. The original one-deployable design assumed a Python API on Vercel.
+- **Decision.** Use the React/TypeScript app, local Vite proxy, and TypeScript Cloudflare Worker with a Workers AI binding. This records the prototype deployment. Confirm production frontend hosting and ownership separately.
+- **Alternatives considered.** A Python/Vercel rewrite adds migration work to a frozen demo. The local Ollama/Qwen experiment requires a separate machine and offers no evidence of class-wide availability.
+- **Trade-off.** The frontend and Worker have separate runtime boundaries. The prototype depends on the shared endpoint, its server-side token, and the hosted model quota. Capacity for the class is unverified.
 
 ## 10. Quality Requirements
 
@@ -424,7 +445,7 @@ _**Verified by** names the test, or the repeatable manual check, that shows the 
 
 | ID | Source and stimulus | Environment | Response | Measure | Verified by |
 |---|---|---|---|---|---|
-| _`QS-cross-employee-order-denied`_ | _A signed-on patron requests another patron's order by its ID_ | _Normal operation_ | _Refused before any order data is read_ | _Every such request is refused and returns no order fields (`SEC-employee-own-orders`)_ | _An integration test that signs in as one patron and requests another patron's order_ |
+| `QS-coach-unavailable` | A tester submits a Coach message while the model is unavailable or returns an unusable response | Checkpoint prototype using a stubbed model failure | Coach shows an understandable error and offers retry or edit. Other routes remain accessible. | `ROB-external-service`: report the integration failure and keep unrelated features usable. Checkpoint 2 can check navigation; functional study workflows are future work. | [Worker failure tests](../../gen-chem-mc/backend/model.test.ts) and [Coach recovery tests](../../gen-chem-mc/src/pages/Coach.test.tsx) cover error translation and recovery controls. Manual navigation check is on the checkpoint checklist. |
 ## 11. Risks and Technical Debt
 
 _Due: Checkpoint 2, kept current after._
@@ -437,7 +458,9 @@ _A risk written as a category ("security", "performance") is not a risk. Write t
 
 | ID | Type | What could go wrong, and what it breaks | Mitigation or fix | Cites |
 |---|---|---|---|---|
-| _`RISK-payroll-api-unavailable`_ | _Risk_ | _Nobody has seen the Payroll System's interface. If it only accepts a nightly batch file, ordering cannot confirm payment at order time._ | _Ask for the interface document at the next client meeting; build Payment against a stub until then._ | _`DE-payroll-integration`, `OI-4`_ |
+| `TD-coach-semantic-verification` | Debt | Prompt and response-shape checks cannot establish that Gemma withheld the solution, particularly across turns or with an image. | Define labeled, fabricated multi-turn text and image cases and review outputs against the coaching rules. | `SAF-ai-guidance`, `SM-no-answer-leak`, OI-5 |
+| `RISK-free-ai-quota` | Risk | A burst of class traffic can exhaust the shared inference allowance or increase response times. | Use synthetic workloads, check Workers AI usage, and measure expected class traffic before rollout. | `SCA-concurrent-users`, `PER-ai-response`, OI-8 |
+| `RISK-student-data-access` | Risk | Using team access or browser-supplied identifiers for persisted student data could expose one student's records to another. | Establish verified identity, ownership checks, and cross-user tests before saving student records. | `SEC-authentication`, `SEC-student-isolation`, OI-1, OI-3 |
 
 ## 12. Glossary
 

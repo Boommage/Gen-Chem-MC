@@ -1,6 +1,6 @@
 # Gemma image setup
 
-Image and text coaching are now combined on **`codex/gemma-unified-integration`**. Use the [current Gemma setup guide](gemma-setup.md) for both.
+Image and text coaching are now combined on `main`. Use the [current Gemma setup guide](gemma-setup.md) for both.
 
 The canonical backend remains the original text endpoint:
 

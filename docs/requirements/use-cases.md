@@ -1,170 +1,281 @@
 # Use Cases
 
-**Project:** Gen Chem Metacognition
-**Team:** Team #4
-**Client:** Heidi Conrad - TCU Chemistry
-**Version:** 0.1
+**Project:** Gen Chem Metacognition (Neocortex)\
+**Team:** Team #4\
+**Version:** 0.2 — Checkpoint 2 review draft\
+**Prototype reference:** `main` at `fe52c63` (Gemma integration, PR #22).
 
----
+## 1. Purpose and scope
 
-_**How to use this template.** Instructions appear in italic square brackets. Fill in underneath them and leave them in place until the document is stable._
+This document records what can be demonstrated on November 9, 2026 and the small set of next use cases the team wants to trace. The working prototype has a Coach conversation with text and optional images. Dashboard, Study, and Progress are navigation shells. Student sign-in, saved conversations, baseline assessment, timed sessions, confidence records, and progress data are future work.
 
-_**What a use case is.** One goal a user can accomplish with your system, written as the dialogue between the actor and the system, including what happens when it goes wrong. It is the unit of work in this course: one use case becomes one issue, one branch, one pull request, and one set of tests._
+Use case IDs are stable. Follow-ups and error paths stay within the use case whose goal they support. See the [traceability matrix](../traceability.md) for evidence and [open issues](OPEN-ISSUES.md) for decisions still needed.
 
-_**Why the use case and not the user story.** You will meet user stories in industry, and they are a good planning tool: "As a student, I want to submit my report so that I get credit." A story is deliberately under-specified, because it is a **placeholder for a conversation** that happens later, between people. That is exactly the wrong property when the thing building your code is an agent that will implement precisely what the specification says and never ask what you meant. Use stories to plan and prioritize. Build against use cases._
+## 2. Use case list
 
-_The difference that matters is the parts a story does not have: preconditions, the step-by-step flow, and above all the **extensions**, which is where the failure paths live. Most defects your team ships this semester will be in a path nobody wrote down._
-
-## Identifiers
-
-_Use cases are identified as `UC-<AREA>-<slug>`, where the area code groups related functionality and the slug is coined from the goal: `UC-RUB-create-rubric`, `UC-WAR-manage-activities`, `UC-STU-invite-students`._
-
-_Pick your own area codes from your project's feature areas, three or four letters each, and list them at the top of the Use Case List. Areas correspond to the `FEAT-*` entries in your [vision and scope](vision-and-scope.md), which is where use cases come from._
-
-_**Never renumber, rename, or repoint an identifier.** Moving a use case between areas would change its identifier, so put it in the right area the first time, and if you get it wrong, leave it. An identifier is an address, not a description._
-
-_Within one use case, `PRE-1`, `POST-1`, and the step numbers are local and may be renumbered freely, because nothing outside the use case cites them._
-
-## Revision History
-
-| Date | Version | Description | Author |
-|---|---|---|---|
-| _[2026-09-11]_ | 0.1 | Initial use cases derived from the vision and scope feature list | _[Victor Perez]_ |
-
----
-
-## 1. Introduction
-
-### 1.1 Purpose
-
-_[One paragraph: this document specifies the goals users can accomplish with the system, in enough detail that a developer knows what to build and a tester knows what to check.]_
-
-### 1.2 Scope
-
-_[Which feature areas from the vision and scope are covered here. Name the `FEAT-*` entries. If a feature has no use cases yet, say so rather than leaving the reader to notice.]_
-
----
-
-## 2. Use Case Template
-
-_[The field definitions. Every use case below uses exactly these fields, in this order.]_
-
-**UC ID and Name.** _The identifier plus a concise name stating the value this use case provides to a user. Begin with an action verb, followed by an object: "Create a rubric", not "Rubric creation" and not "Rubric management", which is a feature, not a goal._
-
-**Created By** and **Date Created.** _Who wrote it, and when._
-
-**Primary and Secondary Actors.** _An actor is a person or other entity outside the system that interacts with it. The primary actor initiates this use case; secondary actors participate in completing it. Actors usually correspond to the user classes you identified in the vision and scope._
-
-**Trigger.** _The business event, system event, or user action that starts the use case. The trigger tells the system to begin testing the preconditions._
-
-**Description.** _A brief statement of the reason for and the outcome of this use case._
-
-**Preconditions.** _What must already be true before this use case can start. **The system must be able to test each precondition**, which is what separates a precondition from a hope. Label them `PRE-1`, `PRE-2`. Example: PRE-1. The user's identity has been authenticated._
-
-**Postconditions.** _The state of the system at successful conclusion. Label them `POST-1`, `POST-2`. Example: POST-1. The price of the item in the database has been updated with the new value._
-
-**Main Success Scenario.** _The actor's actions and the system's responses under normal, expected conditions, as a numbered list that alternates between the two and ends by accomplishing the goal in the name. Write "The system validates..." not "The system will validate..."; use cases are written in the present tense._
-
-**Extensions.** _Where the real work is. Two kinds, both numbered relative to the step they branch from:_
-
-- _**Alternative flows**, other ways the use case can still succeed. Number them `4a`, `4b` for branches from step 4, with their own sub-steps `4a1`, `4a2`. Say where the flow branches off and, if it does, where it rejoins._
-- _**Exceptions**, anticipated error conditions and how the system responds. Numbered the same way._
-
-_**A use case with no extensions is not finished.** For every step, ask: what if the input is invalid, the thing is not found, the user cancels, the user is not allowed, or the external system is down? An agent building from a flow with no failure paths will invent the error handling, and you will not find out until a demo._
-
-**Priority.** _Relative priority of implementing this. Use the same scheme across all your use cases._
-
-**Frequency of Use.** _Roughly how often this is performed, per an appropriate unit of time. An early indicator of load, concurrency, and transaction volume, and it is the field that tells your architecture which use cases matter._
-
-**Business Rules.** _The `BR-*` identifiers that govern this use case. **Identifiers only, never the rule's text**, so the rule has one home in [business-rules.md](business-rules.md) and cannot go stale here._
-
-**Associated Information.** _Everything a developer needs that is not a step: the data fields and their validation rules, quality attributes that apply, display and sort strategies, and what happens if execution fails for a systemic reason such as a network timeout. If the use case makes a durable change, say whether a failure rolls it back, completes it, or leaves it partially done._
-
-_Data fields are specified as a table:_
-
-| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
-|---|---|---|---|---|
-| _[field]_ | _[type]_ | _[required, format, range]_ | _[who may see or set it]_ | _[term]_ |
-
-**Related Use Cases.** _Other use cases this one invokes or is invoked by, by identifier and name._
-
-**Assumptions.** _Anything assumed about this use case or how it executes._
-
-**Open Issues.** _What you do not know yet. Mirror it into [OPEN-ISSUES.md](OPEN-ISSUES.md) so it is visible in one place._
-
----
-
-## 3. Use Case List
-
-_[Your area codes, then a table of every use case by area. Write this list first, before specifying any single use case in detail. It is the cheapest thing to review with your client, and finding out you missed a whole area costs minutes here rather than a week later.]_
-
-| Area code | Feature area | Use cases |
+| ID | Student goal | Checkpoint status |
 |---|---|---|
-| `BNCH` | `FEAT-benchmark-quiz`: Initial study-habits survey | `UC-BNCH-complete-baseline-assessment` |
+| `UC-CHAT-work-through-problem` | Get a guiding Coach reply using text or an image, and continue the current conversation. | Built for prototype; model behavior evidence is partial. |
+| `UC-CHAT-resume-conversation` | Reopen a conversation from an earlier visit. | Future. |
+| `UC-BNCH-complete-baseline-assessment` | Complete the required study-habits assessment and initialize default study preferences. | Future; prior design covers submission only. |
+| `UC-TIMR-run-study-session` | Run a timed study session and record confidence before and after. | Future. |
+| `UC-SLOG-review-study-summary` | View a personal study summary and confidence trends. | Future. |
+| `UC-ACCT-sign-in` | Gain, recover, or end access to a student account. | Future; grouped for checkpoint review. |
 
----
+Course grounding, manual logging for study outside the app, and a structured reflection flow remain in the published scope. They have no independent use-case rows in this short list; the [traceability gap list](../traceability.md#scope-gaps-for-review) keeps them visible.
 
-## 4. Use Cases
+## 3. Checkpoint prototype
 
-### UC-BNCH-complete-baseline-assessment: The student completes a baseline assessment
+### UC-CHAT-work-through-problem: Get guidance from Coach
 
-**UC ID and Name:** `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment
-**Created By:** Team 4
-**Date Created:** 2026-09-18
-**Primary Actor:** student
-**Secondary Actors:** none
-**Trigger:** The student selects the option to begin the baseline assessment during or after onboarding.
-**Description:** The student completes an initial assessment so that the system records the student's current study habits and preferences.
+**UC ID and Name:** `UC-CHAT-work-through-problem`: Get guidance from Coach\
+**Created By / Date Created:** Team 4 checkpoint draft / 2026-11-06\
+**Primary Actor:** Student (team tester in the prototype)\
+**Secondary Actors:** Hosted Gemma service\
+**Trigger:** The actor opens Coach and wants help with a chemistry problem or study approach.\
+**Description:** The actor receives a guiding response and can continue the same open conversation.
 
-**Preconditions:**
+**Preconditions**
 
-- PRE-1. The student can access the application.
-- PRE-2. The baseline assessment is available.
+- PRE-1. The actor can open the Coach page.
+- PRE-2. A compatible Coach backend is configured; the hosted prototype accepts the team's development token. There is no individual student sign-in.
 
-**Postconditions:**
+**Postconditions**
 
-- POST-1. The student's baseline responses are stored and associated with the student.
-- POST-2. The baseline assessment is marked complete for the student.
+- POST-1. The submitted turn and accepted Coach reply are shown in the current view.
+- POST-2. Recent turns are available for follow-ups in that view. Leaving Coach or refreshing clears the conversation; no transcript or image is saved by the app.
 
-**Main Success Scenario:**
+**Main success scenario**
 
-1. The student selects the option to begin the baseline assessment.
-2. The system retrieves the assessment questions and displays an explanation of the assessment.
+1. The actor opens Coach and sees an empty conversation with starter prompts.
+2. The actor enters a question or chooses a starter prompt, then sends it.
+3. The app shows the submitted message and a Thinking indicator while the Worker requests a reply from Gemma.
+4. The app displays the final reply, formatting supported Markdown and math.
+5. The actor may send a follow-up. The app sends a bounded set of recent turns from the same conversation and returns to step 3.
+
+**Extensions**
+
+- **2a. Image input:** The actor attaches one valid JPEG/PNG, reviews or removes its preview, and sends it with a question or the default image prompt. The app checks image support before inference, displays the attachment in the conversation, and continues at step 3.
+- **2b. Empty input or invalid attachment:** The app blocks an empty send without an image, or explains why a file cannot be attached. The actor can correct the input.
+- **3a. Request fails or the reply is unusable:** The app explains the failure and offers Retry or Edit message. Retry resends the same turn without duplicating it; Edit restores the draft and its attachment. No successful reply is shown for a failed turn.
+- **3b. Actor leaves Coach:** The app aborts its pending browser request and discards the current conversation. A return visit starts a new conversation. An already-running upstream inference may continue.
+- **4a. Actor asks for the answer or submits an attempt:** The required behavior is to withhold solutions and lead with guidance; Coach may confirm an answer the student produced and justified. If the reasoning is wrong or absent, prompt the student to reconsider or explain it. These are model instructions; this checkpoint does not establish reliable compliance.
+- **4b. Unrelated question:** A polite redirect to chemistry reasoning or study habits is the proposed behavior. The prototype has a coaching prompt but no dedicated topic check or verified redirect policy. See OI-6.
+
+**Priority / Frequency:** High / repeatedly during study.\
+**Business Rules:** `BR-no-direct-answers`, `BR-answer-confirmation-only`, `BR-student-initiated-breakdown`, `BR-no-content-teaching`.\
+**Associated Information:** One JPEG/PNG up to 2 MiB, 4096 pixels per side, and 12 megapixels. Recent context is bounded to at most 21 messages, 12,000 text characters, and two images. Usage events contain counts and timing; the app does not store conversation content. The server checks reply shape and completion, not whether the reply semantically leaks an answer.\
+**Related Use Cases:** `UC-CHAT-resume-conversation` (future).\
+**Assumptions:** The checkpoint uses fabricated messages and images. The same Gemma model handles text and image requests through one Worker endpoint.\
+**Open Issues:** OI-5, OI-6.
+
+## 4. Future use cases
+
+These are specifications for discussion and later implementation. They are not part of the checkpoint demonstration.
+
+### UC-CHAT-resume-conversation: Reopen a saved conversation
+
+**UC ID and Name:** `UC-CHAT-resume-conversation`: Reopen a saved conversation\
+**Created By / Date Created:** Team 4 checkpoint draft / 2026-11-06\
+**Primary Actor:** Student\
+**Secondary Actors:** None\
+**Trigger:** The student selects a past conversation in Coach.\
+**Description:** The student returns to their own saved transcript and continues from it.
+
+**Preconditions**
+
+- PRE-1. The student has a valid session and completed baseline assessment.
+- PRE-2. The selected conversation was saved and is still within the approved retention period.
+
+**Postconditions**
+
+- POST-1. Only the student's own permitted history is displayed.
+- POST-2. A new turn continues the selected conversation with bounded model context.
+
+**Main success scenario**
+
+1. The student opens saved conversations.
+2. The system lists only the student's saved conversations.
+3. The student selects one. The system checks ownership and loads the available transcript.
+4. The student can continue with `UC-CHAT-work-through-problem`; a successful new turn is associated with the same conversation.
+
+**Extensions**
+
+- **2a. No saved conversations:** The system offers to start a new one.
+- **2b. Student chooses New chat:** The system opens an empty conversation without replacing the existing ones. The first successful exchange creates a new saved conversation.
+- **3a. Missing, expired, or unauthorized conversation:** The system refuses access without revealing another student's conversation.
+- **3b. History is unavailable:** The system explains the failure and offers a retry without overwriting the stored conversation.
+- **4a. Earlier image unavailable:** The student is told to reattach it if image bytes were not retained. Exact retention is open.
+
+**Priority / Frequency:** High after authentication / on return visits.\
+**Business Rules:** The linked Coach use case still governs new replies.\
+**Associated Information:** Identity comes from the verified session. A conversation identifier alone never grants access. Text history, image retention, and model context are separate concerns.\
+**Related Use Cases:** `UC-ACCT-sign-in`, `UC-CHAT-work-through-problem`.\
+**Assumptions:** A private persistence design is approved before rollout.\
+**Open Issues:** OI-1, OI-3.
+
+### UC-BNCH-complete-baseline-assessment: Complete a baseline assessment
+
+**UC ID and Name:** `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment\
+**Created By / Date Created:** Team 4 / 2026-09-18\
+**Primary Actor:** Student\
+**Secondary Actors:** None\
+**Trigger:** A student signs in successfully without a completed assessment.\
+**Description:** The student records current study habits and preferences so the app can initialize default study preferences. This is not a chemistry knowledge quiz.
+
+**Preconditions**
+
+- PRE-1. The student has an authenticated session.
+- PRE-2. The baseline assessment is available and not yet marked complete for this student.
+
+**Postconditions**
+
+- POST-1. The student's validated answers and completion state are saved.
+- POST-2. Default study preferences are available from the student's inputs, and the student can continue to the app. The mapping of answers to defaults is open.
+
+**Main success scenario**
+
+1. The system directs the student to the required assessment.
+2. The system retrieves the questions and explains the purpose of the assessment.
 3. The student begins the assessment.
-4. The system presents a question about the student's current study habits or preferences.
+4. The system presents a question about current study habits or preferences.
 5. The student answers the question.
-6. The system records the response and presents the next question.
+6. The system records the response in the in-progress assessment and presents the next question.
 7. The student repeats steps 5 and 6 until all questions are answered.
-8. The system displays the completed assessment for review and submission.
-9. The student submits the completed assessment.
+8. The system displays the assessment for review and submission.
+9. The student submits the assessment.
 10. The system validates the required responses.
-11. The system stores the validated responses, associates them with the student, marks the assessment complete, and confirms completion to the student.
-12. Use case ends.
+11. The system saves the validated answers for the student, initializes default study preferences, and confirms completion only after the required changes succeed.
+12. The system lets the student continue to the student app.
 
-**Extensions:**
+**Extensions**
 
-- **10a. A required response is missing:**
-    - 10a1. The system identifies the unanswered question or questions and asks the student to complete them.
-    - 10a2. The student provides the missing response or responses.
-    - 10a3. The flow rejoins at step 10.
-- **11a. The system cannot save the responses:**
-    - 11a1. The system informs the student that the assessment could not be saved and preserves the entered responses for another attempt where feasible.
-    - 11a2. The student retries submission or terminates the use case.
+- **3a. Saved draft exists.** The system offers to resume the student's own draft. The student opens it and continues from step 4 with their previously saved responses.
+- **6a. Save and leave.** The student saves a draft and leaves. The system confirms only after the draft is saved. The app gate stays in effect on return.
+- **6b. Draft save fails.** The system reports the failure and keeps entered responses available for a retry where feasible. The completion state remains unchanged.
+- **10a. A required response is missing.** The system identifies the unanswered questions and preserves the other answers. The student fills in the gaps and the flow rejoins at step 10.
+- **11a. The system cannot complete submission.** The system explains the failure, keeps the student at the assessment, and preserves responses for retry where feasible. A failed submission cannot mark the student complete or leave partially initialized defaults.
 
-**Priority:** High
-**Frequency of Use:** Primarily once per student; whether retakes are allowed is not yet determined.
-**Business Rules:** none
+**Priority / Frequency:** High / required once before first use; retakes are open.\
+**Business Rules:** None assigned.\
+**Associated Information:** The assessment collects required selections or text about study behavior. Drafts, answers, completion state, and defaults belong to the student. Completion is set only after validated responses and defaults are saved. The [merged baseline design](../design/design-of-record.md) covers the original submission flow only. First-sign-in gating, durable drafts, and initialization of defaults must be reviewed in that design before implementation.\
+**Related Use Cases:** `UC-ACCT-sign-in`, `UC-TIMR-run-study-session`.\
+**Assumptions:** The approved question set is available.\
+**Open Issues:** OI-2, OI-3.
 
-**Associated Information:**
+### UC-TIMR-run-study-session: Run a timed study session
 
-| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
-|---|---|---|---|---|
-| baseline response | Selection or text | Required for required assessment questions | Visible only to the student and authorized system functions | Study habits |
-| assessment completion status | Boolean | Set to complete only after all required responses are successfully stored | Student-specific; not editable by other students | Baseline assessment |
+**UC ID and Name:** `UC-TIMR-run-study-session`: Run a timed study session\
+**Created By / Date Created:** Team 4 checkpoint draft / 2026-11-06\
+**Primary Actor:** Student\
+**Secondary Actors:** None\
+**Trigger:** The student chooses to start a study session.\
+**Description:** The student runs a study timer and records confidence before and after studying.
 
-The assessment focuses on study behavior rather than chemistry knowledge. Questions may cover preferred study times, session lengths, study methods, print versus digital study, and office-hours use. If persistence fails, the assessment is not marked complete; entered responses are preserved for a retry where feasible.
+**Preconditions**
 
-**Related Use Cases:** none
-**Assumptions:** The baseline assessment is available at the start of the student's use of the application.
-**Open Issues:** Is completion mandatory? Can students retake the assessment?
+- PRE-1. The student has a valid session and completed baseline assessment.
+- PRE-2. The student's study defaults are available, or the student supplies valid session settings.
 
+**Postconditions**
+
+- POST-1. A successfully saved session records its duration and study details.
+- POST-2. Before and after confidence ratings are associated with the session where recorded. The student's summary can include the saved session.
+
+**Main success scenario**
+
+1. The student opens Study; the system presents default study preferences derived from their baseline.
+2. The system asks for a before-session confidence rating.
+3. The student starts the timer; the system displays the elapsed or remaining time.
+4. The session reaches its end or the student ends it.
+5. The system asks for an after-session confidence rating.
+6. The student submits the session. The system saves it, confirms the result, and makes it visible in Progress within 2 seconds (`PER-study-log`).
+
+**Extensions**
+
+- **3a. Refresh or temporary loss of connection:** The system restores the active timer with at most a 10-second difference (`ROB-study-session`).
+- **4a. Student stops early:** The system offers to save the actual elapsed session or discard it.
+- **6a. Save fails:** The system reports the error and retains the pending session where feasible for retry without a duplicate record.
+
+**Priority / Frequency:** High / whenever the student studies with the timer.\
+**Business Rules:** None assigned.\
+**Associated Information:** Prompt timing is before and after. Rating scale, whether either answer is required, and exact session defaults are open. This flow records app-timed sessions only.\
+**Related Use Cases:** `UC-BNCH-complete-baseline-assessment`, `UC-SLOG-review-study-summary`.\
+**Assumptions:** Saved sessions are associated with the signed-in student.\
+**Open Issues:** OI-2, OI-4.
+
+### UC-SLOG-review-study-summary: View personal study progress
+
+**UC ID and Name:** `UC-SLOG-review-study-summary`: View personal study progress\
+**Created By / Date Created:** Team 4 checkpoint draft / 2026-11-06\
+**Primary Actor:** Student\
+**Secondary Actors:** None\
+**Trigger:** The student opens Progress.\
+**Description:** The student views their own recorded study activity and available confidence information.
+
+**Preconditions**
+
+- PRE-1. The student has a valid session and completed baseline assessment.
+
+**Postconditions**
+
+- POST-1. The app shows only the student's own permitted study summary; viewing it changes no study records.
+
+**Main success scenario**
+
+1. The student opens Progress.
+2. The system retrieves the student's saved sessions and available confidence ratings.
+3. The system presents a summary of study activity and confidence over time.
+
+**Extensions**
+
+- **2a. No records yet:** The system shows an empty state and points to starting a study session.
+- **2b. Data unavailable:** The system explains the failure and offers retry.
+- **3a. Too little data:** The system shows available records without claiming a trend or causal relationship.
+
+**Priority / Frequency:** Medium / periodically.\
+**Business Rules:** None assigned.\
+**Associated Information:** This is the student's view. Instructor metrics, research exports, and grades are outside this use case.\
+**Related Use Cases:** `UC-TIMR-run-study-session`, `UC-ACCT-sign-in`.\
+**Assumptions:** The summary can use timed-session records first; manual logging is an open scope gap.\
+**Open Issues:** OI-4, OI-7.
+
+### UC-ACCT-sign-in: Access a student account
+
+**UC ID and Name:** `UC-ACCT-sign-in`: Access a student account\
+**Created By / Date Created:** Team 4 checkpoint draft / 2026-11-06\
+**Primary Actor:** Student\
+**Secondary Actors:** Identity and email services (provider setup to confirm)\
+**Trigger:** The student opens the app and needs to authenticate.\
+**Description:** The student signs in, with registration, verification, recovery, and ending a session captured as related paths for checkpoint planning.
+
+**Preconditions**
+
+- PRE-1. The account entry page and configured identity service are available.
+
+**Postconditions**
+
+- POST-1. A successful sign-in creates a verified session. A student without a completed baseline is routed to that required assessment.
+- POST-2. A failed, expired, or ended session grants no access to protected student data.
+
+**Main success scenario**
+
+1. The student enters their account credentials.
+2. The system validates the credentials and verifies the account state.
+3. The system establishes a session and checks baseline completion.
+4. The system routes the student to the required baseline assessment or, if complete, to the student app.
+
+**Extensions**
+
+- **1a. New student:** The student signs up and verifies the account through the configured email flow before signing in.
+- **1b. Forgotten password:** The student requests a reset and sets a new password after verification; expired or invalid reset links do not change the account.
+- **2a. Wrong password or unverified account:** The system refuses access and offers the appropriate recovery or verification path without exposing private account information.
+- **2b. Identity service unavailable:** The system gives a retryable error and does not establish a session.
+- **4a. Student logs out or the session expires:** Protected access ends, and the student is directed to sign in again.
+
+**Priority / Frequency:** High / at entry, recovery, and session expiry.\
+**Business Rules:** None assigned.\
+**Associated Information:** Student ownership is derived from authenticated identity. The existing team token cannot stand in for a student account. Research consent is separate from account access and remains open.\
+**Related Use Cases:** `UC-BNCH-complete-baseline-assessment`, `UC-CHAT-resume-conversation`.\
+**Assumptions:** The team approves a student identity, verification, and reset flow before implementation.\
+**Open Issues:** OI-3. Split account operations into separate implementation work items if needed when the team designs them.

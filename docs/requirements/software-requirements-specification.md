@@ -181,7 +181,9 @@ _[Any report the system generates: who reads it, what it contains, how often, an
 
 ### 7.4 Data acquisition, integrity, retention, and disposal
 
-_[Where the data comes from, how it is kept correct, how long it is kept, and how it is destroyed. If your system holds anything about students or other identifiable people, this section is not optional, and its content is usually a business rule you should cite rather than invent.]_
+Checkpoint 2 holds chat in the current Coach view and sends bounded context to hosted Gemma through the Worker. The application has no student database or durable chat history. Worker usage events record operational metadata.
+
+Before saving student records, decide retention and deletion for each type of record, including chat images and assessment drafts, and review which metrics an instructor may see. Under the future Private setting, per-student metrics use a pseudonym alongside class averages. Chat content, reflections, and baseline answers remain private in every mode. [Open issues](OPEN-ISSUES.md#open).
 
 ---
 
@@ -250,7 +252,7 @@ _Write one subsection per attribute your project actually has, and say "not appl
 
 ### 9.4 Safety
 
-**SAF-ai-guidance**: For General Chemistry practice questions, the AI study assistant shall provide at least one guiding question, hint, or explanation before providing a final answer.
+**SAF-ai-guidance.** For General Chemistry questions, Coach shall guide the student's reasoning without supplying a final answer, full breakdown, or worked solution. Coach may confirm correctness only after the student supplies the correct answer and explains their reasoning. See `BR-no-direct-answers`, `BR-answer-confirmation-only`, and `BR-student-initiated-breakdown`. Checkpoint 2 implements prompt-level controls. Semantic verification remains open ([OI-5](OPEN-ISSUES.md#open)).
 
 **SAF-ai-transparency**: The AI study assistant shall clearly identify itself as an AI study tool and shall not claim that its generated chemistry explanations are guaranteed to be correct.
 

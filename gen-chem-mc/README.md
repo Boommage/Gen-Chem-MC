@@ -1,6 +1,6 @@
 # Neocortex
 
-Gemma is the selected Coach model. One backend serves text messages, uploaded images, and conversations that mix both. The integration branch is **`codex/gemma-unified-integration`**; `main` is unchanged until review and merge.
+Gemma is the selected Coach model. One backend serves text messages, uploaded images, and conversations that mix both. The combined implementation is on `main`.
 
 Coach includes accessible Thinking indicators, Markdown/KaTeX output, image previews/removal, recent conversation context, retry/edit recovery, and sanitized token-usage logs. Hidden model reasoning is disabled so the 1,024-token output budget is available for the final coaching reply.
 
@@ -10,14 +10,14 @@ Use Node **22.18+**, npm, and Git. From the repository root:
 
 ```bash
 git fetch origin
-git switch codex/gemma-unified-integration
-git pull --ff-only origin codex/gemma-unified-integration
+git switch main
+git pull --ff-only origin main
 cd gen-chem-mc
 npm ci
 npm run dev
 ```
 
-Keep your existing `.env.local` and development token. The original text endpoint now supports both text and images after the endpoint owner deploys this branch:
+Keep your existing `.env.local` and development token. Use the shared endpoint for both text and images:
 
 ```dotenv
 COACH_API_URL=https://neocortex-gemma-team.neocortexmc.workers.dev

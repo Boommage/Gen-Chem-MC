@@ -1,6 +1,6 @@
 # Gemma Coach: text and images
 
-Gemma is the selected model for Neocortex Coach. The integration branch **`codex/gemma-unified-integration`** combines the tested text and image implementations on the latest `main`, without merging into `main` yet.
+Gemma is the selected model for Neocortex Coach. The combined text and image implementation is on `main`.
 
 ## One endpoint and the same token
 
@@ -8,7 +8,7 @@ The canonical shared backend is the existing text Worker:
 
 **`https://neocortex-gemma-team.neocortexmc.workers.dev`**
 
-It serves both text and JPEG/PNG conversations after the endpoint owner deploys this branch. Existing text clients keep their request shape, URL, and team token. There is no separate model selection or image URL to configure.
+The shared Worker serves both text and JPEG/PNG conversations. Existing text clients keep their request shape, URL, and team token.
 
 Existing `.env.local` files are not rewritten by branch checkout, dependency installation, or deployment. Keep yours. The previous image-test Worker is not deleted; users already testing against it can keep using it, but new setup and future unified deployments use the canonical endpoint above.
 
@@ -18,8 +18,8 @@ Use Git and Node **22.18+**. Preserve uncommitted work before switching. From th
 
 ```bash
 git fetch origin
-git switch codex/gemma-unified-integration
-git pull --ff-only origin codex/gemma-unified-integration
+git switch main
+git pull --ff-only origin main
 cd gen-chem-mc
 npm ci
 ```
@@ -41,9 +41,9 @@ Open **http://127.0.0.1:5173/coach**. This command starts only the frontend. In 
 
 On Windows, use `npm.cmd` / `npx.cmd` if PowerShell blocks npm scripts. On Linux/macOS, use `npm` / `npx`; `.cmd` commands are Windows-specific. Run npm commands inside `gen-chem-mc`, not the outer repository folder.
 
-## Endpoint owner: upgrade the existing Worker
+## Endpoint owner: deploy Worker updates
 
-From `gen-chem-mc` on this branch:
+For an approved Worker update, run these commands from `gen-chem-mc` on `main`:
 
 ```bash
 npm ci
