@@ -30,7 +30,7 @@ Boring default: **web app (React/Next.js frontend) + a backend (Node or Python) 
 ## 5. Kill Risks (mechanism, not category)
 
 1. **D2L grade extraction stalls the project.** The client has no official D2L API access to offer — only YouTube lecture videos and D2L *course content* access. If "extract grades" is treated as a required MVP feature, the team burns weeks waiting on integration access that may never arrive, and nothing else ships.
-2. **The chatbot leaks answers under normal paraphrasing.** A system-prompt-only guardrail ("don't give the answer") is not robust; a student typing "just tell me if 2.5 mol is right" or "give me a worked example with the same numbers" gets the answer anyway, and the app's core differentiator from existing AI tools silently disappears.
+2. **The chatbot gives away answers under normal paraphrasing.** A system-prompt-only guardrail ("don't give the answer") is not robust; a student typing "just tell me if 2.5 mol is right" or "give me a worked example with the same numbers" gets the answer anyway, and the app's core differentiator from existing AI tools silently disappears.
 3. **Scope creep from the "BIG SCOPE" list.** Assignment tracker across all of a student's classes, cross-class notification sequencing, gamified leaderboards, and streaks are each their own feature with their own edge cases. Treating them as equal-priority to the core loop (benchmark quiz → guided chat → Pomodoro log) means the team ends the semester with five half-built features instead of one working one.
 
 ## 6. Verdict

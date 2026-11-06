@@ -14,7 +14,7 @@ Every item in this document carries a stable, name-based identifier. Other docum
 | Space | For | Example |
 |---|---|---|
 | `BO-<slug>` | Business objectives | `BO-problem-dissection` |
-| `SM-<slug>` | Success metrics | `SM-no-answer-leak` |
+| `SM-<slug>` | Success metrics | `SM-no-answer-given` |
 | `FEAT-<slug>` | Product features | `FEAT-guided-chatbot` |
 | `RI-<slug>` | Business risks | `RI-chatbot-gives-answer` |
 | `AS-<slug>` | Assumptions and dependencies | `AS-d2l-access` |
@@ -27,6 +27,7 @@ Business rules (`BR-*`) live in [business-rules.md](business-rules.md). Open que
 |---|---|---|---|
 | 2026-09-11 | 0.1 | Initial draft from client brief and interview notes | Team + Instructor |
 | 2026-09-25 | 0.2 | Moved content into template sections and removed the duplicated Introduction. Aligned objectives with the interview notes (replaced `BO-metacognition`, `BO-study-habits`, and `BO-guided-not-answered`, which is a business rule: `BR-no-direct-answers`). Marked unconfirmed metric targets as TBD. Moved `FEAT-d2l-grades-read` to Postponed. Added features discussed with the client. Filled background, process flows, stakeholders, and context from the interview. | Sam Shema |
+| 2026-11-06 | 0.3 | Renamed `SM-no-answer-leak` to `SM-no-answer-given` (target and test set unchanged). Recorded the team's decision on Private students under `FEAT-account-consent`. | Team 4 |
 
 ---
 
@@ -131,7 +132,7 @@ The requirement that the system guides but never gives answers is a business rul
 
 | Identifier | Metric | Baseline | Target | How measured | Objective |
 |---|---|---|---|---|---|
-| `SM-no-answer-leak` | Share of adversarial test prompts (e.g., "just check if 2.5 mol is right", "give me a worked example with the same numbers") for which the chatbot reveals the answer or performs the breakdown | Not yet measured | 0% (the client calls this a "hard stop") | Team-maintained test set run before each release | `BO-problem-dissection` |
+| `SM-no-answer-given` | Share of adversarial test prompts (e.g., "just check if 2.5 mol is right", "give me a worked example with the same numbers") for which the chatbot reveals the answer or performs the breakdown | Not yet measured | 0% (the client calls this a "hard stop") | Team-maintained test set run before each release | `BO-problem-dissection` |
 | `SM-student-adoption` | Share of students enrolled in the pilot course who use the app at least once before the first quiz | 0 (new app) | TBD with client; the team proposes 60% (unconfirmed) | Enrollment count vs. app login logs | `BO-freshman-transition` |
 | `SM-session-logging` | Median number of study sessions logged per active student per week | 0 (not tracked today) | TBD with client | App session logs | `BO-study-awareness` |
 | `SM-reflection-completion` | Share of active students who complete at least one reflection after a quiz or exam | Unknown (PlayLab usage is small) | TBD with client | App reflection logs | `BO-self-reflection` |
@@ -200,7 +201,7 @@ Probability is on a 0–1 scale and impact on a 1–9 scale. Both are team estim
 
 | Identifier | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|---|
-| `RI-chatbot-gives-answer` | The "never give the answer" rule lives mainly in instructions to a general-purpose language model, so students get around it by rephrasing ("just check my answer", "show a similar example with the same numbers"). The app's main difference from other AI tools silently disappears. | 0.6 | 9 | Build an adversarial test set early (`SM-no-answer-leak`); add a response check before replies reach the student; test on real student questions from tutorial staff. |
+| `RI-chatbot-gives-answer` | The "never give the answer" rule lives mainly in instructions to a general-purpose language model, so students get around it by rephrasing ("just check my answer", "show a similar example with the same numbers"). The app's main difference from other AI tools silently disappears. | 0.6 | 9 | Build an adversarial test set early (`SM-no-answer-given`); add a response check before replies reach the student; test on real student questions from tutorial staff. |
 | `RI-d2l-integration-wall` | D2L API access requires institutional approval that takes weeks or never arrives, and the team blocks other work waiting for it. | 0.7 | 6 | Keep grade access out of the MVP; fall back to manual grade export by the instructor for consenting students. |
 | `RI-low-adoption` | Too few students use the app to produce meaningful data or benefit (only a small group has tried the PlayLab bot). | 0.4 | 8 | Client demo after the first exam; possible extra credit, pending department approval (`OI-ADOPTION`). |
 | `RI-benchmark-survey-noise` | Students guess or answer the benchmark quiz dishonestly, so self-reported habits show no link to actual behavior. | 0.5 | 4 | Keep the quiz to about 5 questions; compare answers with the first two weeks of logged sessions. |
@@ -299,7 +300,7 @@ flowchart LR
 **Candidates, pending client decision:**
 - `FEAT-chat-modes`: the client responded positively but did not commit (`OI-MODES`).
 - `FEAT-study-planning`: appears in the frontend (Study page, "Help me plan for my exam"). Needs client confirmation that it stays within `BR-no-content-teaching`.
-- `FEAT-account-consent`: the client wants identifiable data for research and possibly anonymous use; the model is not decided (`OI-ANONYMITY`, `OI-PRIVACY`).
+- `FEAT-account-consent`: the client wants identifiable data for research and possibly anonymous use. Team decision (2026-11-06), client confirmation pending: a student who chooses "Private" is shown to the instructor anonymously rather than hidden (`SEC-instructor-visibility`). Sign-in and research consent are still open (`OI-ANONYMITY`, `OI-PRIVACY`).
 - `FEAT-safety-escalation`: requires a policy decision on who is alerted and when (`OI-SAFETY-ESCALATION`). Must be decided explicitly, not left out by default.
 
 **Postponed (after the MVP):**

@@ -35,6 +35,7 @@ _[These are slugs, like every other identifier in your project, so an inserted d
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 | 2026-10-02 | Team 4 | Initial draft for Checkpoint 1 |
+| 0.2 | 2026-11-06 | Team 4 | Replaced the Python API on Vercel with a TypeScript API on Cloudflare Workers (`KD-typescript-worker`). Updated the instructor view. Renamed `SM-no-answer-leak` to `SM-no-answer-given`. |
 
 ---
 
@@ -58,7 +59,7 @@ _Example, from the Cafeteria Ordering System:]_
 
 | Priority | Quality goal | Specification handles | Why it shapes the architecture |
 |---|---|---|---|
-| 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | The client calls an answer leak a "hard stop" (`SM-no-answer-leak`), and it is the product's one difference from general AI tools. The rule lives mainly in instructions to a general-purpose model, which students can get around by rephrasing (`RI-chatbot-gives-answer`). |
+| 1 | The chatbot guides and never hands over the answer | `SAF-ai-guidance` | The client calls giving the answer a "hard stop" (`SM-no-answer-given`), and it is the product's one difference from general AI tools. The rule lives mainly in instructions to a general-purpose model, which students can get around by rephrasing (`RI-chatbot-gives-answer`). |
 | 2 | A student's study data is seen only by that student and, as usage figures, the instructor | `SEC-authentication`, `SEC-student-isolation` | The system stores identifiable study and reflection data, which is FERPA-protected once combined with grades (`RI-privacy-exposure`). Students already avoid help when they fear judgment, so the content of chats and reflections has to stay private to the student. |
 | 3 | An outage of an external service does not take the rest down | `ROB-external-service` | The chatbot depends on a hosted language model service the team does not control (`AS-llm-service`). The study timer and study log have to keep working when it is unavailable. |
 
@@ -73,7 +74,7 @@ _[The constraints the architecture has to honor. They are already written as `CO
 _Your technology stack is a constraint only if something external fixes it: the client's IT department, an existing system, or the person who maintains this after you graduate. A stack your team chose is a decision, and it goes in section 9 with the alternative you rejected.]_
 
 - `OE-web-browser`
-No `CO-*` constraint is recorded. Nothing outside the team fixes the technology stack: Vercel, Supabase, Python, and React are the team's choices (section 4), not constraints. Who hosts, pays for, and maintains the system after the team graduates is still open with the client (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5), and the answer may add a constraint.
+No `CO-*` constraint is recorded. Nothing outside the team fixes the technology stack: Cloudflare Workers, Supabase, TypeScript, and React are the team's choices (section 4), not constraints. Who hosts, pays for, and maintains the system after the team graduates is still open with the client (`OI-HOSTING`, `OI-MAINTENANCE` in vision and scope section 5), and the answer may add a constraint.
 
 ## 3. Context and Scope
 
@@ -117,8 +118,8 @@ _[Three to five bullets: the few moves that shape everything else. arc42 suggest
 
 _Each bullet is one sentence, and it cites what explains it: the key decision in section 9.2 where one exists, and otherwise the quality goal and the building block in section 5 it shapes. Keep it short; the reasoning lives in section 9. A bullet that cites nothing is either not load-bearing, or it is a decision you have not written down yet._
 
-- **One deployable with one managed database** (`KD-deployment-shape`), because the load is small (`SCA-concurrent-users`) and the future maintainer is unknown (`OI-MAINTENANCE`).
-- **A React and TypeScript single-page application in the browser, with every rule enforced in a Python Application API** (section 5.1), because browser code cannot hold the language model credential or enforce student isolation (quality goal 2).
+- **One Application API on Cloudflare Workers with one managed database** (`KD-typescript-worker`), because the load is small (`SCA-concurrent-users`) and the future maintainer is unknown (`OI-MAINTENANCE`).
+- **A React and TypeScript single-page application in the browser, with every rule enforced in a TypeScript Application API** (section 5.1), because browser code cannot safely reach the language model or enforce student isolation (quality goal 2).
 - **Sign-in is bought, not built**: Supabase Auth issues credentials and stores passwords (section 8.1), so the system never handles a password itself (`SEC-passwords`).
 - **One component is the only path to the Language Model Service** (Coach and model gateway, section 5.2), so the reply check that `RI-chatbot-gives-answer` calls for runs in one place (quality goal 1) and a model outage is contained there (quality goal 3).
 - **Divided by use case area, with identity resolved in one cross-cutting component** (Identity and access, section 5.2), so the rule that a student reaches only their own records is enforced the same way for every area (quality goal 2).
@@ -138,7 +139,7 @@ C4Container
 
     System_Boundary(neocortex, "Neocortex") {
         Container(spa, "Web Application", "React 19 / TypeScript / Vite", "Browser UI for dashboard, study planning and sessions, coaching, and progress")
-        Container(api, "Application API", "Python", "Every business rule; enforces student-data access and is the only container that reaches the database, the language model, and the course materials")
+        Container(api, "Application API", "TypeScript on Cloudflare Workers", "Every business rule; enforces student-data access and is the only container that reaches the database, the language model, and the course materials")
         ContainerDb(db, "Application Database", "PostgreSQL on Supabase", "Student email, baseline responses, study sessions, confidence ratings, reflections, and compressed chat history")
     }
 
@@ -152,15 +153,15 @@ C4Container
     Rel(api, auth, "Verifies the session", "HTTPS")
     Rel(instructor, spa, "Views usage figures", "HTTPS")
     Rel(api, db, "Reads and writes", "Supabase connection over TLS")
-    Rel(api, llm, "Requests a grounded coaching reply", "HTTPS")
+    Rel(api, llm, "Requests a grounded coaching reply", "Workers AI binding")
     Rel(materials, api, "Grounding content", "Loaded by hand by the team")
 ```
 
-The system is one application and one database because the load is small and nobody is yet identified to operate more (`KD-deployment-shape`). The Web Application is a separate container only because it runs in the browser; it ships in the same Vercel project as the Application API. The browser reaches student data only through the Application API, because browser code cannot safely hold the language model credential or enforce student isolation. The Web Application is already implemented as a front-end shell; the Application API and the Application Database are not built yet.
+The system is one application and one database because the load is small and nobody is yet identified to operate more (`KD-typescript-worker`). The Web Application is a separate container because it runs in the browser; its production host has not been chosen. The browser reaches student data only through the Application API, because browser code cannot safely reach the language model or enforce student isolation. The Web Application is already implemented as a front-end shell. The Application API exists only as the coach prototype in `gen-chem-mc/backend/`, which calls Gemma through Cloudflare Workers AI, and the Application Database is not built yet.
 
 ### 5.2 Use case areas and components
 
-The component view zooms into the proposed Application API. `BNCH` is the only use-case area currently defined in [the use-case list](../requirements/use-cases.md#3-use-case-list); the remaining rows are cross-cutting homes for the external systems and system-wide rules already in scope. They are all provisional until a use case establishes and tests their boundaries. The React implementation currently has page-level prototype components under `gen-chem-mc/src/`; it has no API packages yet, so these names are responsibilities rather than claimed code packages.
+The component view zooms into the proposed Application API. `BNCH` is the only use-case area currently defined in [the use-case list](../requirements/use-cases.md#3-use-case-list); the remaining rows are cross-cutting homes for the external systems and system-wide rules already in scope. They are all provisional until a use case establishes and tests their boundaries. The React implementation currently has page-level prototype components under `gen-chem-mc/src/`; the Worker in `gen-chem-mc/backend/` covers only a prototype of the Coach and model gateway, so these names are responsibilities rather than claimed code packages.
 
 ```mermaid
 C4Component
@@ -168,7 +169,7 @@ C4Component
 
     Container(spa, "Web Application", "React 19 / TypeScript", "Student dashboard, study, coach, and progress views")
 
-    Container_Boundary(api, "Application API (server technology TBD)") {
+    Container_Boundary(api, "Application API (TypeScript on Cloudflare Workers)") {
         Component(identity, "Identity and access", "Authentication and authorization", "Identifies the caller, records consent, and applies student-level access control")
         Component(baseline, "Baseline assessment", "BNCH use-case component", "Presents the study-habits assessment, validates responses, and records completion")
         Component(study, "Study record", "Future feature component", "Owns study-session, plan, reflection, and progress records when their use cases are specified")
@@ -190,7 +191,7 @@ C4Component
     Rel(baseline, db, "Stores and reads student-specific responses", "Database protocol TBD")
     Rel(study, db, "Stores and reads student-specific records", "Database protocol TBD")
     Rel(coach, content, "Requests approved grounding context from")
-    Rel(coach, llm, "Requests constrained coaching replies", "HTTPS; provider API TBD")
+    Rel(coach, llm, "Requests constrained coaching replies", "Workers AI binding; Gemma")
     Rel(content, db, "Stores material references and provenance", "Database protocol TBD")
 ```
 
@@ -286,7 +287,7 @@ sequenceDiagram
     Coach->>Content: request approved course grounding
     Content-->>Coach: relevant approved material and provenance
     Coach->>Coach: apply coaching and answer-safety policy
-    Coach->>LLM: constrained prompt with grounding (HTTPS)
+    Coach->>LLM: constrained prompt with grounding (Workers AI binding)
     alt LLM replies
         LLM-->>Coach: draft reply
         Coach->>Coach: check and label response as AI guidance
@@ -325,11 +326,11 @@ _[Four short paragraphs. The last three each cite the `SEC-*` requirement they a
 
 **Authentication.** _Provisional (`OI-ANONYMITY`)._ A student signs up with their TCU email address and a password, and confirms the address with a verification code sent by email. Supabase Auth issues the credential, stores the password as a hash (`SEC-passwords`), and sends the code. The Application API answers a request for student data only when it carries a valid Supabase session (`SEC-authentication`).
 
-**Authorization.** _Provisional (`OI-PRIVACY`): the client has not yet specified the instructor view (vision and scope 3.1)._ There are two roles, student and instructor. A student reaches only their own records (`SEC-student-isolation`), and the Application API scopes every request by the signed-in identity, never by an identifier the browser supplies. The instructor sees the number of users and, per student and as class averages, confidence ratings, chatbot usage, and study-session usage. The instructor does not see the content of chats, reflections, or baseline responses.
+**Authorization.** _Provisional (`OI-PRIVACY`): the instructor view below is a team decision (`SEC-instructor-visibility`) that the client has not yet confirmed (vision and scope 3.1)._ There are two roles, student and instructor. A student reaches only their own records (`SEC-student-isolation`), and the Application API scopes every request by the signed-in identity, never by an identifier the browser supplies. The instructor sees the number of users and, per student and as class averages, confidence ratings, chatbot usage, and study-session usage. If a student chooses "Private," their data is still shown, but anonymously: the Application API replaces their identity with an anonymous label before returning it. The instructor does not see the content of chats, reflections, or baseline responses.
 
 **Sensitive data.** The Application Database stores each student's email address, baseline responses, study sessions, confidence ratings, reflections, and a compressed form of their chat history, all identifiable (`RI-privacy-exposure`). How the chat history is compressed is not yet decided. The Language Model Service receives a student's baseline responses and compressed chat history along with the current message, and never the student's email address. No grades are stored in the MVP (`SEC-grade-consent`). Retention and disposal are not yet defined: section 7.4 of the specification is empty and the question is open with the client (`OI-PRIVACY`).
 
-**Secrets.** The Supabase keys and the language model key live in the Vercel project's environment variables and never in the repository.
+**Secrets.** The Supabase keys and any API tokens live in Cloudflare Worker secrets and never in the repository. The language model needs no key of its own, because the Worker reaches it through its Workers AI binding.
 _Secrets (passwords, API keys, connection strings) never appear in this document or in the repository. Say where they will live, not what they are.]_
 
 ### 8.2 Other concepts
@@ -357,11 +358,11 @@ _One short subsection each: the rule in one sentence, why, and the file that sho
 
 **8.2.3 API conventions.** Every Application API endpoint sits under one URL prefix and returns JSON, and a failure uses the error shape in 8.2.1. Why: the Web Application has one way to call the API and one way to read a failure, and the prefix keeps API routes apart from the front end's routes inside one deployable (`KD-deployment-shape`).
 
-**8.2.4 Code conventions.** The Web Application is written in TypeScript with React and the Application API in Python; the browser calls only the Application API and Supabase Auth, and no component except Coach and model gateway calls the Language Model Service. Why: the browser cannot hold the model credential (section 5.1), and the reply check has to run in one place (`SAF-ai-guidance`).
+**8.2.4 Code conventions.** The Web Application is written in TypeScript with React and the Application API in TypeScript for the Cloudflare Workers runtime, with Node.js used for local tooling and tests; the browser calls only the Application API and Supabase Auth, and no component except Coach and model gateway calls the Language Model Service. Why: the browser cannot safely reach the language model (section 5.1), and the reply check has to run in one place (`SAF-ai-guidance`).
 
 **8.2.5 Validation.** Input is checked in the Application API before anything is saved, and that check is the one that counts; a check in the Web Application is only a convenience. Why: `ROB-invalid-data` requires invalid or incomplete data to be rejected with a message, and the browser sits outside the trust boundary (section 8.1).
 
-**8.2.6 Configuration and secrets.** Everything that differs between development and production, and every secret, is read from environment variables, set in the Vercel project for production and in an uncommitted local file for development. Why: the Supabase keys and the language model key are secrets (section 8.1), and `MNT-setup` requires a new developer to configure the system from the README.
+**8.2.6 Configuration and secrets.** Everything that differs between development and production, and every secret, is read from environment variables, set as Cloudflare Worker variables and secrets for production and in an uncommitted local file for development. Why: the Supabase keys and API tokens are secrets (section 8.1), and `MNT-setup` requires a new developer to configure the system from the README.
 
 **8.2.7 Logging.** The Application API logs failures as errors, refused requests and external-service failures as warnings, and sign-ins and completed actions as information, and it never logs the content of chat messages, reflections, or baseline responses. Why: that content is the identifiable student data named in `RI-privacy-exposure`, and a log is a second copy of it that `SEC-student-isolation` does not protect.
 
@@ -369,7 +370,7 @@ _One short subsection each: the rule in one sentence, why, and the file that sho
 
 **8.2.9 Auditing.** Every stored record carries the student who owns it and the time it was created and last changed, and the MVP keeps no separate audit trail. Why: only the owner can change their own records (`SEC-student-isolation`), so the owner and the timestamps already answer who changed what and when.
 
-**8.2.10 Testing.** Every pull request runs unit tests for the Application API's components and component tests for the Web Application, using made-up student data only, and every release runs the team-maintained adversarial prompt set against the chatbot. Why: `SM-no-answer-leak` is measured by that prompt set with a target of zero leaks, and real student data in a test is the exposure `RI-privacy-exposure` describes.
+**8.2.10 Testing.** Every pull request runs unit tests for the Application API's components and component tests for the Web Application, using made-up student data only, and every release runs the team-maintained adversarial prompt set against the chatbot. Why: `SM-no-answer-given` is measured by that prompt set with a target of zero prompts that get the answer, and real student data in a test is the exposure `RI-privacy-exposure` describes.
 
 
 ## 9. Architecture Decisions
@@ -400,7 +401,15 @@ _A decision without a **rejected alternative** is not a decision, it is a descri
 
 _A decision that turns out wrong is not deleted or rewritten. Mark it **Superseded by `KD-<new-slug>`** and write the new decision as its own entry, so the reasoning behind both stays readable._
 
-**`KD-deployment-shape`: one deployable.** _Accepted; revisit when `OI-HOSTING` is answered._
+**`KD-typescript-worker`: a TypeScript Application API on Cloudflare Workers.** _Accepted 2026-11-06; revisit when `OI-HOSTING` is answered._
+
+- **Driving requirements:** `SCA-concurrent-users`; `MNT-setup`.
+- **Context:** The only backend code that exists is the coach Worker in `gen-chem-mc/backend/`, written in TypeScript. It calls Gemma through Cloudflare Workers AI, shares types with the Web Application through `gen-chem-mc/shared/`, and is already built by the pull request checks. No Python code exists.
+- **Decision:** The Application API is TypeScript running on Cloudflare Workers, with one managed database on Supabase. Node.js is used for local tooling and tests. The Workers runtime is not Node.js, so production code must use what Workers supports. The production host for the Web Application is not yet chosen.
+- **Rejected:** The Python Application API on Vercel in `KD-deployment-shape`. It would mean rewriting the working coach gateway and maintaining a second language, with no requirement that calls for either.
+- **Trade-off:** Node-only libraries may not run on Workers, the coach depends on Cloudflare's Workers AI allowance, and the Web Application may deploy separately from the API. Checking a Supabase session from a Worker has not been tried yet.
+
+**`KD-deployment-shape`: one deployable.** _Superseded by `KD-typescript-worker`; no longer applicable._
 
 - **Driving requirements:** `SCA-concurrent-users`; `MNT-setup`.
 - **Context:** About 185 students in one course with one instructor (vision and scope 3.2), an MVP limited to that course (`AS-freshman-scope`), and nobody yet identified to host or maintain the system after the team graduates (`OI-HOSTING`, `OI-MAINTENANCE`).
