@@ -1,0 +1,76 @@
+# Pull request checks: frontend (React) and backend (Cloudflare Worker) build, tests, and static analysis.
+# Every check fails the job on any finding. Actions are pinned to commit SHAs (the tag in the comment),
+# so a moved tag cannot change what runs.
+
+name: Pull request checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./gen-chem-mc
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: gen-chem-mc/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      # oxlint with .oxlintrc.json; --deny-warnings turns every warning into a failure
+      - name: Lint with oxlint
+        run: npm run lint -- --deny-warnings src
+      # tsconfig.app.json (src, shared) and tsconfig.node.json (vite.config.ts); both set noEmit
+      - name: Type check with tsc
+        run: npx tsc -b
+      - name: Build with Vite
+        run: npm run build
+      - name: Run frontend tests
+        run: npm test -- src
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./gen-chem-mc
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: gen-chem-mc/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint with oxlint
+        run: npm run lint -- --deny-warnings backend shared
+      # tsc -p tsconfig.backend.json (backend, shared; strict, noEmit)
+      - name: Type check with tsc
+        run: npm run typecheck:api
+      # Bundles the Worker without deploying; needs no Cloudflare account or token
+      - name: Build the Worker with Wrangler
+        run: npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/worker"
+        env:
+          WRANGLER_SEND_METRICS: "false"
+      - name: Run backend tests
+        run: npm test -- backend shared
