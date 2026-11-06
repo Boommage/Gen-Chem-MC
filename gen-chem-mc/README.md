@@ -1,15 +1,15 @@
 # Neocortex
 
-Team 4's General Chemistry metacognition project. This `codex/image-integration-test` branch adds image attachments to the working Gemma Coach: previews/removal, multimodal requests, follow-up context, and attachment-preserving retry/edit recovery. Text chat and the Thinking animation remain available. Assistant replies now render Markdown and math, hidden model reasoning is disabled, and the gateway emits sanitized token-usage logs.
+Team 4's General Chemistry metacognition project. Coach is a Gemma-backed chat that supports text and image attachments: previews/removal, multimodal requests, follow-up context, and attachment-preserving retry/edit recovery, with a Thinking animation while it works. Assistant replies render Markdown and math, hidden model reasoning is disabled, and the gateway emits sanitized token-usage logs to Cloudflare Workers observability.
 
 **Use an image-enabled backend.** The shared text Worker does not accept images. Follow [image setup](../docs/gemma-image-setup.md) for local live testing or a separate shared image Worker.
 
-## Get this branch
+## Get the code
 
 Use Node.js **22.18 or newer** (Node 24 LTS recommended), npm, and Git.
 
 ```bash
-git clone --branch codex/image-integration-test https://github.com/Boommage/Gen-Chem-MC.git
+git clone https://github.com/Boommage/Gen-Chem-MC.git
 cd Gen-Chem-MC/gen-chem-mc
 npm ci
 ```
@@ -18,8 +18,8 @@ Already cloned?
 
 ```bash
 git fetch origin
-git switch codex/image-integration-test
-git pull --ff-only origin codex/image-integration-test
+git switch main
+git pull --ff-only origin main
 cd gen-chem-mc
 npm ci
 ```
@@ -32,9 +32,9 @@ npm ci
 | Local mock | No | Canned responses for UI testing; not Gemma |
 | Local Worker with live Gemma | Yes | Your own Cloudflare login with access to the intended account |
 
-Image-branch setup, deployment, and troubleshooting: **[Gemma image setup](../docs/gemma-image-setup.md)**.
+Image setup, deployment, and troubleshooting: **[Gemma image setup](../docs/gemma-image-setup.md)**.
 
-The [Word onboarding document](../docs/gemma-team-onboarding.docx) covers the stable text branch. Use the image guide above for this branch.
+The [Word onboarding document](../docs/gemma-team-onboarding.docx) predates image support and covers text-only setup. Use the image guide above for current setup.
 
 ### Shared live backend
 
@@ -111,15 +111,17 @@ gen-chem-mc/
   shared/coach.ts              Chat contract and history bounds
   shared/images.ts             Upload limits and image-header validation
   src/pages/Coach.tsx          Chat, thinking state, error recovery
+  src/components/CoachMessage.tsx  Markdown and math rendering for replies
+  src/lib/imageAttachment.ts   Client-side image reading and validation
   vite.config.ts              Local proxy, server-only development token
-  wrangler.jsonc              Local and team Worker configurations
+  wrangler.jsonc              Local, team, and images Worker configurations; persisted logs
 ```
 
 Gemma model: `@cf/google/gemma-4-26b-a4b-it`. The server prepends its own policy, restricts text/history size, returns final content only, and maps provider errors to understandable messages. Recent whole conversation pairs are sent within a bounded context. Leaving Coach or refreshing clears its current history.
 
 ## Scope and limitations
 
-- This branch is a **team development text prototype**, not a student production deployment.
+- This is a **team development prototype**, not a student production deployment.
 - One JPEG/PNG per message, up to 2 MB; up to two images in recent context. Images are not stored persistently by the application.
 - No instructor-approved course retrieval, persistent chat database, student authentication, or analytics.
 - The shared development token protects the hosted Worker; it is not student identity or authorization.
