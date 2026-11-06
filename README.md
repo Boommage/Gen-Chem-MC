@@ -2,7 +2,7 @@
 
 Team 4's General Chemistry metacognition project. Gemma is the selected Coach model for both text and image conversations.
 
-The combined implementation is on **`codex/gemma-unified-integration`**, based on the latest `main`. It has not been merged into `main`.
+The combined Coach implementation is on `main` after [PR #22](https://github.com/Boommage/Gen-Chem-MC/pull/22). See the [Checkpoint 2 review](docs/checkpoint-2-review.md) for prototype scope and future use cases.
 
 ## Run the app
 

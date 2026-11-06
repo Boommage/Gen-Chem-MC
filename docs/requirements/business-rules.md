@@ -112,31 +112,27 @@ _Format each rule as a bold identifier, the rule in one sentence, then its sourc
 
 ### 2.1 Tutoring and Guidance Behavior
 
-- **`BR-no-direct-answers`:** The system must never give a student the final answer to a chemistry problem or question; it may only guide the student toward finding the answer themselves.
-  **Source:** client meeting notes — "Current AI platforms provide the answer - ours should never provide the answer but guide them." Confirmed by Heidi Conrad, client meeting, _[confirm date]_.
+- **`BR-no-direct-answers`.** Coach guides the student to work through a chemistry problem without supplying the solution or final answer.
+  **Source.** Heidi Conrad, September 8, 2026 [client interview](../meetings/client-interview-2026-09-08.md).
 
-- **`BR-answer-confirmation-only`:** The system may confirm whether a student's own answer is correct, but only after the student has produced an answer themselves; it does not supply the answer in advance of that. Depends on `BR-no-direct-answers`.
-  **Source:** client meeting notes — "Only tell them the answer if they got the answer correctly." Confirmed by Heidi Conrad, client meeting, _[confirm date]_.
+- **`BR-answer-confirmation-only`.** Coach may confirm correctness when the student supplies the correct answer and explains their reasoning. If the student is wrong or has not explained their reasoning, Coach asks a guiding question without revealing the solution. Depends on `BR-no-direct-answers`.
+  **Source.** September 8, 2026 [client interview](../meetings/client-interview-2026-09-08.md) and Team 4's Checkpoint 2 interpretation.
 
-- **`BR-student-initiated-breakdown`:** When a student cannot break a problem down, the system prompts the student to break the problem down themselves; the system does not perform the breakdown for them. Depends on `BR-no-direct-answers`.
-  **Source:** client meeting notes — "The app does not break down itself... It asks students to break down the problem." Confirmed by Heidi Conrad, client meeting, _[confirm date]_.
+- **`BR-student-initiated-breakdown`.** When a student is stuck, Coach asks the student to identify what is given, what is asked, or what step they would try. The student performs the breakdown. Depends on `BR-no-direct-answers`.
+  **Source.** Heidi Conrad, September 8, 2026 [client interview](../meetings/client-interview-2026-09-08.md).
 
-- **`BR-no-content-teaching`:** The system does not teach chemistry content or solve chemistry problems; its scope is limited to helping students reflect on and improve their study habits and preparation.
-  **Source:** client project brief, "Gen Chem Metacognition: A General Chemistry Success Coach" — "The goal is not for the AI to teach chemistry or solve chemistry problems. Instead, it should act as a coach..."
+- **`BR-no-content-teaching`.** Coach supports study habits, preparation, and the student's reasoning about a problem through guiding questions. Chemistry lessons and worked solutions are outside its role.
+  **Source.** Client project brief, *Gen Chem Metacognition: A General Chemistry Success Coach*.
 
-- **`BR-no-direct-answers`:** The system must never give a student the final answer to a chemistry problem or question; it may only guide the student toward finding the answer themselves.
-  **Source:** Client meeting notes, September 8, 2026 — Heidi Conrad: "Current AI platforms provide the answer - ours should never provide the answer but guide them."
-
-  ### 2.2 Candidate Rules — Not Yet Confirmed
+### 2.2 Candidate Rules — Not Yet Confirmed
 
 _[Flagged per the checklist: these have the shape of a rule but the source is the team's own brainstorm, not a client statement. Confirm with Heidi before treating as a real rule, or move to the specification as a team design decision.]_
 
 - **`BR-leaderboard-professor-only`** *(unconfirmed)***:** If a leaderboard/points feature is implemented, it is visible only to the course instructor, not to students.
   **Source:** team brainstorm ("Retention Methods" notes), not yet raised with or confirmed by the client. **Action:** ask Heidi directly at the next meeting; if she didn't originate this, it is a team design decision and belongs in the specification, not here.
 
-- **`BR-student-information-confidentiality`** 
-Student information needs to be secure and only avaliable to the professor if the student does not lists their account as anonymous. 
-
+- **`BR-student-information-confidentiality`** *(future team direction, pending client review).* Instructors can see approved per-student metrics and class averages. For a student using Private, their per-student metrics appear under a pseudonym. Chat content, reflections, and baseline answers remain private in every mode.
+  **Source.** Team 4's Checkpoint 2 decision. Metric fields, access outside Private, and retention remain open. [Open issues](OPEN-ISSUES.md).
 
 _[That third entry is deliberate. Flag rules you are not sure about rather than dropping them; deciding whether something is a rule or a requirement is a conversation to have with your client, and it is worth having.]_
 

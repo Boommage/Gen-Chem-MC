@@ -1,38 +1,31 @@
 # Open Issues
 
-**Project:** Gen Chem Metacognition
-**Team:** Team #4
+**Project:** Gen Chem Metacognition (Neocortex)\
+**Team:** Team #4\
+**Checkpoint review:** November 6, 2026
 
----
-
-_**What this file is.** Every question about the project that you cannot answer yet, in one place, with the name of the person who can answer it. It is the shortest document in `docs/requirements/` and the one your client meetings run on._
-
-_**Why it exists.** A draft specification with confident guesses in the gaps is more dangerous than one with holes in it, because nobody can tell the guesses from the facts. Writing "we do not know" is not an admission of failure in week 3, it is the correct state. What fails is knowing and not writing it down._
-
-_**Where entries come from.** Three places, and all three are routine:_
-
-- _Drafting a section of [vision-and-scope.md](vision-and-scope.md) and hitting something the client brief does not say._
-- _Your agent's list. When you ask it to draft a section, ask it to list every question it could not answer from the material you gave it. Its list is longer than yours and it is not embarrassed to ask obvious things._
-- _The meeting itself. Your client says something that contradicts your notes, or answers a question with "I would have to check"._
-
-_**How they leave.** Answered in a client meeting, in Slack, or by reading a document. Record the answer and the date, mark it resolved, and put the substance where it belongs (an objective, a term in the [glossary](project-glossary.md), a business rule). This file is a queue, not a home: an answer that stays here has not been filed._
-
-_**Identifiers here are numbers**, `OI-1` upward, and that is deliberate. Numbers are fine for a list that only ever grows at the bottom and gets cited lightly. The slug convention in [vision-and-scope.md](vision-and-scope.md) exists for identifiers that get **reordered** or **cited often**, which is not this list._
-
-## Before a client meeting
-
-_[Sort the open list by what it costs you to stay wrong, not by what is easy to ask. You will get through fewer questions than you plan to. Take the ones where a wrong guess sends the whole team down the wrong path for a month, and leave the ones you can settle by reading a document or trying the client's current tool yourself.]_
-
-_[Send the shortlist to your client the day before. A client who has seen the questions arrives with answers instead of promises.]_
+This is the checkpoint shortlist of questions with a concrete effect on requirements, design, or verification. Existing longer-term issues in [Vision and Scope](vision-and-scope.md#5-open-issues-raised-by-this-document) remain open unless explicitly resolved.
 
 ## Open
 
 | ID | Question | Why it matters | Who can answer | Raised |
 |---|---|---|---|---|
-| OI-1 | _[The question, phrased so it has a definite answer. Not "tell us about reporting" but "who is allowed to see another student's evaluation scores?"]_ | _[What we get wrong if we guess. Name the artifact or decision it blocks.]_ | _[Client, instructor, a specific user, or the team itself]_ | _[YYYY-MM-DD]_ |
+| OI-1 | How long may saved chats and attachments be kept? Is reopening text enough, or must earlier image bytes be available? | Blocks the history storage and deletion design. The current prototype saves neither. | Team and client | 2026-11-06 |
+| OI-2 | What questions and default-session settings does the baseline use, how do answers map to defaults, and can students retake it? Where should an unfinished draft survive? | The required first-sign-in gate, draft resume, and defaults extend the merged baseline design. | Team and client | 2026-11-06 |
+| OI-3 | Which identity provider, email eligibility and verification method will the team use? Which instructor metrics and display rules are approved beyond the confirmed Private behavior? | Blocks student account design, private persistence, and instructor access. Confirm data retention and research consent separately; a pseudonym is not proof of anonymity. | Team and client | 2026-11-06 |
+| OI-4 | What scale is used for before/after confidence, may a student skip a rating, and which saved values belong in Progress? | Defines the future timer and progress acceptance criteria. | Team and client | 2026-11-06 |
+| OI-5 | What fabricated multi-turn and image-based cases count toward `SM-no-answer-leak`, and what is the review process for failures? | Current tests cover request and reply handling, not semantic tutoring compliance. No feature work is planned for this checkpoint. | Team and client/TA | 2026-11-06 |
+| OI-6 | How should Coach respond to unrelated questions: redirect, decline, or distinguish general study advice from unrelated topics? | No dedicated off-topic behavior is specified or verified in the prototype. | Team and client | 2026-11-06 |
+| OI-7 | After Checkpoint 2, which published scope gaps should receive use cases or be explicitly deferred: course grounding, manual study logging, and structured reflection? | Keeps the short checkpoint list from being mistaken for a scope change. Instructor reporting and research consent also remain outside the short list. | Team and client | 2026-11-06 |
+| OI-8 | Where will the student-facing frontend be hosted and who will operate the Worker, identity service, and database after handoff? | The checkpoint uses local Vite plus a hosted Worker. It is not the former one-project Vercel topology or a completed student deployment. | Team and client | 2026-11-06 |
 
-## Resolved
+## Resolved for this checkpoint draft
 
-| ID | Question | Answer | Answered by | Date | Filed in |
-|---|---|---|---|---|---|
-| OI-0 | _[Example row, delete it]_ | _[What we were told]_ | _[Name]_ | _[YYYY-MM-DD]_ | _[`BO-grading-time`, or the glossary term, or the section]_ |
+| Decision | Answer | Source | Filed in |
+|---|---|---|---|
+| Final answers | Coach must not supply a solution or breakdown. It may confirm a student-produced correct answer supported by their reasoning. | Client interview and Team 4 clarification, 2026-11-06 | [Business rules](business-rules.md#21-tutoring-and-guidance-behavior), [SRS](software-requirements-specification.md#94-safety) |
+| Baseline purpose and gate | Survey study habits, initialize default study preferences, and require completion before access after sign-in. | Team 4, 2026-11-06 | [Baseline use case](use-cases.md#uc-bnch-complete-baseline-assessment-complete-a-baseline-assessment), [glossary](project-glossary.md) |
+| Confidence timing | Prompt before and after a timed session. | Team 4, 2026-11-06 | [Timed study use case](use-cases.md#uc-timr-run-study-session-run-a-timed-study-session) |
+| Private instructor view | Show per-student metrics under a pseudonym and class averages. Keep chat, reflection, and baseline answers private from instructors. | Team 4, 2026-11-06; future requirement, not prototype behavior | [Architecture security](../design/architectural-design.md#81-security) |
+| Prototype stack | Keep the TypeScript Worker and hosted Gemma; Node.js is used for development tooling and the local mock. | Team 4, 2026-11-06; verified on merged PR #22 | [Architecture decisions](../design/architectural-design.md#92-key-decisions) |
+| Checkpoint scope | Freeze prototype features. Write a small future use-case set and keep uncovered scope visible as gaps. | Team 4, 2026-11-06 | [Traceability](../traceability.md#scope-gaps-for-review) |

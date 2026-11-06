@@ -6,8 +6,10 @@
 
 > **Realizes:** `UC-BNCH-complete-baseline-assessment`. No `FR-BNCH-*` requirement exists yet.
 > **Depends on:** `FEAT-benchmark-quiz`; `SEC-authentication`; `SEC-student-isolation`; `ROB-invalid-data` (applied to this area by architecture-of-record section 6.2). The use case cites no business rules.
-> **See:** [use cases](../requirements/use-cases.md#uc-bnch-complete-baseline-assessment-the-student-completes-a-baseline-assessment), [specification](../requirements/software-requirements-specification.md), [architecture-of-record](architectural-design.md)
+> **See:** [use cases](../requirements/use-cases.md#uc-bnch-complete-baseline-assessment-complete-a-baseline-assessment), [specification](../requirements/software-requirements-specification.md), [architecture-of-record](architectural-design.md)
 > **Designed against:** `main` at `4257888`
+>
+> **Checkpoint 2 scope note.** This design covers the original submission flow. Review the required first-sign-in gate, saved draft and resume, and initialization of default study preferences before implementing the revised use case.
 
 ---
 
@@ -35,7 +37,7 @@ _**Write it in this order.** Each step is one person's or one pair's work, and t
 
 _[One paragraph: what this area does, which components of your [architecture-of-record](architectural-design.md) it lives in, and what it reads from or calls in other areas. Link the container diagram rather than redrawing it. If this design changes the architecture-of-record, say so here and list the change under "Changes to the architecture-of-record" below.]_
 
-The baseline assessment records a student's current study habits and preferences in a short initial survey (`FEAT-benchmark-quiz`), so the system has a starting point for that student. It is the `BNCH` area of the Application API: the **Baseline assessment** component ([containers](architectural-design.md#51-containers), [use case areas and components](architectural-design.md#52-use-case-areas-and-components)). It gets the caller's identity from **Identity and access** and stores responses and completion state in the Application Database. The **Coach and model gateway** later reads the student's baseline responses, because the Language Model Service receives them with each coaching request (architecture-of-record 8.1, Sensitive data). On `main`, the Web Application has no baseline page yet (its routes are `/dashboard`, `/study`, `/coach`, and `/progress`), and the Application API and Application Database are not built (architecture-of-record 5.1). This design does not change the architecture-of-record.
+The baseline assessment records the student's study habits and preferences (`FEAT-benchmark-quiz`). In this design, the future **Baseline assessment** component gets the caller's identity from **Identity and access** and stores responses and completion in the Application Database. The Checkpoint 2 Worker only serves Coach. Baseline answers are for initializing study preferences. Any later use as model context requires a separate decision.
 
 ## Components & classes
 
@@ -191,11 +193,10 @@ _[What this design could not settle and who can, and what could go wrong that yo
 
 **For the client** (also to add to `OPEN-ISSUES.md`, which has no entries yet):
 
-- Is completing the assessment mandatory? (use case, Open Issues)
 - Can students retake it, and if so, are earlier responses kept? This changes the data model and the API. (use case, Open Issues and Frequency of Use)
 - What are the exact questions and answer options? `FEAT-benchmark-quiz` names preferred time of day, session length, and methods; the use case also mentions print versus digital study and office-hours use; which study methods to list is open (`OI-STUDY-METHODS`).
 - Must students sign in at all (`OI-ANONYMITY`, `OI-PRIVACY`)? Anonymous use would change how responses are associated with a student. Sign-in in 8.1 is provisional.
-- How long are baseline responses kept, and when are they deleted (`OI-PRIVACY`; specification 7.4 is empty)?
+- How long are baseline responses kept, and when are they deleted (specification §7.4 and OI-2)?
 
 **For the team:**
 
@@ -203,13 +204,12 @@ _[What this design could not settle and who can, and what could go wrong that yo
 - Where do the questions live: in the database or in code?
 - How does the Web Application keep entered responses for a retry after a failed save (architecture-of-record 6.2 leaves the client-storage mechanism open)?
 - Define the URL prefix (8.2.3) and the error shape (8.2.1) before the API contract rows can name paths and status codes.
-- Settle the Application API's server technology: section 5.2 says TBD while 8.2.4 says Python, and the chatbot prototypes on unmerged branches run as TypeScript Cloudflare Workers.
-- The use case cites the glossary terms "Study habits" and "Baseline assessment", but the project glossary does not define them yet.
+- Extend the TypeScript API design to cover the required first-sign-in gate, student-owned drafts, and mapping assessment responses to default study preferences (OI-2).
 
 **Risks accepted:**
 
 - Students may guess or answer dishonestly, so self-reported habits may not match logged behavior (`RI-benchmark-survey-noise`). The vision's mitigation is a short assessment of about 5 questions, compared with the first two weeks of logged sessions.
-- Baseline responses are identifiable student data (`RI-privacy-exposure`) and are also sent to the Language Model Service (architecture-of-record 8.1).
+- Baseline responses are identifiable student data (`RI-privacy-exposure`). Keep answers private and review draft retention and access before implementation.
 
 ---
 
