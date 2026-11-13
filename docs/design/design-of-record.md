@@ -43,7 +43,7 @@ _[One class diagram for the whole area, and one line per class or file saying wh
 
 _**If your repository has no code for this area yet**, which is the normal case for your proving slice, list the files you expect the agent to create, with the paths your architecture-of-record's conventions give them, and mark them all new. The agent then builds into the structure you chose rather than one it improvised.]_
 
-No code exists for this area. The Application API's package layout and framework are not yet fixed (section 5.2 lists the server technology as TBD, and 8.2.4 names Python), so the parts below are named by responsibility. File names are left for the team to choose under these conventions.
+No code exists for this area. The Application API is TypeScript on Cloudflare Workers (`KD-typescript-worker`), but its package layout for this area is not yet fixed, so the parts below are named by responsibility. File names are left for the team to choose under these conventions.
 
 ```mermaid
 classDiagram
@@ -203,8 +203,8 @@ _[What this design could not settle and who can, and what could go wrong that yo
 - Where do the questions live: in the database or in code?
 - How does the Web Application keep entered responses for a retry after a failed save (architecture-of-record 6.2 leaves the client-storage mechanism open)?
 - Define the URL prefix (8.2.3) and the error shape (8.2.1) before the API contract rows can name paths and status codes.
-- Settle the Application API's server technology: section 5.2 says TBD while 8.2.4 says Python, and the chatbot prototypes on unmerged branches run as TypeScript Cloudflare Workers.
-- The use case cites the glossary terms "Study habits" and "Baseline assessment", but the project glossary does not define them yet.
+- The use case cites the glossary term "Study habits", but the project glossary does not define it yet.
+- Design how completed baseline responses enable a default study session; the use case now names this purpose, but this design does not yet cover it.
 
 **Risks accepted:**
 

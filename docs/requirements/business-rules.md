@@ -83,6 +83,7 @@ _The Source column is the defense. Every rule traces to a document or a person, 
 | Date | Version | Description | Author |
 |---|---|---|---|
 | _[YYYY-MM-DD]_ | 0.1 | Initial rules from the client brief and first client meeting | _[Name]_ |
+| 2026-11-06 | 0.2 | Revised the candidate `BR-student-information-confidentiality` to the team's anonymous-not-hidden decision. | Team 4 |
 
 ---
 
@@ -135,7 +136,8 @@ _[Flagged per the checklist: these have the shape of a rule but the source is th
   **Source:** team brainstorm ("Retention Methods" notes), not yet raised with or confirmed by the client. **Action:** ask Heidi directly at the next meeting; if she didn't originate this, it is a team design decision and belongs in the specification, not here.
 
 - **`BR-student-information-confidentiality`** 
-Student information needs to be secure and only avaliable to the professor if the student does not lists their account as anonymous. 
+Student information must be secure. The instructor can always see each student's data and class averages; if a student chooses "Private," their data is shown to the instructor anonymously rather than hidden.
+  **Source:** team decision, 2026-11-06; client confirmation pending (`OI-PRIVACY`).
 
 
 _[That third entry is deliberate. Flag rules you are not sure about rather than dropping them; deciding whether something is a rule or a requirement is a conversation to have with your client, and it is worth having.]_

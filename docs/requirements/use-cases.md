@@ -114,7 +114,7 @@ _[Your area codes, then a table of every use case by area. Write this list first
 **Primary Actor:** student
 **Secondary Actors:** none
 **Trigger:** The student selects the option to begin the baseline assessment during or after onboarding.
-**Description:** The student completes an initial assessment so that the system records the student's current study habits and preferences.
+**Description:** The student completes an initial assessment so that the system records the student's current study habits and preferences and can enable a default study session based on their input.
 
 **Preconditions:**
 
