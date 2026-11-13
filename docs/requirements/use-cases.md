@@ -3,7 +3,7 @@
 **Project:** Gen Chem Metacognition
 **Team:** Team #4
 **Client:** Heidi Conrad - TCU Chemistry
-**Version:** 0.1
+**Version:** 0.2
 
 ---
 
