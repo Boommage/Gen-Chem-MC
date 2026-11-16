@@ -30,6 +30,7 @@ _Within one use case, `PRE-1`, `POST-1`, and the step numbers are local and may 
 | Date | Version | Description | Author |
 |---|---|---|---|
 | _[2026-09-11]_ | 0.1 | Initial use cases derived from the vision and scope feature list | _[Victor Perez]_ |
+| 2026-11-16 | 0.2 | Merged the master use-case inventory into the use-case list and recorded its scope, dependencies, and open items in this document. | Team 4 |
 
 ---
 
@@ -39,9 +40,20 @@ _Within one use case, `PRE-1`, `POST-1`, and the step numbers are local and may 
 
 _[One paragraph: this document specifies the goals users can accomplish with the system, in enough detail that a developer knows what to build and a tester knows what to check.]_
 
+This document identifies the user goals supported by the Gen Chem Metacognition Study Assistant. The use-case list is the authoritative inventory of stable use-case identifiers; each detailed specification defines the normal flow, failure paths, data, and rules needed to implement and test that goal. Items awaiting a client or architecture decision remain in the list with their dependency stated rather than being treated as approved requirements.
+
 ### 1.2 Scope
 
 _[Which feature areas from the vision and scope are covered here. Name the `FEAT-*` entries. If a feature has no use cases yet, say so rather than leaving the reader to notice.]_
+
+This document covers the MVP feature areas `FEAT-benchmark-quiz`, `FEAT-guided-chatbot`, `FEAT-course-grounding`, `FEAT-pomodoro-timer`, `FEAT-study-session-log`, and `FEAT-reflection`; the candidate areas `FEAT-chat-modes`, `FEAT-study-planning`, `FEAT-account-consent`, and `FEAT-safety-escalation`; and the postponed areas `FEAT-d2l-grades-read`, `FEAT-assignment-tracker`, `FEAT-notifications`, `FEAT-leaderboard`, and `FEAT-streak`. Candidate and postponed entries reserve identifiers but are not committed MVP work.
+
+### 1.3 Inventory Decisions and Open Items
+
+- The possible instructor view does not yet map to a feature area. It is excluded from this release unless the client approves an instructor-view feature; an `INST` area must not be added without that feature.
+- The dashboard is structural navigation (`USE-core-navigation`), not a separate functional use case, while it only aggregates existing widget state.
+- Direct-answer requests, message edits after failure, and model-provider timeouts are extensions of `UC-CHAT-work-through-problem`, not independent use cases.
+- The business-rules audit found a duplicate `BR-no-direct-answers` entry and a missing `BR-error-reflection` candidate from the client interview notes. Resolve those in [business-rules.md](business-rules.md) before treating the latter as a governing rule.
 
 ---
 
@@ -100,7 +112,30 @@ _[Your area codes, then a table of every use case by area. Write this list first
 
 | Area code | Feature area | Use cases |
 |---|---|---|
-| `BNCH` | `FEAT-benchmark-quiz`: Initial study-habits survey | `UC-BNCH-complete-baseline-assessment` |
+| `BNCH` | `FEAT-benchmark-quiz`: Benchmark Quiz (MVP) | `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment; `UC-BNCH-view-baseline-results`: View baseline study-habit profile; `UC-BNCH-retake-baseline-assessment`: Retake the baseline assessment |
+| `CHAT` | `FEAT-guided-chatbot`: Guided Chatbot (MVP) | `UC-CHAT-work-through-problem`: Work through a chemistry problem with the coach; `UC-CHAT-check-own-answer`: Have the coach check a student-derived answer; `UC-CHAT-share-problem-image`: Share a problem via photo or screenshot; `UC-CHAT-start-new-conversation`: Start a fresh conversation; `UC-CHAT-resume-conversation`: Resume an existing conversation |
+| `GRND` | `FEAT-course-grounding`: Course Grounding (MVP) | `UC-GRND-add-course-material`: Add course material for coach grounding; `UC-GRND-remove-course-material`: Remove or replace outdated course material |
+| `TIME` | `FEAT-pomodoro-timer`: Pomodoro Timer (MVP) | `UC-TIME-run-study-session`: Run a timed study session; `UC-TIME-set-timer-lengths`: Set focus and break durations; `UC-TIME-abandon-study-session`: End a study session early |
+| `LOG` | `FEAT-study-session-log`: Study Session Log (MVP) | `UC-LOG-log-study-session`: Log a study session done outside the app; `UC-LOG-delete-study-session`: Delete a logged study session; `UC-LOG-view-study-history`: View historical study sessions; `UC-LOG-view-study-summary`: View study patterns and metrics |
+| `REFL` | `FEAT-reflection`: Reflection (MVP) | `UC-REFL-reflect-after-session`: Reflect after completing a study session; `UC-REFL-reflect-after-assessment`: Reflect after a quiz or exam; `UC-REFL-view-past-reflections`: Review past reflection entries |
+| `MODE` | `FEAT-chat-modes`: Chat Modes (Candidate; `OI-MODES`) | `UC-MODE-choose-coaching-style`: Choose supportive or concise coaching style |
+| `PLAN` | `FEAT-study-planning`: Study Planning (Candidate; confirm compliance with `BR-no-content-teaching`) | `UC-PLAN-create-study-plan`: Plan study-session timing and duration; `UC-PLAN-adjust-study-plan`: Modify an existing study plan |
+| `ACCT` | `FEAT-account-consent`: Account & Consent (Candidate; `OI-ANONYMITY`, `OI-IRB`, `OI-PRIVACY`) | `UC-ACCT-sign-in`: Sign in to the system; `UC-ACCT-sign-out`: Sign out of the system; `UC-ACCT-use-anonymously`: Use the system without identification; `UC-ACCT-give-research-consent`: Consent to data linking for research; `UC-ACCT-withdraw-research-consent`: Withdraw prior research consent; `UC-ACCT-delete-my-data`: Delete my account data |
+| `SAFE` | `FEAT-safety-escalation`: Safety Escalation (Candidate; `OI-SAFETY-ESCALATION`) | `UC-SAFE-respond-to-distress`: Get support resources when expressing distress |
+| `GRAD` | `FEAT-d2l-grades-read`: D2L Grades (Postponed) | `UC-GRAD-import-grades`: Import grades from D2L |
+| `TRAK` | `FEAT-assignment-tracker`: Assignment Tracker (Postponed) | `UC-TRAK-sync-assignment-deadlines`: Sync assignment deadlines |
+| `NOTF` | `FEAT-notifications`: Notifications (Postponed) | `UC-NOTF-receive-study-reminder`: Receive a study reminder; `UC-NOTF-set-reminder-preferences`: Set reminder preferences |
+| `GAME` | `FEAT-leaderboard`, `FEAT-streak`: Leaderboard / Streak (Postponed) | `UC-GAME-view-study-streak`: View a study streak; `UC-GAME-view-class-leaderboard`: View the class leaderboard |
+
+### 3.1 Specification Status and Dependencies
+
+`UC-BNCH-complete-baseline-assessment` is specified in Section 4. All other entries above are inventory records awaiting their own full Section 4 specifications; their identifiers and scope classifications are retained here so they can be reviewed and traced without inventing unapproved behavior.
+
+- `UC-BNCH-retake-baseline-assessment` depends on the unresolved retake decision in `UC-BNCH-complete-baseline-assessment`.
+- `UC-CHAT-resume-conversation` requires persisted chat-history storage. `UC-CHAT-share-problem-image` accepts JPEG or PNG images up to 2 MB, 4096 px on either side, and 12 MP; no more than two images are retained in recent context.
+- `UC-GRND-add-course-material` depends on `AS-training-data`. `UC-TIME-run-study-session` must restore state after refresh (`ROB-study-session`). `UC-LOG-view-study-history` must show a saved session within two seconds (`PER-study-log`).
+- `UC-LOG-log-study-session` awaits `OI-STUDY-METHODS`. `UC-REFL-reflect-after-assessment` uses self-reported results because D2L grade import is postponed.
+- Account use cases also depend on the stated security and consent decisions: `SEC-authentication`, `SEC-grade-consent`, `BR-student-information-confidentiality`, and the applicable `OI-*` entries. `UC-GAME-view-class-leaderboard` additionally requires confirmation of `BR-leaderboard-professor-only`.
 
 ---
 
