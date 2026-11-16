@@ -61,13 +61,60 @@ _Worked example, from Project Pulse:]_
 
 ---
 
-## 3. From here (week 8)
+## Functional traceability matrix
 
-_[Leave this section as it is until week 8. It says what the two tables above grow into, so that nobody restructures the file in the meantime._
+> `/design` runs in two beats: it first sets a use case's **Build** to `🔬 Problem-validated` once its challenge loop has firmed the use case (spec fixes looped back), then to `📐 Designed` — filling the **Design** column with the area's design-of-record — when the solution design is approved (trivial use cases reach `📐` in one motion); `/implement` fills the code columns, sets **Build**, and fills **Verify** at the end of its run (Phase 5).
 
-_In week 8 the spine extends past the use case: **business objective → feature → use case area → use case → design → code → test.** A third table arrives with one row per use case and columns for the design element, the source files, and the tests, tracked as two separate states, built and verified, so that a use case which is built but untested stays visibly unverified rather than being absorbed into a single "done".]_
+### How to use it
 
----
+- **One row per use case**, in `UC-<AREA>-<slug>` order, mirroring `requirements/use-cases.md`.
+- **Build** — construction state of the code, from the Build legend below (`❌` → `🔬` → `📐` → `🟡` → `✅`). It says nothing about tests; `✅ Built` is a claim about code only.
+- **Verify** — whether automated tests exercise and pass for the built behavior, from the Verify legend below. Deliberately **independent of Build**: a `✅ Built` use case with no test reads `🔎 None` here, so "done" can never hide an untested flow. `—` until there is built behavior to verify (Build is `❌`/`🔬`/`📐`). RAM has no frontend automated tests yet (see the matrix note), so a built RAM use case's Verify reflects its **backend** test coverage; that frontend-test gap is recorded once rather than per row.
+- **Release:** the release plan, the tag in which the row's code ships, from the Release legend below. Build and Verify say where the work is; Release says when it is planned to be done. It tracks Build only: a shipped row whose Verify is `🔎 None` or `🟡 Partial` keeps its Release, and its missing tests are test debt, visible in Verify and tracked as an issue. Set it when the row is added, and revise it when a use case closes or the scope changes; the pull request that changes a Release cell says why. Scope is not set here: a use case whose `**Status:**` line marks it Deferred or Tabled (see the use-case lifecycle status convention in [`AGENTS.md`](AGENTS.md)) is out of the MVP, and its Release cell stays empty. On any other row, an empty cell is unplanned work.
+- **FR IDs** — the SRS's non-use-case, system-level functional requirements this use case **depends on / builds upon** (e.g. autosave, validation, real-time collaboration, AI), and, where relevant, the External Interface Requirements (`SI-*`) that carry the use case's interface detail (export formats/fidelity, import allowlist/extraction). The use case's own "The system …" steps are its primary acceptance criteria; this column points to the reusable cross-cutting subsystems behind it. **This column is deliberately non-exhaustive — read it as additive over a universal baseline, not as the complete FR set for the row.** The most universal behaviors — RBAC (`FR-SEC-*`) and authorship metadata (`FR-HIS-authorship-metadata`) — apply to **nearly every** row, so they are an **implicit baseline omitted from every cell** to reduce noise: their absence from a row is **never informative** — it never means the use case escapes authorization or authorship. The column therefore lists only the *additional* cross-cutting FRs a use case draws on **beyond** that baseline, and **`—` means "none beyond the baseline"** (the use case is otherwise self-contained — its own steps are the whole spec), **not** "this use case has no security or authorship dimension." Section locking is part of the editing use cases' own steps (governed by `BR-edit-lock-required` / `BR-lock-expiry`), not a separate FR.
+- **Design** — the area's design-of-record (`design/<area>.md`, optionally anchored to the use case's sequence diagram under *Sequence*, the one per-use-case heading the doc carries) once `/design` has written it and its pull request has merged; `—` until then. A single area doc covers every use case in its area, so rows in the same area cite the same file.
+- **Frontend / Backend / Tests** — concrete artifacts (`file_path` or component/class names) once built; `—` until then.
+- **Extension coverage (convention).** Because tests are tagged to the **whole use case** — there are no per-step or per-extension IDs — the **Tests** cell names *which extensions* a test exercises, e.g. `…AddEvaluation… + matching extensions (E1,E3); E2 untested`. This keeps edge-case coverage visible: a `✅ Verified` row whose negative/exception flows are only partly tested shows `🟡 Partial` in Verify with the gap spelled out in Tests. `/sync-check` flags any `✅ Built` use case whose count of negative-path tests is below its number of extensions (a heuristic that surfaces likely-undertested exception behavior). Back-filling the per-extension annotation across the already-built use cases is a `/sync-check` sweep, not a precondition for the convention.
+- When a use case is added to `requirements/use-cases.md`, add its row here (Build `❌ Not started`, Verify `—`, and a Release value). `/design` advances Build to `🔬 Problem-validated` once the use case is firmed, then `📐 Designed` when the solution design is approved; when `/implement` finishes it, set Build, fill Verify, and fill the code columns.
+
+### Build legend
+
+| Symbol | Meaning |
+|--------|---------|
+| ❌ Not started | No design, no code; the use case is unexamined. |
+| 🔬 Problem-validated | `/design`'s challenge loop has run against the use case — ambiguities, contradictions, and assumptions that break against the code surfaced and looped back into the spec; the problem statement is firm. No solution design yet. (The `❌ → 🔬` transition **is** a recorded challenge event; its evidence is the spec diff that produced it.) |
+| 📐 Designed | Solution approved — the area's `design/<area>.md` is written (`/design`) and approved by merging its pull request, with the questions-test result in the pull request description; not yet coded. |
+| 🟡 In progress | Partially built (e.g., backend complete, frontend pending). |
+| ✅ Built | Code complete for the use case's flow. **Makes no claim about tests** — see the Verify column. |
+
+### Verify legend
+
+| Symbol | Meaning |
+|--------|---------|
+| ✅ Verified | Automated test(s) exercise the built behavior — main flow and extensions — and pass. |
+| 🟡 Partial | Some flows/extensions are tested; others are not (the Tests cell names the gap). |
+| 🔎 None | Built, but no (or insufficient) automated test exists. |
+| — | Nothing built to verify yet (Build is `❌`, `🔬`, or `📐`). |
+
+### Release legend
+
+| Value | Meaning |
+|-------|---------|
+| ≤ v1.5.0 | Shipped before the release plan began (planning started with the work left after `v1.5.0`). |
+| v1.6.0, v1.7.0, … | The planned release tag. The next tag is the one being worked toward; later tags are the planned order. |
+| Later | In scope, not yet scheduled. |
+| (empty) | Only on a use case whose `**Status:**` line marks it Deferred or Tabled; that line owns its scope. |
+
+The planned releases, in order: `v1.6.0` the reminders (the on-demand one, and the scheduled one brought in line with `BR-submission-owed`); `v1.7.0` the rest of RAM authoring (artifact and link screens, comments, review, export); `v1.8.0` the first AI assistant end to end (critique and the proposal loop, the assistant settings it needs, and the LLM proxy with `QS-llm-outage` measured); `v1.9.0` ReqLint and the tutor; `v2.0.0` the remaining assistants, for the Fall 2027 classroom deployment.
+
+> **Foundation & performance-tracking rows (`UC-RUB-*`, `UC-SEC-*`, `UC-TEA-*`, `UC-STU-*`, `UC-INS-*`, `UC-ACC-*`, `UC-WAR-*`, `UC-EVA-*`).** These are the established, in-production course-management, weekly-activity-report, and peer-evaluation features. Their concrete spec→code mapping was filled in by **design-as-built code archaeology**
+
+
+| UC | Use Case | Build | Verify | Release | FR IDs | Design | Frontend | Backend | Tests |
+|----|----------|-------|--------|--------|--------|----------|---------|-------|---------|
+| UC-BNCH-complete-baseline-assessment | Student completes onboarding assesment | ❌ Built | ❌ Verified | Later | — | — | — | — | — |
+
+
 
 ## Working this document with your agent
 

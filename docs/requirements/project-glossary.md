@@ -35,7 +35,7 @@ _[The temptation is to define words your teammates already know. Skip those. The
 _Ask the client directly: "Is there a word your team uses here that I would not guess the meaning of?"_
 - **Chatbot**: Online AI assistant that a student can talk with about their Chemistry problems
 - **Tutoring**: The role of the chatbot. Helps students break down problems by encouraging the reflection of notes and course material. Never breaks down the probelems on their own.
-- **Benchmark Quiz**: Initial assesment given to the students prior to using the chatbot. Evaluates the students knowledge level and guides the chatbot prior to sending their first message
+- **Benchmark Quiz** (also **Baseline Assessment**): Short initial survey of a student's current study habits and preferences. It does not measure chemistry knowledge. It is the initializer for the student's study session, enabling a default study session based on their input.
 - **D2L**: The online hub for all TCU course material. All quizes, grades, and assignments are accessable from D2L.
 - 
 
@@ -57,6 +57,7 @@ _Rules:_
 | Date | Version | Description | Author |
 |---|---|---|---|
 | _[2016-09-10]_ | 0.1 | Initial terms from the client brief and first client meeting | _[DJ Brown]_ |
+| 2026-11-06 | 0.2 | Corrected Benchmark Quiz to cover study habits, not knowledge. | Team 4 |
 
 ---
 

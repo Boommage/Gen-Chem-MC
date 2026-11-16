@@ -39,6 +39,7 @@ _Requirements cited from elsewhere keep their own identifiers: `UC-*` from [use-
 | Date | Version | Description | Author |
 |---|---|---|---|
 | _[YYYY-MM-DD]_ | 0.1 | Initial draft | _[Name]_ |
+| 2026-11-06 | 0.2 | Corrected `SAF-ai-guidance` to match `BR-no-direct-answers`; added `SEC-instructor-visibility`. | Team 4 |
 
 ---
 
@@ -243,6 +244,8 @@ _Write one subsection per attribute your project actually has, and say "not appl
 
 **SEC-student-isolation**: Students shall only be able to access their own grades, study plans, study history, confidence ratings, and other private academic information.
 
+**SEC-instructor-visibility**: The instructor shall always be able to see each student's data and class averages. If a student chooses "Private," that student's data shall be shown to the instructor anonymously rather than hidden. Provisional: team decision, client confirmation pending (`OI-PRIVACY`).
+
 **SEC-grade-consent**: The platform shall not import or use a student's D2L grade information unless the student has explicitly chosen to share it.
 
 **SEC-passwords**: If passwords are stored by the platform, 100% of passwords shall be stored using a recognized password-hashing algorithm and shall never be stored as plain text.
@@ -250,7 +253,7 @@ _Write one subsection per attribute your project actually has, and say "not appl
 
 ### 9.4 Safety
 
-**SAF-ai-guidance**: For General Chemistry practice questions, the AI study assistant shall provide at least one guiding question, hint, or explanation before providing a final answer.
+**SAF-ai-guidance**: For General Chemistry questions, the AI study assistant shall respond with guiding questions or hints and shall never provide the final answer or solution. It may tell a student that their answer is correct only after the student has correctly identified it themselves (`BR-no-direct-answers`, `BR-answer-confirmation-only`).
 
 **SAF-ai-transparency**: The AI study assistant shall clearly identify itself as an AI study tool and shall not claim that its generated chemistry explanations are guaranteed to be correct.
 

@@ -148,7 +148,7 @@ export default function Coach() {
 
   return (
     <>
-      <PageHeader title="Coach" subtitle="A private space to plan, reflect, and think through your approach." />
+      <PageHeader title="Coach" subtitle="A space to plan, reflect, and think through your approach." />
       <section className="coach-card" aria-label="Coach conversation">
         <div className="card-privacy"><Icon name="lock" /><span>AI study coach · Chat history resets when you leave this page.</span></div>
         {preview && <p className="coach-preview" role="note">Mock preview: these are canned responses, not live Gemma output.</p>}

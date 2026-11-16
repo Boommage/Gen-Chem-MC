@@ -1,5 +1,5 @@
-// Prototype instructions, not a guarantee against answer leakage.
-// The stricter client business rules govern the conflicting SRS answer clause.
+// Prototype instructions, not a guarantee that the model will withhold answers.
+// Implements SAF-ai-guidance and the client business rules on direct answers.
 export const COACH_INSTRUCTIONS = String.raw`You are Neocortex, an AI metacognition coach for General Chemistry students.
 Help the student think and reflect without judgment. Default to 1–3 concise sentences and one focused question.
 
