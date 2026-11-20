@@ -103,8 +103,8 @@ _Rule text and sources live in [business rules](requirements/business-rules.md).
 
 | Value | Meaning |
 |-------|---------|
-| v1.0.0 | Shipped 2026-11-20 ([release](https://github.com/Boommage/Gen-Chem-MC/releases/tag/v1.0.0), commit `910a8f3`): the guided chat coach. |
-| v1.1.0 | Planned: the MVP demo release (December 2026), the remaining MVP use cases. Rows move out of it with the client if the calibration forecast says they do not fit. |
+| v0.1.0 | Shipped 2026-11-20 ([release](https://github.com/Boommage/Gen-Chem-MC/releases/tag/v0.1.0), commit `910a8f3`): the guided chat coach. |
+| v1.0.0 | Planned: the MVP release (December 2026), the remaining MVP use cases. Rows move out of it with the client if the calibration forecast says they do not fit. |
 | Later | In scope, not yet scheduled (candidate features awaiting client decisions). |
 | (empty) | Postponed in vision and scope §5; out of the MVP. |
 
@@ -114,26 +114,26 @@ _Rule text and sources live in [business rules](requirements/business-rules.md).
 
 | UC | Use case | Build | Verify | Release | Quality reqs | Design | Frontend | Backend | Tests |
 |----|----------|-------|--------|---------|--------------|--------|----------|---------|-------|
-| `UC-BNCH-complete-baseline-assessment` | Complete a baseline assessment | 📐 Designed | — | v1.1.0 | — | [design-of-record](design/design-of-record.md) | — | — | — |
-| `UC-BNCH-view-baseline-results` | View baseline study-habit profile | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-BNCH-retake-baseline-assessment` | Retake the baseline assessment | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-CHAT-work-through-problem` | Work through a problem with the coach | ✅ Built | 🟡 Partial | v1.0.0 | `PER-ai-response`, `ROB-external-service` | — | [`Coach.tsx`](../gen-chem-mc/src/pages/Coach.tsx), [`CoachMessage.tsx`](../gen-chem-mc/src/components/CoachMessage.tsx) | [`model.ts`](../gen-chem-mc/backend/model.ts), [`policy.ts`](../gen-chem-mc/backend/policy.ts), [`coach.ts`](../gen-chem-mc/shared/coach.ts) | [`Coach.test.tsx`](../gen-chem-mc/src/pages/Coach.test.tsx), [`model.test.ts`](../gen-chem-mc/backend/model.test.ts), [`coach.test.ts`](../gen-chem-mc/shared/coach.test.ts): main flow + 3a, 4a, 7b. **Untested: 5a, 7a** (model behavior) |
-| `UC-CHAT-check-own-answer` | Have the coach check own answer | ✅ Built | 🟡 Partial | v1.0.0 | `PER-ai-response`, `ROB-external-service` | — | same as above | same as above | Same tests: main flow + 3b, 4a. **Untested: 3a, 5a, 5b, 5c, 7a** (model behavior) |
-| `UC-CHAT-share-problem-image` | Share a problem via photo or screenshot | ✅ Built | 🟡 Partial | v1.0.0 | `PER-ai-response`, `ROB-external-service` | — | [`Coach.tsx`](../gen-chem-mc/src/pages/Coach.tsx), [`imageAttachment.ts`](../gen-chem-mc/src/lib/imageAttachment.ts) | [`model.ts`](../gen-chem-mc/backend/model.ts), [`images.ts`](../gen-chem-mc/shared/images.ts) | [`Coach.images.test.tsx`](../gen-chem-mc/src/pages/Coach.images.test.tsx), [`imageAttachment.test.ts`](../gen-chem-mc/src/lib/imageAttachment.test.ts), [`images.test.ts`](../gen-chem-mc/shared/images.test.ts), [`model.test.ts`](../gen-chem-mc/backend/model.test.ts): main flow + 6a, 6b, 7a, 9a. **Untested: 5a** (cancel file picker), **10a, 10b** (model behavior) |
-| `UC-CHAT-start-new-conversation` | Start a fresh conversation | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-CHAT-resume-conversation` | Resume an existing conversation | ❌ Not started | — | v1.1.0 | — | — | — | — | — (needs chat-history storage) |
-| `UC-GRND-add-course-material` | Add course material for grounding | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-GRND-remove-course-material` | Remove or replace course material | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-TIME-run-study-session` | Run a timed study session | ❌ Not started | — | v1.1.0 | `ROB-study-session` | — | — | — | — |
-| `UC-TIME-set-timer-lengths` | Set focus and break durations | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-TIME-abandon-study-session` | End a study session early | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-LOG-log-study-session` | Log a session done outside the app | ❌ Not started | — | v1.1.0 | `ROB-invalid-data` | — | — | — | — |
-| `UC-LOG-delete-study-session` | Delete a logged session | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-LOG-view-study-history` | View historical study sessions | ❌ Not started | — | v1.1.0 | `PER-study-log` | — | — | — | — |
-| `UC-LOG-view-study-summary` | View study patterns and metrics | ❌ Not started | — | v1.1.0 | `PER-page-load` | — | — | — | — |
-| `UC-REFL-reflect-after-session` | Reflect after a study session | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-REFL-reflect-after-assessment` | Reflect after a quiz or exam | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
-| `UC-REFL-view-past-reflections` | Review past reflections | ❌ Not started | — | v1.1.0 | — | — | — | — | — |
+| `UC-BNCH-complete-baseline-assessment` | Complete a baseline assessment | 📐 Designed | — | v1.0.0 | — | [design-of-record](design/design-of-record.md) | — | — | — |
+| `UC-BNCH-view-baseline-results` | View baseline study-habit profile | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-BNCH-retake-baseline-assessment` | Retake the baseline assessment | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-CHAT-work-through-problem` | Work through a problem with the coach | ✅ Built | 🟡 Partial | v0.1.0 | `PER-ai-response`, `ROB-external-service` | — | [`Coach.tsx`](../gen-chem-mc/src/pages/Coach.tsx), [`CoachMessage.tsx`](../gen-chem-mc/src/components/CoachMessage.tsx) | [`model.ts`](../gen-chem-mc/backend/model.ts), [`policy.ts`](../gen-chem-mc/backend/policy.ts), [`coach.ts`](../gen-chem-mc/shared/coach.ts) | [`Coach.test.tsx`](../gen-chem-mc/src/pages/Coach.test.tsx), [`model.test.ts`](../gen-chem-mc/backend/model.test.ts), [`coach.test.ts`](../gen-chem-mc/shared/coach.test.ts): main flow + 3a, 4a, 7b. **Untested: 5a, 7a** (model behavior) |
+| `UC-CHAT-check-own-answer` | Have the coach check own answer | ✅ Built | 🟡 Partial | v0.1.0 | `PER-ai-response`, `ROB-external-service` | — | same as above | same as above | Same tests: main flow + 3b, 4a. **Untested: 3a, 5a, 5b, 5c, 7a** (model behavior) |
+| `UC-CHAT-share-problem-image` | Share a problem via photo or screenshot | ✅ Built | 🟡 Partial | v0.1.0 | `PER-ai-response`, `ROB-external-service` | — | [`Coach.tsx`](../gen-chem-mc/src/pages/Coach.tsx), [`imageAttachment.ts`](../gen-chem-mc/src/lib/imageAttachment.ts) | [`model.ts`](../gen-chem-mc/backend/model.ts), [`images.ts`](../gen-chem-mc/shared/images.ts) | [`Coach.images.test.tsx`](../gen-chem-mc/src/pages/Coach.images.test.tsx), [`imageAttachment.test.ts`](../gen-chem-mc/src/lib/imageAttachment.test.ts), [`images.test.ts`](../gen-chem-mc/shared/images.test.ts), [`model.test.ts`](../gen-chem-mc/backend/model.test.ts): main flow + 6a, 6b, 7a, 9a. **Untested: 5a** (cancel file picker), **10a, 10b** (model behavior) |
+| `UC-CHAT-start-new-conversation` | Start a fresh conversation | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-CHAT-resume-conversation` | Resume an existing conversation | ❌ Not started | — | v1.0.0 | — | — | — | — | — (needs chat-history storage) |
+| `UC-GRND-add-course-material` | Add course material for grounding | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-GRND-remove-course-material` | Remove or replace course material | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-TIME-run-study-session` | Run a timed study session | ❌ Not started | — | v1.0.0 | `ROB-study-session` | — | — | — | — |
+| `UC-TIME-set-timer-lengths` | Set focus and break durations | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-TIME-abandon-study-session` | End a study session early | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-LOG-log-study-session` | Log a session done outside the app | ❌ Not started | — | v1.0.0 | `ROB-invalid-data` | — | — | — | — |
+| `UC-LOG-delete-study-session` | Delete a logged session | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-LOG-view-study-history` | View historical study sessions | ❌ Not started | — | v1.0.0 | `PER-study-log` | — | — | — | — |
+| `UC-LOG-view-study-summary` | View study patterns and metrics | ❌ Not started | — | v1.0.0 | `PER-page-load` | — | — | — | — |
+| `UC-REFL-reflect-after-session` | Reflect after a study session | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-REFL-reflect-after-assessment` | Reflect after a quiz or exam | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
+| `UC-REFL-view-past-reflections` | Review past reflections | ❌ Not started | — | v1.0.0 | — | — | — | — | — |
 | `UC-MODE-choose-coaching-style` | Choose coaching style | ❌ Not started | — | Later | — | — | — | — | — |
 | `UC-PLAN-create-study-plan` | Plan study timing and duration | ❌ Not started | — | Later | — | — | — | — | — |
 | `UC-PLAN-adjust-study-plan` | Modify a study plan | ❌ Not started | — | Later | — | — | — | — | — |
@@ -207,7 +207,7 @@ _Rule text and sources live in [business rules](requirements/business-rules.md).
 
 ### 4.2 Unfinished MVP use cases
 
-Each estimate below was made on 2026-11-20. These are the rows whose Release is the MVP demo release (`v1.1.0` in the matrix above). Persistence (a database and storage for student records) does not exist yet. It is included in `UC-BNCH-complete-baseline-assessment` because that is the first use case that needs it.
+Each estimate below was made on 2026-11-20. These are the rows whose Release is the MVP demo release (`v1.0.0` in the matrix above). Persistence (a database and storage for student records) does not exist yet. It is included in `UC-BNCH-complete-baseline-assessment` because that is the first use case that needs it.
 
 | Use case | Estimate (h) | Midpoint |
 |---|---|---|
