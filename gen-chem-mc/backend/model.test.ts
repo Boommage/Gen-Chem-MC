@@ -181,7 +181,9 @@ describe('Gemma coach gateway', () => {
   it('returns a timeout instead of waiting indefinitely', async () => {
     const { run, env } = setup()
     run.mockImplementationOnce(() => new Promise(() => {}))
-    expect((await createHandler(10).fetch(request(), env)).status).toBe(504)
+    const response = await createHandler(10).fetch(request(), env)
+    expect(response.status).toBe(504)
+    expect(JSON.stringify(await response.json())).toContain('The coach is taking too long. Please retry in a moment.')
     expect(console.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: 'timeout', prompt_tokens: null, completion_tokens: null, total_tokens: null }))
   })
   it('maps uploaded image bytes to Gemma multimodal messages', async () => {
