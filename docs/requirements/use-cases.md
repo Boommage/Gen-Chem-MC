@@ -3,7 +3,7 @@
 **Project:** Gen Chem Metacognition
 **Team:** Team #4
 **Client:** Heidi Conrad - TCU Chemistry
-**Version:** 0.1
+**Version:** 0.3
 
 ---
 
@@ -29,8 +29,9 @@ _Within one use case, `PRE-1`, `POST-1`, and the step numbers are local and may 
 
 | Date | Version | Description | Author |
 |---|---|---|---|
-| _[2026-09-11]_ | 0.1 | Initial use cases derived from the vision and scope feature list | _[Victor Perez]_ |
+| 2026-09-11 | 0.1 | Initial use cases derived from the vision and scope feature list | Victor Perez |
 | 2026-11-16 | 0.2 | Merged the master use-case inventory into the use-case list and recorded its scope, dependencies, and open items in this document. | Team 4 |
+| 2026-11-19 | 0.3 | Add use cases for `CHAT` area code | Giang Tran |
 
 ---
 
@@ -203,3 +204,464 @@ The assessment focuses on study behavior rather than chemistry knowledge. Questi
 **Assumptions:** The baseline assessment is available at the start of the student's use of the application.
 **Open Issues:** Is completion mandatory? Can students retake the assessment?
 
+## UC-CHAT-work-through-problem — Work Through a Chemistry Problem
+
+**Created By:** Team 4  
+**Date Created:** November 19, 2026  
+**Primary Actor:** Student  
+**Secondary Actors:** AI Model Service
+
+**Trigger:** The student submits a chemistry problem or requests help solving one through the chat interface.
+
+**Description:** The student works through a General Chemistry problem with guidance from the AI coach. Rather than immediately providing the solution, the system encourages the student to explain their understanding, identify relevant concepts, and determine the next steps. The AI coach is not allowed to provide the student with a direct solution. 
+
+### Preconditions
+- **PRE-1.** The chat interface is accessible to the student.
+- **PRE-2.** The AI coaching service is configured and available to receive requests.
+
+### Postconditions
+- **POST-1.** The system displays a coaching response relevant to the student's chemistry problem.
+- **POST-2.** The conversation contains the student's submitted problem and the AI coach's response in the active session.
+- **POST-3.** The student can continue the conversation to work through subsequent steps.
+
+### Main Success Scenario
+1. The student opens the chat interface.
+2. The system displays the active conversation and message input.
+3. The student enters a chemistry problem and submits it.
+4. The system validates the input and sends the problem with available conversation context to the AI coaching service.
+5. The AI coaching service returns a response that guides the student's reasoning without immediately providing the complete solution.
+6. The system displays the coaching response.
+7. The student explains their reasoning or proposes the next step.
+8. The system sends the student's response and available conversation context to the AI coaching service.
+9. The AI coaching service evaluates the student's reasoning and returns targeted guidance or a follow-up question.
+10. The system displays the guidance, allowing the student to continue working toward a solution.
+
+### Extensions
+**3a. Empty message — Exception**
+- **3a1.** The system detects that the message contains no meaningful content.
+- **3a2.** The system does not submit the request to the AI service.
+- **3a3.** The system prompts the student to enter a question or problem.
+- **3a4.** The flow returns to step 3.
+
+**4a. AI service unavailable — Exception**
+- **4a1.** The system detects a service error or timeout.
+- **4a2.** The system displays an error indicating that coaching is temporarily unavailable.
+- **4a3.** The system retains the student's entered problem in the current interface where possible.
+- **4a4.** The student may retry from step 3.
+
+**5a. Student requests complete answer — Alternative flow**
+- **5a1.** The AI coach recognizes the request for a direct solution.
+- **5a2.** The AI coach redirects the interaction toward identifying what the student knows and which step to attempt next.
+- **5a3.** The flow rejoins at step 6.
+
+**7a. Student expresses uncertainty — Alternative flow**
+- **7a1.** The student indicates that they do not know how to proceed.
+- **7a2.** The system forwards the response to the AI coach.
+- **7a3.** The AI coach provides a smaller guiding question or conceptual hint.
+- **7a4.** The flow rejoins at step 10.
+
+**7b. Student stops participating — Alternative flow**
+- **7b1.** The student leaves the conversation or stops responding.
+- **7b2.** The current interaction ends without requiring the student to complete the problem.
+- **7b3.** Conversation retention depends on the confirmed session-storage design.
+
+### Priority
+**High** — Core educational functionality.
+
+### Frequency of Use
+Estimated multiple times per study session, potentially several times per week per active student.
+
+### Business Rules
+- `BR-no-direct-answers` (identifier to verify against `business-rules.md`).
+
+### Associated Information
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| Conversation ID | String / UUID | Required if conversations are persistently identified; unique | Authorized session/user only | Conversation |
+| Student message | String | Required; nonempty after trimming | Treat as untrusted input | Student Message |
+| AI response | String | Required for successful response | Display only in appropriate conversation | Coaching Response |
+| Conversation context | Array of messages | Valid roles and content | Do not expose other students' conversations | Conversation Context |
+| Message timestamp | DateTime | Valid timestamp if recorded | Subject to retention policy | Message Timestamp |
+
+**Quality attributes:** Understandable guidance, graceful AI failures, and continuity in the active session.
+
+**Display strategy:** Chronological messages with clear distinction between student and AI.
+
+**Systemic failure handling:** A failed AI request is not displayed as successful. Whether messages persist before or after successful processing remains a storage decision.
+
+### Related Use Cases
+- `UC-CHAT-check-own-answer` — Check Own Chemistry Answer
+- `UC-CHAT-share-problem-image` — Share Chemistry Problem Image
+- `UC-CHAT-start-new-conversation` — Start New Conversation
+
+### Assumptions
+- Students use a text-based chat interface.
+- The AI receives sufficient context for multi-turn coaching.
+- Coaching focuses on reasoning and reflection.
+- Students may stop before completing a problem.
+
+### Open Issues
+- **OI-CHAT-01:** What are the maximum student message length and context limits?
+- **OI-CHAT-02:** May students request full worked solutions in any circumstances?
+- **OI-CHAT-03:** Are conversations stored permanently, temporarily, or only for the session?
+- **OI-CHAT-04:** What AI response-time or timeout threshold is required?
+
+---
+
+## UC-CHAT-check-own-answer — Check Own Chemistry Answer
+
+**Created By:** Team 4
+**Date Created:** November 19, 2026  
+**Primary Actor:** Student  
+**Secondary Actors:** AI Model Service
+
+**Trigger:** The student submits a chemistry problem with an attempted answer and requests feedback.
+
+**Description:** The student uses the AI coach to evaluate an attempted answer. The system offers feedback on reasoning, identifies possible misconceptions, and encourages reflection and correction rather than merely revealing a solution.
+
+### Preconditions
+- **PRE-1.** The chat interface is accessible to the student.
+- **PRE-2.** The AI coaching service is configured and available to receive requests.
+
+### Postconditions
+- **POST-1.** The system displays feedback addressing the attempted answer.
+- **POST-2.** The answer and feedback appear in the active conversation.
+- **POST-3.** The student can revise the answer or continue discussing their reasoning.
+
+### Main Success Scenario
+1. The student opens the chat interface.
+2. The system displays the active conversation and message input.
+3. The student submits a chemistry problem, attempted answer, and feedback request.
+4. The system validates the message and sends relevant information to the AI coaching service.
+5. The AI coaching service examines the answer and available reasoning.
+6. The system displays feedback indicating whether the answer appears correct, incorrect, or requires clarification, with coaching guidance.
+7. The student reviews the feedback and submits a revision or explanation.
+8. The system forwards the student's response to the AI coaching service.
+9. The AI coaching service evaluates the revision and returns guidance.
+10. The system displays the feedback to help the student identify improvements.
+
+### Extensions
+**3a. Answer without original problem — Alternative flow**
+- **3a1.** The system accepts the message.
+- **3a2.** The AI coach determines whether available context is sufficient.
+- **3a3.** If insufficient, the AI coach requests the problem or additional information.
+- **3a4.** The system displays the clarification request.
+- **3a5.** The student supplies the missing information and returns to step 3.
+
+**3b. Empty message — Exception**
+- **3b1.** The system detects the empty message.
+- **3b2.** The system prompts for an answer or question.
+- **3b3.** The flow returns to step 3.
+
+**4a. AI service unavailable — Exception**
+- **4a1.** The system detects a timeout or service failure.
+- **4a2.** The system informs the student that feedback is unavailable.
+- **4a3.** The student may retry.
+- **4a4.** The flow returns to step 3 on retry.
+
+**5a. Correct answer — Alternative flow**
+- **5a1.** The AI coach identifies the answer as correct based on available information.
+- **5a2.** The AI coach reinforces relevant concepts and asks about the reasoning.
+- **5a3.** The flow rejoins at step 6.
+
+**5b. Incorrect answer — Alternative flow**
+- **5b1.** The AI coach identifies a likely error or misconception.
+- **5b2.** The AI coach provides a targeted hint or question.
+- **5b3.** The flow rejoins at step 6.
+
+**5c. Uncertain evaluation — Alternative flow**
+- **5c1.** The AI coach identifies ambiguity or missing information.
+- **5c2.** The AI coach requests clarification instead of asserting correctness.
+- **5c3.** The system displays the request at step 6.
+- **5c4.** The student clarifies at step 7.
+
+**7a. Student does not revise — Alternative flow**
+- **7a1.** The student ends the interaction.
+- **7a2.** The use case concludes with feedback displayed.
+- **7a3.** No additional AI request is made.
+
+### Priority
+**High** — Supports reflection and learning from mistakes.
+
+### Frequency of Use
+Estimated several times per study session, especially during homework and exam preparation.
+
+### Business Rules
+- `BR-no-direct-answers` (identifier to verify).
+
+### Associated Information
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| Conversation ID | String / UUID | Required if persistent identifiers are used | Authorized session/user only | Conversation |
+| Chemistry problem | String | Sufficient context; may come from earlier messages | Protect student content | Chemistry Problem |
+| Attempted answer | String | Nonempty; format varies by problem | Appropriate conversation only | Attempted Answer |
+| Student reasoning | String | Optional; may be requested | Protect student content | Student Reasoning |
+| AI feedback | String | Required on success | Appropriate conversation only | Coaching Feedback |
+| Revised answer | String | Optional; nonempty if submitted | Same access restrictions | Revised Answer |
+| Message timestamp | DateTime | Valid if recorded | Subject to retention policy | Message Timestamp |
+
+**Quality attributes:** Understandable, relevant, and appropriately cautious feedback.
+
+**Display strategy:** Feedback appears after the student's submission in chronological order.
+
+**Systemic failure handling:** Do not fabricate correctness feedback on service failure. Persistence and rollback depend on the storage architecture.
+
+### Related Use Cases
+- `UC-CHAT-work-through-problem` — Work Through a Chemistry Problem
+- `UC-CHAT-share-problem-image` — Share Chemistry Problem Image
+- `UC-CHAT-start-new-conversation` — Start New Conversation
+
+### Assumptions
+- Students can submit attempted answers through chat.
+- AI evaluations are not guaranteed to be correct.
+- Feedback develops understanding rather than assigning formal grades.
+- No gradebook integration is required.
+
+### Open Issues
+- **OI-CHAT-05:** Should AI explicitly state correctness or guide self-assessment?
+- **OI-CHAT-06:** Should structured math notation, equations, and units be supported?
+- **OI-CHAT-07:** Should revisions be tracked separately or only as messages?
+- **OI-CHAT-08:** How should ambiguous or unverifiable answers be handled?
+
+---
+
+## UC-CHAT-share-problem-image — Share Chemistry Problem Image
+
+**Created By:** Team 4
+**Date Created:** November 19, 2026  
+**Primary Actor:** Student  
+**Secondary Actors:** AI Model Service; Image Processing Service (if separate)
+
+**Trigger:** The student selects an image of a chemistry problem to share in chat.
+
+**Description:** The student uploads a photographed or saved chemistry problem. The system processes recognizable contents and makes them available to the AI coach so the student can receive guidance without manually transcribing the problem. This is intended behavior, not a verified implementation.
+
+### Preconditions
+- **PRE-1.** The student can access the chat interface.
+- **PRE-2.** Image upload is enabled and configured.
+- **PRE-3.** The configured AI or image-processing service is available to accept image inputs.
+
+### Postconditions
+- **POST-1.** The selected image is associated with the active conversation for the interaction.
+- **POST-2.** The system displays the image or an attachment representation.
+- **POST-3.** The AI coach displays a response based on recognizable content or requests clarification.
+- **POST-4.** The student can continue discussing the problem.
+
+### Main Success Scenario
+1. The student opens the chat interface.
+2. The system displays the conversation and image-attachment control.
+3. The student selects the image-attachment control.
+4. The system opens the supported file-selection interface.
+5. The student selects an image containing a chemistry problem.
+6. The system validates the image file type and size.
+7. The system displays an attachment preview.
+8. The student submits the image with optional text.
+9. The system sends the image and accompanying text to the configured service.
+10. The AI service interprets recognizable chemistry content and generates coaching guidance.
+11. The system displays the image and coaching response.
+12. The student continues working through the problem with the coach.
+
+### Extensions
+**5a. File selection canceled — Alternative flow**
+- **5a1.** The student closes file selection without choosing an image.
+- **5a2.** The system returns to chat without an attachment.
+- **5a3.** The use case ends without changing the conversation.
+
+**6a. Unsupported format — Exception**
+- **6a1.** The system detects an unsupported file type.
+- **6a2.** The system displays accepted formats.
+- **6a3.** The system rejects the file.
+- **6a4.** The student may return to step 5.
+
+**6b. Oversized file — Exception**
+- **6b1.** The system detects a file above the configured limit.
+- **6b2.** The system explains the size restriction.
+- **6b3.** The system rejects the file.
+- **6b4.** The student may return to step 5.
+
+**7a. Attachment removed before submission — Alternative flow**
+- **7a1.** The student removes the selected image.
+- **7a2.** The system clears the preview.
+- **7a3.** The student may return to step 3 or end the use case.
+
+**9a. Transmission or processing fails — Exception**
+- **9a1.** The system detects an upload failure, service error, or timeout.
+- **9a2.** The system displays a processing error.
+- **9a3.** The system does not display a successful processing result.
+- **9a4.** The student may retry from step 8.
+
+**10a. Image unclear — Alternative flow**
+- **10a1.** The AI service cannot reliably read some or all content.
+- **10a2.** The AI requests a clearer image or textual clarification.
+- **10a3.** The system displays the request at step 11.
+- **10a4.** The student supplies clarification and returns to step 8.
+
+**10b. Multiple problems in image — Alternative flow**
+- **10b1.** The AI coach identifies multiple possible questions.
+- **10b2.** The AI asks which one to discuss.
+- **10b3.** The system displays the question at step 11.
+- **10b4.** The student identifies the intended problem at step 12.
+
+### Priority
+**Medium (provisional)** — Useful but dependent on image-processing capabilities.
+
+### Frequency of Use
+Estimated one to several times per study session for students using printed or handwritten materials.
+
+### Business Rules
+- `BR-no-direct-answers` (identifier to verify; applies to image-based coaching).
+
+### Associated Information
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| Conversation ID | String / UUID | Required if persistently identified | Authorized session/user only | Conversation |
+| Image file | Binary / File | Required; within supported type and size limits | Treat as untrusted upload | Problem Image |
+| Image MIME type | String | Supported format; validate content, not filename alone | Prevent malicious uploads | File Type |
+| Image size | Integer | Positive and within configured maximum | Enforce resource limits | File Size |
+| Image attachment ID | String / UUID | Unique if stored/tracked | Prevent unauthorized access | Attachment |
+| Accompanying text | String | Optional; nonempty if provided | Same restrictions as chat | Student Message |
+| AI response | String | Required on successful coaching | Appropriate conversation only | Coaching Response |
+| Upload timestamp | DateTime | Valid if recorded | Subject to retention policy | Upload Timestamp |
+
+**Quality attributes:** Reliable validation, understandable errors, and cautious interpretation of unreadable notation.
+
+**Display strategy:** Show the image alongside its message in chronological order, with a preview before submission.
+
+**Systemic failure handling:** Reject invalid files before processing. Never report failed uploads or AI requests as successful. Storage and cleanup policies remain undecided.
+
+### Related Use Cases
+- `UC-CHAT-work-through-problem` — Work Through a Chemistry Problem
+- `UC-CHAT-check-own-answer` — Check Own Chemistry Answer
+- `UC-CHAT-start-new-conversation` — Start New Conversation
+
+### Assumptions
+- Students select existing images from their devices.
+- A vision-capable model or service interprets image contents.
+- Images may include printed or handwritten text, equations, and diagrams.
+- Some images cannot be interpreted reliably.
+- Image-based coaching follows the same metacognitive principles as text chat.
+
+### Open Issues
+- **OI-CHAT-09:** Which image formats are supported?
+- **OI-CHAT-10:** What is the maximum image size?
+- **OI-CHAT-11:** Will the existing model, a vision model, or another service process images?
+- **OI-CHAT-12:** Are images stored, and for how long?
+- **OI-CHAT-13:** Are multiple images per message supported?
+- **OI-CHAT-14:** Is direct camera capture required or only file selection?
+- **OI-CHAT-15:** How should images containing identifying or sensitive information be handled?
+
+---
+
+## UC-CHAT-start-new-conversation — Start New Conversation
+
+**Created By:** Team 4
+**Date Created:** November 19, 2026  
+**Primary Actor:** Student  
+**Secondary Actors:** None
+
+**Trigger:** The student selects the option to start a new conversation.
+
+**Description:** The student starts a separate conversation with the AI coach without carrying previous messages into the new conversation's active context.
+
+### Preconditions
+- **PRE-1.** The student can access the chat interface.
+- **PRE-2.** The interface provides an enabled new-conversation option.
+
+### Postconditions
+- **POST-1.** The system displays an empty conversation ready for input.
+- **POST-2.** Previous conversation messages are excluded from the new active context.
+- **POST-3.** The student can submit a new message without continuing the previous conversation.
+- **POST-4.** Previous conversation retention follows the configured storage policy.
+
+### Main Success Scenario
+1. The student opens the chat interface.
+2. The system displays the active conversation or an empty chat.
+3. The student selects "New Conversation."
+4. The system initializes a new conversation state separate from the previous one.
+5. The system clears previous messages from the active chat display.
+6. The system displays an empty conversation and message input.
+7. The student enters a new chemistry question or problem.
+8. The system validates the input and sends it to the AI service without previous conversation messages as active context.
+9. The AI coaching service generates a response.
+10. The system displays the response in the new conversation.
+
+### Extensions
+**3a. Current conversation already empty — Alternative flow**
+- **3a1.** The system determines that the active conversation has no messages.
+- **3a2.** The system keeps the empty state instead of requiring another empty record.
+- **3a3.** The flow rejoins at step 6.
+
+**3b. Unsent text exists — Alternative flow**
+- **3b1.** The system detects an unsent draft.
+- **3b2.** The system follows the configured draft-handling policy.
+- **3b3.** If confirmation is required, the system asks whether to discard the draft.
+- **3b4.** If the student cancels, the system keeps the current conversation and ends the use case.
+- **3b5.** If the student confirms, the flow rejoins at step 4.
+
+**4a. Conversation initialization fails — Exception**
+- **4a1.** The system detects initialization failure.
+- **4a2.** The system displays an error.
+- **4a3.** The system preserves the existing conversation where possible.
+- **4a4.** The student may retry from step 3.
+
+**7a. Student leaves before sending — Alternative flow**
+- **7a1.** The student navigates away.
+- **7a2.** The system follows its empty-conversation persistence policy.
+- **7a3.** The use case ends without an AI request.
+
+**8a. Empty message — Exception**
+- **8a1.** The system detects empty input.
+- **8a2.** The system prompts for a message.
+- **8a3.** The flow returns to step 7.
+
+**8b. AI service unavailable — Exception**
+- **8b1.** The system detects a service error or timeout.
+- **8b2.** The system displays an error.
+- **8b3.** The new conversation remains active.
+- **8b4.** The student may retry from step 7.
+
+### Priority
+**High** — Basic chat separation and context isolation.
+
+### Frequency of Use
+Estimated one to several times per study session.
+
+### Business Rules
+No verified rule identifier specifically governs starting a new conversation.
+
+### Associated Information
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| Conversation ID | String / UUID | Unique if persisted; may be assigned on first message | Authorized session/user only | Conversation |
+| Session/User ID | String / UUID | Valid if session/account association is used | Prevent cross-user access | User Session |
+| Conversation creation time | DateTime | Valid if recorded | Subject to retention policy | Conversation Timestamp |
+| Conversation messages | Array of messages | Initially empty | Isolated from other conversations | Conversation History |
+| Active conversation ID | String / UUID / Null | References a valid active conversation when assigned | Prevent unauthorized selection | Active Conversation |
+| Unsent draft | String | Optional; follow draft policy | Do not transfer unintentionally | Message Draft |
+
+**Quality attributes:** Responsive transition and isolation of prior conversation context.
+
+**Display strategy:** Show an empty message area and input field; history navigation is not assumed.
+
+**Systemic failure handling:** Do not report a saved conversation if creation fails. Preserve previous conversation where possible. Rollback depends on whether records are created immediately or on the first message.
+
+### Related Use Cases
+- `UC-CHAT-work-through-problem` — Work Through a Chemistry Problem
+- `UC-CHAT-check-own-answer` — Check Own Chemistry Answer
+- `UC-CHAT-share-problem-image` — Share Chemistry Problem Image
+
+### Assumptions
+- Students can initiate separate conversations.
+- New conversations exclude previous messages from active context.
+- Starting a new conversation does not automatically delete the previous one.
+- Authentication is not necessarily required.
+- Persistence may differ between authenticated and unauthenticated students.
+- Empty conversations may exist only in frontend state until the first message.
+
+### Open Issues
+- **OI-CHAT-16:** Create a conversation immediately or on the first message?
+- **OI-CHAT-17:** Should students access prior conversations through history?
+- **OI-CHAT-18:** Can unauthenticated students retain conversations across sessions?
+- **OI-CHAT-19:** Confirm before discarding unsent text?
+- **OI-CHAT-20:** How should titles be generated, if required?
+- **OI-CHAT-21:** What happens to an in-progress AI response when a new conversation starts?
