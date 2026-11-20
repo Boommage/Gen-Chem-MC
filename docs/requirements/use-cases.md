@@ -32,6 +32,7 @@ _Within one use case, `PRE-1`, `POST-1`, and the step numbers are local and may 
 | 2026-09-11 | 0.1 | Initial use cases derived from the vision and scope feature list | Victor Perez |
 | 2026-11-16 | 0.2 | Merged the master use-case inventory into the use-case list and recorded its scope, dependencies, and open items in this document. | Team 4 |
 | 2026-11-19 | 0.3 | Add use cases for `CHAT` area code | Giang Tran |
+| 2026-11-20 | 0.4 | Applied the client's answers to `BNCH`: the baseline assessment is mandatory, one-time, covers study habits and chemistry knowledge, and uses questions the instructor provides to the team. Revised `UC-BNCH-complete-baseline-assessment` and `UC-BNCH-view-baseline-results`; added `UC-BNCH-view-class-baseline-results` and `UC-BNCH-view-common-terms`; withdrew `UC-BNCH-retake-baseline-assessment`. | Amarachi Chiemela, Sam Shema |
 
 ---
 
@@ -51,7 +52,7 @@ This document covers the MVP feature areas `FEAT-benchmark-quiz`, `FEAT-guided-c
 
 ### 1.3 Inventory Decisions and Open Items
 
-- The possible instructor view does not yet map to a feature area. It is excluded from this release unless the client approves an instructor-view feature; an `INST` area must not be added without that feature.
+- The client asked for an instructor (admin) view of baseline results and of common terms in students' responses. Those use cases belong to `FEAT-benchmark-quiz` and are specified under `BNCH`. Any broader instructor view still has no feature and stays excluded; an `INST` area must not be added without one.
 - The dashboard is structural navigation (`USE-core-navigation`), not a separate functional use case, while it only aggregates existing widget state.
 - Direct-answer requests, message edits after failure, and model-provider timeouts are extensions of `UC-CHAT-work-through-problem`, not independent use cases.
 - The business-rules audit found a duplicate `BR-no-direct-answers` entry and a missing `BR-error-reflection` candidate from the client interview notes. Resolve those in [business-rules.md](business-rules.md) before treating the latter as a governing rule.
@@ -113,7 +114,7 @@ _[Your area codes, then a table of every use case by area. Write this list first
 
 | Area code | Feature area | Use cases |
 |---|---|---|
-| `BNCH` | `FEAT-benchmark-quiz`: Benchmark Quiz (MVP) | `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment; `UC-BNCH-view-baseline-results`: View baseline study-habit profile; `UC-BNCH-retake-baseline-assessment`: Retake the baseline assessment |
+| `BNCH` | `FEAT-benchmark-quiz`: Benchmark Quiz (MVP) | `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment; `UC-BNCH-view-baseline-results`: View my baseline and growth over time; `UC-BNCH-view-class-baseline-results`: View the class's baseline results; `UC-BNCH-view-common-terms`: View common terms in students' responses; `UC-BNCH-retake-baseline-assessment`: _withdrawn 2026-11-20, the assessment is one-time_ |
 | `CHAT` | `FEAT-guided-chatbot`: Guided Chatbot (MVP) | `UC-CHAT-work-through-problem`: Work through a chemistry problem with the coach; `UC-CHAT-check-own-answer`: Have the coach check a student-derived answer; `UC-CHAT-share-problem-image`: Share a problem via photo or screenshot; `UC-CHAT-start-new-conversation`: Start a fresh conversation; `UC-CHAT-resume-conversation`: Resume an existing conversation |
 | `GRND` | `FEAT-course-grounding`: Course Grounding (MVP) | `UC-GRND-add-course-material`: Add course material for coach grounding; `UC-GRND-remove-course-material`: Remove or replace outdated course material |
 | `TIME` | `FEAT-pomodoro-timer`: Pomodoro Timer (MVP) | `UC-TIME-run-study-session`: Run a timed study session; `UC-TIME-set-timer-lengths`: Set focus and break durations; `UC-TIME-abandon-study-session`: End a study session early |
@@ -130,9 +131,10 @@ _[Your area codes, then a table of every use case by area. Write this list first
 
 ### 3.1 Specification Status and Dependencies
 
-`UC-BNCH-complete-baseline-assessment` is specified in Section 4. All other entries above are inventory records awaiting their own full Section 4 specifications; their identifiers and scope classifications are retained here so they can be reviewed and traced without inventing unapproved behavior.
+The four active `BNCH` use cases and the `CHAT` use cases with a heading in Section 4 are specified there. All other entries above are inventory records awaiting their own full Section 4 specifications; their identifiers and scope classifications are retained here so they can be reviewed and traced without inventing unapproved behavior.
 
-- `UC-BNCH-retake-baseline-assessment` depends on the unresolved retake decision in `UC-BNCH-complete-baseline-assessment`.
+- `UC-BNCH-retake-baseline-assessment` is withdrawn: the client confirmed the assessment is one-time. Its identifier is kept so it is never reused.
+- The instructor use cases `UC-BNCH-view-class-baseline-results` and `UC-BNCH-view-common-terms` need instructor sign-in, which no account use case covers yet.
 - `UC-CHAT-resume-conversation` requires persisted chat-history storage. `UC-CHAT-share-problem-image` accepts JPEG or PNG images up to 2 MB, 4096 px on either side, and 12 MP; no more than two images are retained in recent context.
 - `UC-GRND-add-course-material` depends on `AS-training-data`. `UC-TIME-run-study-session` must restore state after refresh (`ROB-study-session`). `UC-LOG-view-study-history` must show a saved session within two seconds (`PER-study-log`).
 - `UC-LOG-log-study-session` awaits `OI-STUDY-METHODS`. `UC-REFL-reflect-after-assessment` uses self-reported results because D2L grade import is postponed.
@@ -145,64 +147,296 @@ _[Your area codes, then a table of every use case by area. Write this list first
 ### UC-BNCH-complete-baseline-assessment: The student completes a baseline assessment
 
 **UC ID and Name:** `UC-BNCH-complete-baseline-assessment`: Complete a baseline assessment
-**Created By:** Team 4
-**Date Created:** 2026-09-18
+**Created By:** Team 4 (Amarachi Chiemela, Sam Shema)
+**Date Created:** 2026-09-18 (revised 2026-11-20 from the client's answers)
 **Primary Actor:** student
 **Secondary Actors:** none
-**Trigger:** The student selects the option to begin the baseline assessment during or after onboarding.
-**Description:** The student completes an initial assessment so that the system records the student's current study habits and preferences and can enable a default study session based on their input.
+**Trigger:** The student opens the application for the first time after signing up.
+**Description:** Before using the rest of the application, the student takes a one-time baseline assessment with two parts, their current study habits and their general chemistry knowledge. The instructor provides the questions and the team includes them in the application. The system records the result as the student's baseline, so the coach can pitch its guiding questions at the student's level and the student can later see their growth against it.
 
 **Preconditions:**
 
-- PRE-1. The student can access the application.
-- PRE-2. The baseline assessment is available.
+- PRE-1. The student has signed up and is signed in.
+- PRE-2. The student has no completed baseline assessment.
+- PRE-3. The application includes the question set the instructor provided to the team.
 
 **Postconditions:**
 
-- POST-1. The student's baseline responses are stored and associated with the student.
-- POST-2. The baseline assessment is marked complete for the student.
+- POST-1. The student's validated responses are stored and associated with the student, together with the version of the question set they answered.
+- POST-2. The student's baseline is stored: their study-habit answers and a knowledge level per chemistry topic, scored from their knowledge answers.
+- POST-3. The student's choice about showing their name to the instructor is stored.
+- POST-4. The baseline assessment is marked complete for the student, with the date it was completed, and the student can use the rest of the application.
+- POST-5. POST-1 to POST-4 are all true or none is: a failed submission stores nothing and leaves the student not complete.
 
 **Main Success Scenario:**
 
-1. The student selects the option to begin the baseline assessment.
-2. The system retrieves the assessment questions and displays an explanation of the assessment.
-3. The student begins the assessment.
-4. The system presents a question about the student's current study habits or preferences.
-5. The student answers the question.
-6. The system records the response and presents the next question.
-7. The student repeats steps 5 and 6 until all questions are answered.
-8. The system displays the completed assessment for review and submission.
-9. The student submits the completed assessment.
-10. The system validates the required responses.
-11. The system stores the validated responses, associates them with the student, marks the assessment complete, and confirms completion to the student.
-12. Use case ends.
+1. The student opens the application for the first time after signing up.
+2. The system shows that the baseline assessment is required before continuing and explains it: a one-time, ungraded assessment with a study-habits part and a general chemistry part; it has no effect on the course grade; "I'm not sure" is an acceptable answer to a chemistry question; and the coach uses the result to match its questions to what the student already knows.
+3. The system asks whether the student allows the instructor to see their name with their results, explaining that otherwise the instructor sees them anonymously.
+4. The student chooses yes or no.
+5. The student begins the assessment.
+6. The system presents a question from the question set, with its answer options and its position in the assessment (for example, "Question 3 of 12"). A chemistry question also offers "I'm not sure".
+7. The student answers the question.
+8. The system keeps the response in the in-progress assessment, without showing whether a chemistry answer is correct, and presents the next question.
+9. The student repeats steps 7 and 8 until all questions are answered.
+10. The system displays the completed assessment for review, showing every question with the student's answer and the student's name-sharing choice.
+11. The student submits the completed assessment.
+12. The system validates the required responses.
+13. The system scores the chemistry answers by topic, stores the responses, the baseline, and the name-sharing choice, marks the assessment complete, and confirms completion to the student.
+14. The system lets the student into the application. The coach uses the baseline from the student's next conversation.
+15. Use case ends.
 
 **Extensions:**
 
-- **10a. A required response is missing:**
-    - 10a1. The system identifies the unanswered question or questions and asks the student to complete them.
-    - 10a2. The student provides the missing response or responses.
-    - 10a3. The flow rejoins at step 10.
-- **11a. The system cannot save the responses:**
-    - 11a1. The system informs the student that the assessment could not be saved and preserves the entered responses for another attempt where feasible.
-    - 11a2. The student retries submission or terminates the use case.
+- **2a. The student tries to skip the assessment or go to another page:**
+    - 2a1. The system explains that the assessment is required first and returns the student to it.
+- **2b. The questions cannot be loaded:**
+    - 2b1. The system explains that the assessment is unavailable right now and offers to try again. Nothing is stored.
+    - 2b2. Whether the student waits or may use the rest of the application meanwhile is open (see Open Issues).
+- **2c. The student's session has expired:**
+    - 2c1. The system asks the student to sign in again and returns them to step 2 afterwards.
+- **4a. The student does not choose:**
+    - 4a1. The system treats the choice as required and does not continue until the student chooses yes or no.
+- **7a. The student chooses "I'm not sure" on a chemistry question:**
+    - 7a1. The system records the response as not known, separately from a wrong answer, and the flow continues at step 8.
+- **7b. The student skips an optional question:**
+    - 7b1. The system records no response for that question and the flow continues at step 8.
+- **7c. The student goes back to an earlier question:**
+    - 7c1. The system shows the earlier question with the student's current answer, and the student may change it. The flow continues at step 8.
+- **7d. A response is not one of the offered options, or a text answer is longer than allowed:**
+    - 7d1. The system rejects it with a message explaining what is accepted and keeps the student on the question (`ROB-invalid-data`).
+- **8a. The student leaves or closes the application before submitting:**
+    - 8a1. Nothing is stored and the assessment remains not complete.
+    - 8a2. The next time the student opens the application, the flow starts again at step 2.
+- **10a. The student changes an answer or their name-sharing choice during review:**
+    - 10a1. The system shows that question or choice again, the student changes it, and the flow returns to step 10.
+- **11a. The student submits more than once** (for example, by double-clicking):
+    - 11a1. The system processes one submission and stores one set of responses.
+- **12a. A required response is missing:**
+    - 12a1. The system identifies the unanswered question or questions and asks the student to complete them.
+    - 12a2. The student provides the missing response or responses.
+    - 12a3. The flow rejoins at step 12.
+- **12b. The student's session expired before submission:**
+    - 12b1. The system asks the student to sign in again, keeps the entered responses where feasible, and the flow rejoins at step 11.
+- **12c. The student already completed the assessment** (for example, on another device):
+    - 12c1. The system does not store a second set of responses or change the baseline, tells the student their assessment is already complete, and continues at step 14.
+- **13a. The system cannot save the responses or calculate the baseline:**
+    - 13a1. The system informs the student that the assessment could not be saved, stores nothing, and preserves the entered responses for another attempt where feasible (POST-5).
+    - 13a2. The student retries submission or terminates the use case. The student stays at the assessment until it is saved.
+- **14a. A student with a completed assessment opens the application:**
+    - 14a1. The system does not show the assessment again and goes straight into the application. The assessment is one-time; there is no retake.
 
 **Priority:** High
-**Frequency of Use:** Primarily once per student; whether retakes are allowed is not yet determined.
-**Business Rules:** none
+**Frequency of Use:** Once per student, on first opening the application after sign-up; about 185 students in the pilot course, mostly at the start of the semester.
+**Business Rules:** `BR-student-information-confidentiality`, `BR-no-content-teaching`
 
 **Associated Information:**
 
 | Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
 |---|---|---|---|---|
-| baseline response | Selection or text | Required for required assessment questions | Visible only to the student and authorized system functions | Study habits |
-| assessment completion status | Boolean | Set to complete only after all required responses are successfully stored | Student-specific; not editable by other students | Baseline assessment |
+| question | Text, part (study habits or chemistry), answer options; for chemistry, a topic and a correct option | Provided by the instructor and included in the application by the team | The correct option is never sent to the student's browser; chemistry answers are scored on the server | Benchmark Quiz |
+| baseline response | One or more selected options, "not sure", or short text | Must match the question's options; required for required questions; short text has a maximum length | Visible to the student; visible to the instructor named or anonymously according to the name-sharing choice; never written to logs | Benchmark Quiz |
+| name-sharing choice | Yes or no | Required | Set by the student; decides whether the instructor sees the student's name | — |
+| baseline | Study-habit answers and a knowledge level per chemistry topic | Derived on the server only from the student's responses | Sent to the language model service with the student's coaching requests; visible to the instructor as the name-sharing choice allows | Benchmark Quiz |
+| question-set version | Identifier | The version included in the application when the student started; changes only in a new release | — | — |
+| assessment completion status and date | Boolean and date-time (UTC) | Set to complete only after the responses, baseline, and choice are stored together | Student-specific; checked every time the student opens the application | Benchmark Quiz |
 
-The assessment focuses on study behavior rather than chemistry knowledge. Questions may cover preferred study times, session lengths, study methods, print versus digital study, and office-hours use. If persistence fails, the assessment is not marked complete; entered responses are preserved for a retry where feasible.
+The chemistry part calibrates the coach; it does not teach. The coach uses the baseline only to choose the level of its guiding questions, never to explain content or give answers (`BR-no-content-teaching`). Every request requires a signed-in student and reaches only that student's records (`SEC-authentication`, `SEC-student-isolation`); the instructor's access follows `SEC-instructor-visibility`. The submission is one transaction: if any part fails, nothing is stored and the assessment is not marked complete. The assessment should be short enough that a first-time student reaches their study plan within five minutes of finishing onboarding (`USE-study-plan`), and the page meets `USE-accessibility`. The [baseline assessment design-of-record](../design/design-of-record.md) predates this revision and must be revised before implementation.
 
-**Related Use Cases:** none
-**Assumptions:** The baseline assessment is available at the start of the student's use of the application.
-**Open Issues:** Is completion mandatory? Can students retake the assessment?
+**Related Use Cases:** `UC-ACCT-sign-in`, `UC-BNCH-view-baseline-results`, `UC-BNCH-view-class-baseline-results`, `UC-CHAT-work-through-problem` (uses the baseline)
+**Assumptions:** Students answer on their own, without looking answers up; the "I'm not sure" option reduces guessing.
+**Open Issues:**
+
+- How does the coach use the baseline, for example how many topics and levels, and how the baseline is added to coaching requests?
+- If the questions cannot be loaded (extension 2b), does the student wait, or use the rest of the application until they load?
+- In what form will the instructor provide the questions, with the correct answer and topic for each chemistry question, and by when?
+- Can a student change their name-sharing choice later, and where?
+
+---
+
+### UC-BNCH-view-baseline-results: The student views their baseline and growth
+
+**UC ID and Name:** `UC-BNCH-view-baseline-results`: View my baseline and growth over time
+**Created By:** Team 4 (Amarachi Chiemela, Sam Shema)
+**Date Created:** 2026-11-16 (revised 2026-11-20)
+**Primary Actor:** student
+**Secondary Actors:** none
+**Trigger:** The student finishes the baseline assessment, or later chooses to view their baseline.
+**Description:** The student sees where they started, in study habits and in chemistry knowledge by topic, and how they have grown since, so they can recognize their own progress.
+
+**Preconditions:**
+
+- PRE-1. The student is signed in.
+- PRE-2. The student has a completed baseline assessment.
+
+**Postconditions:**
+
+- POST-1. The student has seen their own baseline, its date, and any growth measured since.
+- POST-2. Nothing is changed.
+
+**Main Success Scenario:**
+
+1. The student chooses to view their baseline.
+2. The system retrieves the student's baseline and any later measurements of the same topics and habits.
+3. The system displays the baseline by topic and habit, with its date, and shows the change since the baseline over time, in neutral and encouraging language that presents it as progress, not a grade.
+4. Use case ends.
+
+**Extensions:**
+
+- **2a. The student has not completed the assessment:**
+    - 2a1. The system takes the student to `UC-BNCH-complete-baseline-assessment`, which is required first.
+- **2b. There are no later measurements yet:**
+    - 2b1. The system shows the baseline alone and explains that growth appears as the student keeps using the application.
+- **2c. The results cannot be loaded:**
+    - 2c1. The system explains that the results are unavailable right now and offers to try again. Nothing is changed.
+- **2d. The student's session has expired:**
+    - 2d1. The system asks the student to sign in again and returns them to step 2 afterwards.
+- **3a. The question set has changed since the student answered:**
+    - 3a1. The system shows the baseline as the student answered it, not the current questions.
+
+**Priority:** Medium
+**Frequency of Use:** Once after completing the assessment, then occasionally, for example after an exam.
+**Business Rules:** `BR-student-information-confidentiality`
+
+**Associated Information:**
+
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| baseline | As in `UC-BNCH-complete-baseline-assessment` | Read only | The student sees only their own (`SEC-student-isolation`) | Benchmark Quiz |
+| later measurement | Same topics and habits as the baseline, with a date | Source not yet decided (see Open Issues) | Student-specific | — |
+
+The view never ranks the student or compares them with other students, consistent with the client's goal that students recognize their own patterns without feeling judged (`BO-self-reflection`, `BO-study-awareness`). It does not reveal the correct answers to the chemistry questions.
+
+**Related Use Cases:** `UC-BNCH-complete-baseline-assessment`
+**Assumptions:** The view is reachable within three clicks of the dashboard (`USE-core-navigation`).
+**Open Issues:**
+
+- The assessment is one-time, so where do the later measurements that show growth come from: study sessions, reflections, Coach conversations, or short periodic check-ins?
+- Where does the view live: on the Progress page, or in a separate profile view?
+
+---
+
+### UC-BNCH-view-class-baseline-results: The instructor views the class's baseline results
+
+**UC ID and Name:** `UC-BNCH-view-class-baseline-results`: View the class's baseline results
+**Created By:** Team 4 (Amarachi Chiemela, Sam Shema)
+**Date Created:** 2026-11-20
+**Primary Actor:** instructor
+**Secondary Actors:** none
+**Trigger:** The instructor wants to see where her students are starting from.
+**Description:** The instructor sees the class's baseline results in the admin view, with the names of only the students who agreed to show them, so she understands her students' starting habits and knowledge while respecting each student's choice.
+
+**Preconditions:**
+
+- PRE-1. The instructor is signed in with instructor access.
+
+**Postconditions:**
+
+- POST-1. The instructor has seen class-level results and each student's results, named only where the student agreed.
+- POST-2. Nothing is changed.
+
+**Main Success Scenario:**
+
+1. The instructor opens the class's baseline results in the admin view.
+2. The system retrieves every completed baseline assessment for the course.
+3. The system displays class-level results: the number of students who completed the assessment, the spread of study-habit answers, and the average knowledge level per chemistry topic.
+4. The system lists each student's results, showing the student's name if they chose to share it and an anonymous label otherwise.
+5. The instructor opens one student's results.
+6. The system shows that student's answers and knowledge levels, under the same naming rule.
+7. Use case ends.
+
+**Extensions:**
+
+- **1a. Someone without instructor access opens the results:**
+    - 1a1. The system refuses access and shows no results.
+- **2a. No student has completed the assessment yet:**
+    - 2a1. The system says so and shows no results.
+- **2b. The results cannot be loaded:**
+    - 2b1. The system explains that the results are unavailable right now and offers to try again.
+- **3a. Students answered different versions of the question set:**
+    - 3a1. The system groups results by version, or shows only questions common to the versions, so that answers to different questions are not combined.
+- **4a. So few students are anonymous that one could be identified:**
+    - 4a1. How the system protects them is open (see Open Issues).
+
+**Priority:** Medium
+**Frequency of Use:** A few times per semester, mostly after most students have signed up.
+**Business Rules:** `BR-student-information-confidentiality`
+
+**Associated Information:**
+
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| student label | Name or anonymous label | The name appears only if the student's name-sharing choice is yes | Instructor only | — |
+| class-level results | Counts and averages | Calculated from completed assessments only | Instructor only | Benchmark Quiz |
+
+The anonymous label is stable, so the instructor can follow one anonymous student's results without learning who they are. Access follows `SEC-instructor-visibility`; students never see other students' results (`SEC-student-isolation`).
+
+**Related Use Cases:** `UC-BNCH-complete-baseline-assessment`, `UC-BNCH-view-common-terms`
+**Assumptions:** The pilot has one course and one instructor.
+**Open Issues:**
+
+- Should the instructor also see each student's growth since the baseline, or only the baseline?
+- How are anonymous students protected when only a few students are anonymous (extension 4a)?
+
+---
+
+### UC-BNCH-view-common-terms: The instructor views common terms in students' responses
+
+**UC ID and Name:** `UC-BNCH-view-common-terms`: View common terms in students' responses
+**Created By:** Team 4 (Amarachi Chiemela, Sam Shema)
+**Date Created:** 2026-11-20
+**Primary Actor:** instructor
+**Secondary Actors:** Language model service (Gemma on Cloudflare Workers AI)
+**Trigger:** The instructor wants to know what her students commonly say about how they study and what they find hard.
+**Description:** The coach pulls out the terms and themes that come up most often in students' own words, and the instructor sees them in the admin view, so she can spot shared habits and difficulties without reading every response.
+
+**Preconditions:**
+
+- PRE-1. The instructor is signed in with instructor access.
+
+**Postconditions:**
+
+- POST-1. The instructor has seen the most common terms and themes, with how often each appears.
+- POST-2. No term is attributed to an individual student.
+
+**Main Success Scenario:**
+
+1. The instructor opens common terms in the admin view.
+2. The system collects the students' text responses for the selected period.
+3. The system asks the language model service to group them into common terms and themes.
+4. The system displays the terms and themes, most frequent first, with how often each appears.
+5. Use case ends.
+
+**Extensions:**
+
+- **1a. Someone without instructor access opens common terms:**
+    - 1a1. The system refuses access and shows nothing.
+- **2a. There are too few responses to show common terms:**
+    - 2a1. The system says so and shows nothing.
+- **3a. The language model service is unavailable, times out, or its allowance is exhausted:**
+    - 3a1. The system explains that common terms are unavailable right now and offers to try again (`ROB-external-service`).
+- **3b. The model's output names or quotes an identifiable student:**
+    - 3b1. The system does not show that term (POST-2).
+- **4a. The instructor selects a term:**
+    - 4a1. How much detail the system shows, for example anonymized example phrases, is open (see Open Issues).
+
+**Priority:** Low
+**Frequency of Use:** Occasionally, for example after the first exam.
+**Business Rules:** `BR-student-information-confidentiality`
+
+**Associated Information:**
+
+Student text is sent to the language model service to find common terms, so it leaves the application; this needs the same privacy approval as coaching requests (`OI-PRIVACY`). Terms are shown only in aggregate. The result may be generated again each time or stored; if it is stored, it is refreshed when new responses arrive.
+
+**Related Use Cases:** `UC-BNCH-view-class-baseline-results`, `UC-BNCH-complete-baseline-assessment`
+**Assumptions:** Enough students answer in their own words for patterns to appear.
+**Open Issues:**
+
+- Which responses are included: only text answers in the baseline assessment, or also Coach conversations? Coach conversations are not stored today, so including them needs chat-history storage first.
+- Does this belong in `BNCH` if it includes Coach conversations? If so, it may need its own area and feature.
+- What is the minimum number of responses before terms are shown, and can the instructor see example phrases?
+
+---
 
 ## UC-CHAT-work-through-problem — Work Through a Chemistry Problem
 
