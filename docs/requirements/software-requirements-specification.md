@@ -40,6 +40,7 @@ _Requirements cited from elsewhere keep their own identifiers: `UC-*` from [use-
 |---|---|---|---|
 | _[YYYY-MM-DD]_ | 0.1 | Initial draft | _[Name]_ |
 | 2026-11-06 | 0.2 | Corrected `SAF-ai-guidance` to match `BR-no-direct-answers`; added `SEC-instructor-visibility`. | Team 4 |
+| 2026-11-20 | 0.3 | Revised `SEC-instructor-visibility` to the client-confirmed name-sharing rule. | Amarachi Chiemela, Sam Shema |
 
 ---
 
@@ -244,7 +245,7 @@ _Write one subsection per attribute your project actually has, and say "not appl
 
 **SEC-student-isolation**: Students shall only be able to access their own grades, study plans, study history, confidence ratings, and other private academic information.
 
-**SEC-instructor-visibility**: The instructor shall always be able to see each student's data and class averages. If a student chooses "Private," that student's data shall be shown to the instructor anonymously rather than hidden. Provisional: team decision, client confirmation pending (`OI-PRIVACY`).
+**SEC-instructor-visibility**: The instructor shall be able to see each student's baseline information and class averages. A student's name shall be shown to the instructor only if the student agreed to share it; otherwise that student's information shall be shown anonymously, never hidden (`BR-student-information-confidentiality`).
 
 **SEC-grade-consent**: The platform shall not import or use a student's D2L grade information unless the student has explicitly chosen to share it.
 

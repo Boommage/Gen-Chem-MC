@@ -8,6 +8,8 @@
 > **Depends on:** `FEAT-benchmark-quiz`; `SEC-authentication`; `SEC-student-isolation`; `ROB-invalid-data` (applied to this area by architecture-of-record section 6.2). The use case cites no business rules.
 > **See:** [use cases](../requirements/use-cases.md#uc-bnch-complete-baseline-assessment-the-student-completes-a-baseline-assessment), [specification](../requirements/software-requirements-specification.md), [architecture-of-record](architectural-design.md)
 > **Designed against:** `main` at `4257888`
+>
+> **Status (2026-11-20):** Out of date. It predates use cases version 0.4, in which the assessment became mandatory and one-time, gained a chemistry-knowledge part scored on the server and a name-sharing choice, and the instructor gained a class view (`UC-BNCH-view-class-baseline-results`, `UC-BNCH-view-common-terms`). The instructor is now allowed to see baseline information (`SEC-instructor-visibility`), which reverses this design's "instructor never sees baseline response content". Revise this design before anyone implements `BNCH`.
 
 ---
 

@@ -28,6 +28,7 @@ Business rules (`BR-*`) live in [business-rules.md](business-rules.md). Open que
 | 2026-09-11 | 0.1 | Initial draft from client brief and interview notes | Team + Instructor |
 | 2026-09-25 | 0.2 | Moved content into template sections and removed the duplicated Introduction. Aligned objectives with the interview notes (replaced `BO-metacognition`, `BO-study-habits`, and `BO-guided-not-answered`, which is a business rule: `BR-no-direct-answers`). Marked unconfirmed metric targets as TBD. Moved `FEAT-d2l-grades-read` to Postponed. Added features discussed with the client. Filled background, process flows, stakeholders, and context from the interview. | Sam Shema |
 | 2026-11-06 | 0.3 | Renamed `SM-no-answer-leak` to `SM-no-answer-given` (target and test set unchanged). Recorded the team's decision on Private students under `FEAT-account-consent`. | Team 4 |
+| 2026-11-20 | 0.4 | Updated `FEAT-benchmark-quiz` from the client's answers: mandatory, one-time, study habits and chemistry knowledge, instructor-provided questions, and an instructor view. | Amarachi Chiemela, Sam Shema |
 
 ---
 
@@ -277,7 +278,7 @@ flowchart LR
 |---|---|---|
 | `FEAT-guided-chatbot` | A chat coach that asks students to break down a problem themselves, prompts them to reconsider when they are wrong, and confirms only answers they reach on their own. | `BR-no-direct-answers`, `BR-answer-confirmation-only`, `BR-student-initiated-breakdown`, `BR-no-content-teaching` |
 | `FEAT-course-grounding` | The chatbot evaluates reasoning using the client's own course materials rather than outside sources, which may teach concepts differently. | `BR-no-content-teaching` |
-| `FEAT-benchmark-quiz` | A short (about 5 question) initial survey of the student's current study habits: preferred time of day, session length, and methods used. | |
+| `FEAT-benchmark-quiz` | A mandatory, one-time assessment on first use after sign-up, covering the student's current study habits (such as preferred time of day, session length, and methods used) and their general chemistry knowledge, with questions the instructor provides. It gives the coach a baseline, lets the student see their growth, and gives the instructor a class view in which students are named only if they agree. | `BR-student-information-confidentiality` |
 | `FEAT-pomodoro-timer` | A built-in study timer that records each timed session. | |
 | `FEAT-study-session-log` | A record of each study session (method, duration, time of day), from the timer or entered manually for studying done elsewhere, with a personal summary the student can review. | |
 | `FEAT-reflection` | Guided, nonjudgmental reflection after a study session, quiz, or exam, comparing how the student studied with how they felt they did. | |
