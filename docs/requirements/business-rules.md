@@ -84,6 +84,7 @@ _The Source column is the defense. Every rule traces to a document or a person, 
 |---|---|---|---|
 | _[YYYY-MM-DD]_ | 0.1 | Initial rules from the client brief and first client meeting | _[Name]_ |
 | 2026-11-06 | 0.2 | Revised the candidate `BR-student-information-confidentiality` to the team's anonymous-not-hidden decision. | Team 4 |
+| 2026-11-20 | 0.3 | Confirmed `BR-student-information-confidentiality` from the client's answers (names shown only with the student's agreement) and moved it out of the candidates. | Amarachi Chiemela, Sam Shema |
 
 ---
 
@@ -128,17 +129,17 @@ _Format each rule as a bold identifier, the rule in one sentence, then its sourc
 - **`BR-no-direct-answers`:** The system must never give a student the final answer to a chemistry problem or question; it may only guide the student toward finding the answer themselves.
   **Source:** Client meeting notes, September 8, 2026 — Heidi Conrad: "Current AI platforms provide the answer - ours should never provide the answer but guide them."
 
-  ### 2.2 Candidate Rules — Not Yet Confirmed
+### 2.2 Student Information
+
+- **`BR-student-information-confidentiality`:** Student information must be kept secure. The instructor may see each student's information and class averages, but sees a student's name only if that student agreed to share it; otherwise the student's information is shown to the instructor anonymously.
+  **Source:** Heidi Conrad, client answers relayed by Amarachi Chiemela and Sam Shema, 2026-11-20. Replaces the team decision of 2026-11-06.
+
+### 2.3 Candidate Rules — Not Yet Confirmed
 
 _[Flagged per the checklist: these have the shape of a rule but the source is the team's own brainstorm, not a client statement. Confirm with Heidi before treating as a real rule, or move to the specification as a team design decision.]_
 
 - **`BR-leaderboard-professor-only`** *(unconfirmed)***:** If a leaderboard/points feature is implemented, it is visible only to the course instructor, not to students.
   **Source:** team brainstorm ("Retention Methods" notes), not yet raised with or confirmed by the client. **Action:** ask Heidi directly at the next meeting; if she didn't originate this, it is a team design decision and belongs in the specification, not here.
-
-- **`BR-student-information-confidentiality`** 
-Student information must be secure. The instructor can always see each student's data and class averages; if a student chooses "Private," their data is shown to the instructor anonymously rather than hidden.
-  **Source:** team decision, 2026-11-06; client confirmation pending (`OI-PRIVACY`).
-
 
 _[That third entry is deliberate. Flag rules you are not sure about rather than dropping them; deciding whether something is a rule or a requirement is a conversation to have with your client, and it is worth having.]_
 

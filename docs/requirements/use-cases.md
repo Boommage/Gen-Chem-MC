@@ -134,7 +134,7 @@ _[Your area codes, then a table of every use case by area. Write this list first
 The four active `BNCH` use cases and the `CHAT` use cases with a heading in Section 4 are specified there. All other entries above are inventory records awaiting their own full Section 4 specifications; their identifiers and scope classifications are retained here so they can be reviewed and traced without inventing unapproved behavior.
 
 - `UC-BNCH-retake-baseline-assessment` is withdrawn: the client confirmed the assessment is one-time. Its identifier is kept so it is never reused.
-- The instructor use cases `UC-BNCH-view-class-baseline-results` and `UC-BNCH-view-common-terms` need instructor sign-in, which no account use case covers yet.
+- The instructor use cases `UC-BNCH-view-class-baseline-results` and `UC-BNCH-view-common-terms` need instructor sign-in, which no account use case covers yet (`OI-INSTRUCTOR-SIGN-IN`).
 - `UC-CHAT-resume-conversation` requires persisted chat-history storage. `UC-CHAT-share-problem-image` accepts JPEG or PNG images up to 2 MB, 4096 px on either side, and 12 MP; no more than two images are retained in recent context.
 - `UC-GRND-add-course-material` depends on `AS-training-data`. `UC-TIME-run-study-session` must restore state after refresh (`ROB-study-session`). `UC-LOG-view-study-history` must show a saved session within two seconds (`PER-study-log`).
 - `UC-LOG-log-study-session` awaits `OI-STUDY-METHODS`. `UC-REFL-reflect-after-assessment` uses self-reported results because D2L grade import is postponed.
@@ -247,9 +247,9 @@ The chemistry part calibrates the coach; it does not teach. The coach uses the b
 **Assumptions:** Students answer on their own, without looking answers up; the "I'm not sure" option reduces guessing.
 **Open Issues:**
 
-- How does the coach use the baseline, for example how many topics and levels, and how the baseline is added to coaching requests?
+- How does the coach use the baseline, for example how many topics and levels, and how the baseline is added to coaching requests? (`OI-BNCH-COACH-USE`)
 - If the questions cannot be loaded (extension 2b), does the student wait, or use the rest of the application until they load?
-- In what form will the instructor provide the questions, with the correct answer and topic for each chemistry question, and by when?
+- In what form will the instructor provide the questions, with the correct answer and topic for each chemistry question, and by when? (`OI-BNCH-QUESTIONS`)
 - Can a student change their name-sharing choice later, and where?
 
 ---
@@ -311,7 +311,7 @@ The view never ranks the student or compares them with other students, consisten
 **Assumptions:** The view is reachable within three clicks of the dashboard (`USE-core-navigation`).
 **Open Issues:**
 
-- The assessment is one-time, so where do the later measurements that show growth come from: study sessions, reflections, Coach conversations, or short periodic check-ins?
+- The assessment is one-time, so where do the later measurements that show growth come from: study sessions, reflections, Coach conversations, or short periodic check-ins? (`OI-BNCH-GROWTH`)
 - Where does the view live: on the Progress page, or in a separate profile view?
 
 ---
@@ -432,7 +432,7 @@ Student text is sent to the language model service to find common terms, so it l
 **Assumptions:** Enough students answer in their own words for patterns to appear.
 **Open Issues:**
 
-- Which responses are included: only text answers in the baseline assessment, or also Coach conversations? Coach conversations are not stored today, so including them needs chat-history storage first.
+- Which responses are included: only text answers in the baseline assessment, or also Coach conversations? Coach conversations are not stored today, so including them needs chat-history storage first (`OI-BNCH-COMMON-TERMS`).
 - Does this belong in `BNCH` if it includes Coach conversations? If so, it may need its own area and feature.
 - What is the minimum number of responses before terms are shown, and can the instructor see example phrases?
 

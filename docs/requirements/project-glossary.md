@@ -35,7 +35,8 @@ _[The temptation is to define words your teammates already know. Skip those. The
 _Ask the client directly: "Is there a word your team uses here that I would not guess the meaning of?"_
 - **Chatbot**: Online AI assistant that a student can talk with about their Chemistry problems
 - **Tutoring**: The role of the chatbot. Helps students break down problems by encouraging the reflection of notes and course material. Never breaks down the probelems on their own.
-- **Benchmark Quiz** (also **Baseline Assessment**): Short initial survey of a student's current study habits and preferences. It does not measure chemistry knowledge. It is the initializer for the student's study session, enabling a default study session based on their input.
+- **Baseline**: The record of where a student started, produced by the Benchmark Quiz: their study-habit answers and a knowledge level for each chemistry topic. The coach uses it to pitch its guiding questions at the student's level, and the student sees their growth against it.
+- **Benchmark Quiz** (also **Baseline Assessment**): A one-time assessment every student takes on first opening the application after sign-up. It has two parts, the student's current study habits and their general chemistry knowledge, using questions the instructor provides. Its result is the student's **Baseline**. It is ungraded and does not count toward the course grade.
 - **D2L**: The online hub for all TCU course material. All quizes, grades, and assignments are accessable from D2L.
 - 
 
@@ -58,6 +59,7 @@ _Rules:_
 |---|---|---|---|
 | _[2016-09-10]_ | 0.1 | Initial terms from the client brief and first client meeting | _[DJ Brown]_ |
 | 2026-11-06 | 0.2 | Corrected Benchmark Quiz to cover study habits, not knowledge. | Team 4 |
+| 2026-11-20 | 0.3 | Per the client's answers, Benchmark Quiz covers both study habits and chemistry knowledge and is one-time; added Baseline. | Amarachi Chiemela, Sam Shema |
 
 ---
 
