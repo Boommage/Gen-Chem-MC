@@ -10,6 +10,15 @@ This repository keeps the detailed, opt-in course workflows in `.agents/`.
 These workflows are deliberately not implicit: apply one only when the developer
 explicitly requests that stage or names its workflow file.
 
+## Coordinated login and chat work
+
+Before working on student login or saved conversations, read
+[the team implementation guide](docs/design/auth-chat-team-guide.md). Follow its
+directory ownership, shared interfaces, and existing visual conventions. Zan and
+Aria own login, Victor and DJ own chat history, and Victor coordinates shared
+files and integration. Use the selected use case and its merged design for product
+behavior, and raise unresolved choices with the feature owners.
+
 ## The agent must not
 
 - **Break the dependency rule.** `gen-chem-mc/src/` and `gen-chem-mc/backend/`
