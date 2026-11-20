@@ -9,3 +9,22 @@ This repository keeps the detailed, opt-in course workflows in `.agents/`.
 
 These workflows are deliberately not implicit: apply one only when the developer
 explicitly requests that stage or names its workflow file.
+
+## The agent must not
+
+- **Break the dependency rule.** `gen-chem-mc/src/` and `gen-chem-mc/backend/`
+  may import from `gen-chem-mc/shared/`; `shared/` imports from neither, and
+  `src/` never imports from `backend/`.
+- **Mark a row in `docs/traceability.md` as ✅ Verified** unless a passing test
+  covers the main flow and every extension. Otherwise use 🟡 Partial and name
+  the untested extensions. Every link added to that file must be opened to
+  confirm it resolves.
+  *(From review: [commit comment](https://github.com/Boommage/Gen-Chem-MC/commit/44ddd6d5bbd70e0a4802df86bbefbf955b37bfba#commitcomment-211061264)
+  on PR #28)*
+- **Log request bodies, model responses, error objects, tokens or credentials.**
+  Add fields to the `logUsage` allowlist in `backend/model.ts` instead.
+- **Change `backend/policy.ts`** without keeping its policy and
+  reasoning-disabled tests in `backend/model.test.ts` passing.
+- **Read secret locations:** `.dev.vars`, `.env*`, or any file holding
+  `TEAM_API_TOKEN`.
+- **Remove the `Co-Authored-By` trailer** from a commit it helped write.
