@@ -140,7 +140,7 @@ C4Container
     System_Boundary(neocortex, "Neocortex") {
         Container(spa, "Web Application", "React 19 / TypeScript / Vite", "Browser UI for dashboard, study planning and sessions, coaching, and progress")
         Container(api, "Application API", "TypeScript on Cloudflare Workers", "Every business rule; enforces student-data access and is the only container that reaches the database, the language model, and the course materials")
-        ContainerDb(db, "Application Database", "PostgreSQL on Supabase", "Student email, baseline responses, study sessions, confidence ratings, reflections, and compressed chat history")
+        ContainerDb(db, "Application Database", "Cloudflare D1", "Owned conversations, turns, messages, and private attachment metadata; future student study records")
     }
 
     System_Ext(llm, "Language Model Service", "Produces draft coaching replies")
@@ -152,12 +152,12 @@ C4Container
     Rel(spa, auth, "Signs up and signs in", "HTTPS")
     Rel(api, auth, "Verifies the session", "HTTPS")
     Rel(instructor, spa, "Views usage figures", "HTTPS")
-    Rel(api, db, "Reads and writes", "Supabase connection over TLS")
+    Rel(api, db, "Reads and writes", "D1 binding")
     Rel(api, llm, "Requests a grounded coaching reply", "Workers AI binding")
     Rel(materials, api, "Grounding content", "Loaded by hand by the team")
 ```
 
-The system is one application and one database because the load is small and nobody is yet identified to operate more (`KD-typescript-worker`). The Web Application is a separate container because it runs in the browser; its production host has not been chosen. The browser reaches student data only through the Application API, because browser code cannot safely reach the language model or enforce student isolation. The Web Application is already implemented as a front-end shell. The Application API exists only as the coach prototype in `gen-chem-mc/backend/`, which calls Gemma through Cloudflare Workers AI, and the Application Database is not built yet.
+The system is one application and one database because the load is small and nobody is yet identified to operate more (`KD-typescript-worker`). The Web Application is a separate container because it runs in the browser; its production host has not been chosen. The browser reaches student data only through the Application API, because browser code cannot safely reach the language model or enforce student isolation. The Web Application is already implemented as a front-end shell. The Application API exists only as the coach prototype in `gen-chem-mc/backend/`, which calls Gemma through Cloudflare Workers AI, and the chat database now has its initial schema. Student-authenticated persistence routes and the history UI are subsequent integrations. See [chat database design](chat.md).
 
 ### 5.2 Use case areas and components
 
@@ -177,7 +177,7 @@ C4Component
         Component(content, "Course-material gateway", "Cross-cutting integration component", "Obtains, records provenance for, and makes approved grounding material available to the coach")
     }
 
-    ContainerDb(db, "Application Database", "PostgreSQL on Supabase", "Student data and loaded course material")
+    ContainerDb(db, "Application Database", "Cloudflare D1", "Conversations and attachment metadata; future student study records")
     System_Ext(llm, "Language Model Service", "Draft coaching replies")
     System_Ext(materials, "Course Material Sources", "YouTube, D2L, and Google Drive course content")
     System_Ext(auth, "Supabase Auth", "Sign-in credentials and verification codes")            
@@ -416,6 +416,15 @@ _A decision that turns out wrong is not deleted or rewritten. Mark it **Supersed
 - **Decision:** The Web Application and the Application API ship together as one Vercel project, with one managed database on Supabase. The three containers in section 5.1 remain, but the team deploys only one thing.
 - **Rejected:** Separately deployed services, with the Coach and model gateway running apart from the rest of the Application API. That would add network calls, a second deployment, and failure modes between the two, to solve a scaling problem that the load in `SCA-concurrent-users` does not create. The isolation `ROB-external-service` asks for is met inside one deployable, because the gateway is the only component that calls the Language Model Service (section 5.2).
 - **Trade-off:** The system scales only as a whole, and a bad deploy takes coaching and study recording down together. A scalability requirement well beyond `SCA-concurrent-users`, such as a school-wide rollout (`FEAT-school-wide`, postponed), would have forced separate services.
+
+**`KD-chat-storage` — D1 for conversations, Supabase Auth for identity.** _Database foundation, November 20, 2026._
+
+- The selected storage setup uses a D1 `DB` binding in the existing Worker, with Supabase Auth issuing the student identity used for ownership.
+- This replaces the application-storage portion of the Supabase database proposal in `KD-typescript-worker`. Its TypeScript Worker decision continues to apply.
+- The owner confirmed saving on first submission, preserving failed turns for Retry, saved text and images, and expiration fourteen days after the last saved message.
+- R2 is the proposed private image store. The owner's zero-overage requirement needs an explicit storage decision because R2 has no hard spending cap.
+- Application queries must enforce ownership from verified sessions. The new schema covers conversations and attachment metadata. The [chat design](chat.md) records remaining API, image, and scheduled cleanup integration.
+- Supabase PostgreSQL would integrate database access policies with Auth. D1 was selected to keep conversation storage directly accessible to the existing Worker.
 
 ## 10. Quality Requirements
 

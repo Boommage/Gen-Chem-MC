@@ -17,10 +17,24 @@
     "binding": "AI",
     "remote": true
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "neocortex-chat",
+      "database_id": "3f58c909-f0a4-4c55-b3bf-1ff7ccd5c7f0"
+    }
+  ],
   "env": {
     "team": {
       "name": "neocortex-gemma-team",
       "ai": { "binding": "AI", "remote": true },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "neocortex-chat",
+          "database_id": "3f58c909-f0a4-4c55-b3bf-1ff7ccd5c7f0"
+        }
+      ],
       "observability": {
         "logs": {
           "enabled": true,
