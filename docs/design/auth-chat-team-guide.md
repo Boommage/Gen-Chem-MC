@@ -9,7 +9,7 @@
 
 This guide defines the directory boundaries, interfaces, visual conventions, and integration sequence for agents working on student login and saved conversations. Use it with [AGENTS.md](../../AGENTS.md), the [use cases](../requirements/use-cases.md), and the selected area's merged design. Directory and interface examples below describe the intended implementation. Create them through the shared foundation and feature PRs described here.
 
-The working plan uses Supabase Auth for student identity, Cloudflare D1 for conversation records, R2 for private images, and the existing Cloudflare Worker for requests and Gemma. The team confirmed that reopened chats must retain both text and images and that Victor coordinates shared changes.
+The working plan uses Supabase Auth for student identity, Cloudflare D1 for conversation records, private image storage, and the existing Cloudflare Worker for requests and Gemma. R2 is the proposed image store, subject to the owner's zero-overage requirement. See the [database design](chat.md). The team confirmed that reopened chats must retain both text and images and that Victor coordinates shared changes.
 
 ## 1. Agree on the behavior before feature implementation
 
@@ -27,11 +27,11 @@ The team still needs to answer the following questions in the use cases. Both ag
 
 - Which email addresses can register, and which sign-in method ships first? Is email verification required, and does password reset ship in this increment?
 - Earlier discussions required a baseline assessment before general app access. Does this increment temporarily admit students to Coach, or include that gate? Record any changed decision and its impact.
-- How long are chats and images retained? Do rename, deletion, and unsent draft recovery belong in the first release?
+- Chats and images expire fourteen days after the last saved message. Do rename, manual deletion, and unsent draft recovery belong in the first release?
 - What happens when a student selects New chat, changes conversations, or signs out during generation? Agree on cancellation and any unfinished-turn recovery.
-- Should a saved conversation first appear when New chat is selected or when the first message is submitted? What title is shown?
+- A conversation is saved when its first message is submitted. What title is shown?
 
-The API below supports saving a user message before model completion and retrying the same turn. Treat that behavior as the proposed failure policy for the use-case review. Student chats remain private. The previously agreed instructor view covers approved metrics and pseudonyms, with chat content excluded from instructor access.
+Victor confirmed that a submitted user message is saved before model completion and remains retryable with a failed status if Gemma fails. Student chats remain private. The previously agreed instructor view covers approved metrics and pseudonyms, with chat content excluded from instructor access.
 
 ## 2. Directory layout and ownership
 
