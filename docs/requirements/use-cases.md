@@ -101,6 +101,7 @@ _[Your area codes, then a table of every use case by area. Write this list first
 | Area code | Feature area | Use cases |
 |---|---|---|
 | `BNCH` | `FEAT-benchmark-quiz`: Initial study-habits survey | `UC-BNCH-complete-baseline-assessment` |
+| `STDY` | `FEAT-pomodoro-timer`: Timed study session | `UC-STDY-use-pomodoro-timer` |
 
 ---
 
@@ -168,3 +169,64 @@ The assessment focuses on study behavior rather than chemistry knowledge. Questi
 **Assumptions:** The baseline assessment is available at the start of the student's use of the application.
 **Open Issues:** Is completion mandatory? Can students retake the assessment?
 
+### UC-STDY-use-pomodoro-timer: Run a timed study session
+
+**UC ID and Name:** `UC-STDY-use-pomodoro-timer`, Run a timed study session  
+**Created By:** Team 4  
+**Date Created:** 2026-11-20  
+**Primary Actor:** student  
+**Secondary Actors:** none  
+**Trigger:** The student opens the timer on the Study tab.  
+**Description:** The student plans a focused study session with scheduled breaks, runs the timer, and can review the time actually spent studying and on breaks.
+
+**Preconditions:**
+
+- PRE-1. The student can access the Study tab.
+
+**Postconditions:**
+
+- POST-1. The timer has stopped.
+- POST-2. The student's study log contains one record for the finished or explicitly ended session, with actual total, focus, and break times.
+
+**Main Success Scenario:**
+
+1. The student opens the timer.
+2. The system displays the 25-, 45-, 60-, and 90-minute session presets and the default 25-minute focus and 5-minute break values.
+3. The student selects a preset or enters a total duration and can edit the focus and break durations.
+4. The system validates the values and previews the resulting ordered schedule. The preview updates as the student changes valid values.
+5. The student starts the session.
+6. The system starts in focus and advances automatically between focus and break periods. The timer shows the current period and remaining time.
+7. When the selected session time is used, the system ends the timer after a focus period.
+8. The system records the actual total, focus, and break times and confirms that the session was saved.
+
+**Extensions:**
+
+- **2a. The student returns after a refresh or reopens the tab or browser with a recoverable session.** Before displaying setup, the system restores the session paused and offers Continue session or End session. Continue returns to step 6 at the saved position. End goes to step 8 with the accrued time.
+- **2b. The student returns while a finalized session is awaiting save.** The system offers to retry the save with the frozen totals. Retry rejoins at step 8.
+- **4a. A duration is invalid or incomplete.** The system identifies the affected input and prevents the student from starting with those values. The student returns to step 3.
+- **6a. The student skips an active break.** The system starts focus immediately and assigns the remaining break time to focus. Break time already accrued stays in the log. The flow continues at step 6.
+- **6b. The student pauses.** The system freezes the session and current-period clocks. When the student resumes, the flow continues at step 6 from the same point. Paused time is excluded.
+- **6c. The connection is temporarily lost.** The system pauses the session. Recovery preserves the paused position, subject to `ROB-study-session`. The student can continue at step 6 or end at step 8 with accrued time.
+- **6d. The student selects Reset.** The system explains that resetting requires ending the current session. If the student cancels, the session keeps its prior running or paused state. If the student confirms, the timer stops and the flow goes to step 8 with accrued time before setup is available again.
+- **8a. Saving fails.** The system reports the failure and preserves the finalized totals for retry. A retry of the same session produces one study log record.
+
+**Priority:** High (MVP)  
+**Frequency of Use:** Once per timed study session.  
+**Business Rules:** none
+
+**Associated Information:**
+
+| Property name | Data type | Validation rule | Security or access concerns | Glossary reference |
+|---|---|---|---|---|
+| Total session duration | Duration | Required. Includes scheduled focus and breaks. See `OI-TIMER-DURATION-LIMITS`. | Entered by the student | — |
+| Focus and break settings | Durations | Required. See `OI-TIMER-DURATION-LIMITS`. | Entered by the student | — |
+| Session schedule | Ordered focus and break periods | Periods are sequential. The first and last periods are focus. Periods sum to the selected total. | Belongs to the current session | — |
+| Actual total, focus, and break times | Durations | Nonnegative. Total equals focus plus break. Paused time is excluded. | Access follows `SEC-student-isolation` | — |
+
+Use the configured period lengths until reaching the end of the schedule. Shorten a final focus period to fit. If the remaining time at the end of a focus period would only form a final break, add it to that focus period. A short final focus period after a full break is allowed. An explicit end or reset can stop an in-progress break and records actual accrued time.
+
+Applicable requirements include `USE-core-navigation`, `ROB-study-session`, `ROB-invalid-data`, `PER-study-log`, and `SEC-student-isolation`.
+
+**Related Use Cases:** no study log use case is defined yet. The record supports `FEAT-study-session-log`.  
+**Assumptions:** The study log can receive a single record for a timed session.  
+**Open Issues:** `OI-TIMER-DURATION-LIMITS`, `OI-TIMER-ALERTS`

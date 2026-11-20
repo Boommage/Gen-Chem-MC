@@ -31,6 +31,7 @@ _Worked example, from Project Pulse:]_
 |---|---|---|
 | `FEAT-performance-tracking` | `BO-PERF-instructor-efficiency`, `BO-PERF-student-participation` | `WAR`, `EVA` |
 | `FEAT-administration` | (enabling, serves no objective directly) | `SEC`, `TEA`, `STU`, `INS`, `ACC`, `RUB` |
+| `FEAT-pomodoro-timer` | `BO-study-awareness` | `STDY` |
 
 _[An enabling feature that serves no measurable objective on its own says so, as the second row does. That is different from forgetting to fill the column in.]_
 
@@ -113,6 +114,7 @@ The planned releases, in order: `v1.6.0` the reminders (the on-demand one, and t
 | UC | Use Case | Build | Verify | Release | FR IDs | Design | Frontend | Backend | Tests |
 |----|----------|-------|--------|--------|--------|----------|---------|-------|---------|
 | UC-BNCH-complete-baseline-assessment | Student completes onboarding assesment | ❌ Built | ❌ Verified | Later | — | — | — | — | — |
+| `UC-STDY-use-pomodoro-timer` | Run a timed study session | 📐 Designed | ❌ Verified | December MVP | `ROB-study-session`, `ROB-invalid-data`, `USE-core-navigation`, `PER-study-log`, `SEC-authentication`, `SEC-student-isolation` | [stdy.md](design/stdy.md) | — | — | — |
 
 
 

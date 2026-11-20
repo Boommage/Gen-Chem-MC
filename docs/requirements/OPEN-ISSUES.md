@@ -30,6 +30,8 @@ _[Send the shortlist to your client the day before. A client who has seen the qu
 | ID | Question | Why it matters | Who can answer | Raised |
 |---|---|---|---|---|
 | OI-1 | _[The question, phrased so it has a definite answer. Not "tell us about reporting" but "who is allowed to see another student's evaluation scores?"]_ | _[What we get wrong if we guess. Name the artifact or decision it blocks.]_ | _[Client, instructor, a specific user, or the team itself]_ | _[YYYY-MM-DD]_ |
+| OI-TIMER-DURATION-LIMITS | What minimum, maximum, and increments apply to editable total, focus, and break times? Is a zero-length break setting allowed? | Determines validation and boundary cases for `UC-STDY-use-pomodoro-timer`. | Team 4 | 2026-11-20 |
+| OI-TIMER-ALERTS | Should phase changes or session completion trigger alerts? If so, which events and channels are in the MVP? | Determines the notification behavior and tests for `UC-STDY-use-pomodoro-timer`. | Team 4 | 2026-11-20 |
 
 ## Resolved
 

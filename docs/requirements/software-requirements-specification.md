@@ -129,6 +129,8 @@ _[Link only. Business requirements, objectives, metrics, and scope live in [visi
 
 ### 5.1 Use cases
 
+[Run a timed study session](use-cases.md#uc-stdy-use-pomodoro-timer-run-a-timed-study-session) specifies the Study timer behavior for `FEAT-pomodoro-timer`.
+
 _[Link to [use-cases.md](use-cases.md). Most of your system's behavior is specified there, as use cases, and it does not get restated here.]_
 
 ### 5.2 Non-use-case functional requirements
@@ -266,6 +268,8 @@ _Write one subsection per attribute your project actually has, and say "not appl
 ### 9.6 Robustness
 
 **ROB-study-session**: If a student refreshes the page or temporarily loses connection during an active Pomodoro session, the system shall restore the session with no more than 10 seconds of timer difference.
+
+The recovered session is paused. Temporary connection loss also pauses the timer. The timer offers Continue session or End session on recovery after refresh, reconnection, or reopening a closed tab or browser. See `UC-STDY-use-pomodoro-timer` extensions 2a and 6c.
 
 **ROB-external-service**: If D2L, the AI service, or another external integration is unavailable, the platform shall display an understandable error message and keep unrelated platform features usable.
 
