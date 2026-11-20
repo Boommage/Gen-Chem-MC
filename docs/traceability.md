@@ -159,6 +159,106 @@ _Rule text and sources live in [business rules](requirements/business-rules.md).
 
 ---
 
+## 4. Calibration
+
+**Last updated:** 2026-11-20 (first draft).
+
+**How it is calculated.** **Actual** is the number of hours on weekly activity report lines tagged with the use case's ID, logged since the estimate was made. **Ratio** is actual ÷ the estimate's midpoint. A ratio above 1 means the work took longer than estimated.
+
+> ⚠️ **Draft data; read before trusting the numbers.**
+> - **No estimates were written down before the chat use cases were built.** The estimates for the three finished rows are made after the fact (marked *retro*), so their ratios only show the size of a miss, not a calibrated one.
+> - **The actual hours are a git-history stand-in, not activity-report hours.** Each one is roughly one 2-hour session per cluster of commits, using the commits listed in *Evidence*. That undercounts reading, testing, and meetings, so treat it as a minimum. **Replace each Actual cell with the hours from the tagged weekly activity report lines**, then recompute the ratios.
+> - Model experiments that were not kept (Llama, Qwen, GLM, Frontier) are counted under `UC-CHAT-work-through-problem`, because choosing the model was part of building it.
+
+### 4.1 Finished use cases
+
+| Use case | Person | Estimate (h) | Midpoint | Actual (h) | Ratio | Evidence |
+|---|---|---|---|---|---|---|
+| `UC-CHAT-work-through-problem` | Victor Perez (vic-pz) | 4–6 *retro* | 5 | 6 | 1.20 | Gemma integration, thinking state, proxy fixes (2026-10-12); math rendering, usage logs (2026-10-26) |
+| | Camarachi888 | 3–5 *retro* | 4 | 6 | 1.50 | GLM integration (2026-10-05); Worker endpoint, GenChem prompt (2026-10-16) |
+| | Giang Tran (lamgiang2001) | 2–4 *retro* | 3 | 5 | 1.67 | Llama Worker (2026-10-16); run-only token, Ollama option (2026-10-26) |
+| | Aria Linganuri | 1–3 *retro* | 2 | 4 | 2.00 | Qwen experiment (2026-10-13); team conflict resolution (#25) |
+| | Sam Shema | 0.5–1.5 *retro* | 1 | 2 | 2.00 | Frontier experiment (#18) |
+| | David Brown | 0.5–1.5 *retro* | 1 | 2 | 2.00 | Baseline frontend UI (2026-09-22) |
+| | **Team** | **12–20** | **16** | **25** | **1.56** | |
+| `UC-CHAT-check-own-answer` | Camarachi888 | 2–4 *retro* | 3 | 2 | 0.67 | Answer-check rules in the GenChem prompt (2026-10-16) |
+| | Aria Linganuri | 1–2 *retro* | 1.5 | 1 | 0.67 | `policy.ts` conflict resolution (#25) |
+| | **Team** | **3–6** | **4.5** | **3** | **0.67** | |
+| `UC-CHAT-share-problem-image` | Victor Perez (vic-pz) | 6–10 *retro* | 8 | 7 | 0.88 | Image attachments and Gemma vision (2026-10-12); unified text and image integration (#22) |
+| | **Team** | **6–10** | **8** | **7** | **0.88** | |
+
+**Ratio per person** (across all finished use cases):
+
+| Person | Σ midpoints | Σ actual | Ratio |
+|---|---|---|---|
+| Victor Perez | 13 | 13 | 1.00 |
+| Camarachi888 | 7 | 8 | 1.14 |
+| Giang Tran | 3 | 5 | 1.67 |
+| Aria Linganuri | 3.5 | 5 | 1.43 |
+| Sam Shema | 1 | 2 | 2.00 |
+| David Brown | 1 | 2 | 2.00 |
+| **Team** | **28.5** | **35** | **1.23** |
+
+**Biggest miss per finished use case.**
+
+- **`UC-CHAT-work-through-problem` (1.56):** we planned to wire up one model, but trying four models (GLM, Llama, Qwen, Gemma) before choosing one, and fixing proxy loops and empty replies in local setup, roughly doubled the integration work.
+- **`UC-CHAT-check-own-answer` (0.67):** it took less time than estimated because it reused the chat pipeline from work-through-problem, so the only new work was coaching rules in the prompt.
+- **`UC-CHAT-share-problem-image` (0.88):** close to the estimate. Gemma accepts images natively, so most of the time went into attachment validation and size limits, which we had expected.
+
+### 4.2 Unfinished MVP use cases
+
+Each estimate below was made on 2026-11-20. These are the rows whose Release is the MVP demo release (`v1.1.0` in the matrix above). Persistence (a database and storage for student records) does not exist yet. It is included in `UC-BNCH-complete-baseline-assessment` because that is the first use case that needs it.
+
+| Use case | Estimate (h) | Midpoint |
+|---|---|---|
+| `UC-BNCH-complete-baseline-assessment` (includes persistence setup) | 10–16 | 13 |
+| `UC-BNCH-view-baseline-results` | 4–8 | 6 |
+| `UC-BNCH-retake-baseline-assessment` | 2–4 | 3 |
+| `UC-CHAT-start-new-conversation` | 1–3 | 2 |
+| `UC-CHAT-resume-conversation` | 6–10 | 8 |
+| `UC-GRND-add-course-material` | 8–14 | 11 |
+| `UC-GRND-remove-course-material` | 3–5 | 4 |
+| `UC-TIME-run-study-session` | 6–10 | 8 |
+| `UC-TIME-set-timer-lengths` | 2–4 | 3 |
+| `UC-TIME-abandon-study-session` | 2–3 | 2.5 |
+| `UC-LOG-log-study-session` | 4–6 | 5 |
+| `UC-LOG-delete-study-session` | 1–3 | 2 |
+| `UC-LOG-view-study-history` | 3–5 | 4 |
+| `UC-LOG-view-study-summary` | 6–10 | 8 |
+| `UC-REFL-reflect-after-session` | 3–5 | 4 |
+| `UC-REFL-reflect-after-assessment` | 3–5 | 4 |
+| `UC-REFL-view-past-reflections` | 2–4 | 3 |
+| **Total** | | **90.5** |
+
+### 4.3 Forecast
+
+**Forecast (2026-11-20):** the 17 unfinished MVP rows total 90.5 h of midpoints. At the team ratio of 1.23, that is **≈ 111 h needed**. The team has **≈ 60 h available** before the MVP demo: 6 people × about 5 h/week × about 2 working weeks, since Thanksgiving week is excluded. **It does not fit.** It would take about 49 h of midpoints (60 ÷ 1.23).
+
+**Proposed cut, pending the client's agreement.** Keep these 8 rows in the MVP:
+- `UC-BNCH-complete-baseline-assessment`
+- `UC-BNCH-view-baseline-results`
+- `UC-CHAT-start-new-conversation`
+- `UC-TIME-run-study-session`
+- `UC-TIME-set-timer-lengths`
+- `UC-LOG-log-study-session`
+- `UC-LOG-view-study-history`
+- `UC-REFL-reflect-after-session`
+
+Together these are 45 h of midpoints × 1.23 ≈ **55 h, which fits**. Move the other 9 to Later:
+- `UC-BNCH-retake-baseline-assessment`
+- `UC-CHAT-resume-conversation`
+- `UC-GRND-add-course-material`
+- `UC-GRND-remove-course-material`
+- `UC-TIME-abandon-study-session`
+- `UC-LOG-delete-study-session`
+- `UC-LOG-view-study-summary`
+- `UC-REFL-reflect-after-assessment`
+- `UC-REFL-view-past-reflections`
+
+**Dropping course grounding (`GRND`) is the decision that most needs the client**, because `FEAT-course-grounding` is an MVP feature. If the client keeps it, something of similar size (about 15 h) has to move out in its place. Update the Release column of the matrix only after the client agrees.
+
+---
+
 ## Working this document with your agent
 
 _Delegate: running the checks above and reporting what fails; finding every `BR-`, `FEAT-` and `UC-` identifier cited in `docs/` that has no definition; checking that every link in this file resolves._
