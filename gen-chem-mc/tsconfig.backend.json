@@ -11,5 +11,5 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["backend/**/*.ts", "shared/**/*.ts", "worker-configuration.d.ts"]
+  "include": ["backend/**/*.ts", "shared/**/*.ts", "tests/chat/**/*.ts", "worker-configuration.d.ts"]
 }
