@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createHandler, GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
+import { CoachInferenceError, createHandler, generateCoachingReply, GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
 import { PNG_IMAGE } from '../shared/imageFixtures.ts'
 import { COACH_INSTRUCTIONS } from './policy.ts'
 
@@ -12,6 +12,55 @@ function setup() {
 function request(messages: unknown = [{ role: 'user', content: 'Help me study' }], url = 'http://localhost/api/coach', token?: string) {
   return new Request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify({ messages }) })
 }
+
+describe('shared Gemma inference', () => {
+  beforeEach(() => vi.spyOn(console, 'log').mockImplementation(() => {}))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('generates from server-loaded text and images with the existing policy and reply settings', async () => {
+    const { env, run } = setup()
+    expect(await generateCoachingReply([{ role: 'user', content: 'Check this diagram', image: PNG_IMAGE }], env))
+      .toEqual({ reply: 'What have you tried?', model: GEMMA_MODEL })
+    expect(run).toHaveBeenCalledExactlyOnceWith(GEMMA_MODEL, {
+      messages: [
+        { role: 'system', content: COACH_INSTRUCTIONS },
+        { role: 'user', content: [{ type: 'text', text: 'Check this diagram' }, { type: 'image_url', image_url: { url: PNG_IMAGE.dataUrl } }] },
+      ],
+      max_completion_tokens: 1024, chat_template_kwargs: { enable_thinking: false }, stream: false,
+    })
+    expect(console.log).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects invalid server-loaded context before spending inference', async () => {
+    const { env, run } = setup()
+    await expect(generateCoachingReply([{ role: 'assistant', content: 'Unmatched reply' }], env)).rejects.toMatchObject({ code: 'INVALID_MESSAGES', status: 400 })
+    expect(run).not.toHaveBeenCalled()
+    expect(console.log).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { result: { choices: [{ message: { content: '<think>private reasoning</think>' } }] }, code: 'INVALID_REPLY', status: 502 },
+    { error: { status: 429, message: 'private quota diagnostic' }, code: 'QUOTA_EXHAUSTED', status: 429 },
+    { error: new Error('private upstream diagnostic'), code: 'COACH_UNAVAILABLE', status: 503 },
+  ])('returns a typed safe failure for $code without double logging', async ({ result, error, code, status }) => {
+    const { env, run } = setup()
+    if (error) run.mockRejectedValueOnce(error)
+    else run.mockResolvedValueOnce(result)
+    const failure = await generateCoachingReply([{ role: 'user', content: 'Help me study' }], env).catch(error => error)
+    expect(failure).toBeInstanceOf(CoachInferenceError)
+    expect(failure).toMatchObject({ code, status })
+    expect(failure.message).not.toContain('private')
+    expect(console.log).toHaveBeenCalledTimes(1)
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain('private')
+  })
+
+  it('times out through the same typed failure without waiting on a stalled provider', async () => {
+    const { env, run } = setup()
+    run.mockImplementationOnce(() => new Promise(() => {}))
+    await expect(generateCoachingReply([{ role: 'user', content: 'Help me study' }], env, 1)).rejects.toMatchObject({ code: 'TIMEOUT', status: 504 })
+    expect(console.log).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('Gemma coach gateway', () => {
   beforeEach(() => { vi.spyOn(console, 'log').mockImplementation(() => {}) })

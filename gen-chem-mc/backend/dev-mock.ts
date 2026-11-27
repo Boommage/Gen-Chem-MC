@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
-import { createHandler, GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
+import handler from './app.ts'
+import { GEMMA_MODEL, MAX_BODY_BYTES, type Env } from './model.ts'
 
 const env: Env = {
   AI: {
@@ -17,7 +18,6 @@ const env: Env = {
   },
 }
 
-const handler = createHandler()
 const server = createServer(async (incoming, outgoing) => {
   try {
     const chunks: Buffer[] = []

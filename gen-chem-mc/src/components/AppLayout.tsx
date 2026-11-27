@@ -29,9 +29,10 @@ interface AppLayoutProps {
   activeRoute: Route
   onNavigate: (route: Route) => void
   children: ReactNode
+  accountMenu?: ReactNode
 }
 
-export default function AppLayout({ activeRoute, onNavigate, children }: AppLayoutProps) {
+export default function AppLayout({ activeRoute, onNavigate, children, accountMenu }: AppLayoutProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -48,10 +49,10 @@ export default function AppLayout({ activeRoute, onNavigate, children }: AppLayo
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="profile-row">
+          {accountMenu ?? <div className="profile-row">
             <span className="avatar" aria-hidden="true" />
             <span>Profile / Settings</span>
-          </div>
+          </div>}
           <p className="privacy-note">Your reflections are private by default.</p>
         </div>
       </aside>
