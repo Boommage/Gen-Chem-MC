@@ -104,13 +104,13 @@ Reading, changing a title, replaying an existing message, and retry status chang
 
 ## Images and usage controls
 
-Private image keys derive from the conversation ID, turn ID, and input hash. The browser retrieves bytes with its current bearer token and displays revocable blob URLs; tokens and public bucket URLs never appear in image sources. A failed upload keeps a retryable user turn but cannot claim the image was saved. After reloading such a failure, the original file may need to be attached again.
+Private image keys include a server-generated immutable attachment ID, conversation ID, turn ID, and input hash. Retries load the persisted attachment metadata and reuse its object key. A newly created attachment cannot reuse an older queued-deletion key, even if client IDs are reused after retention. The browser retrieves bytes with its current bearer token and displays revocable blob URLs; tokens and public bucket URLs never appear in image sources. A failed upload keeps a retryable user turn but cannot claim the image was saved. After reloading such a failure, the original file may need to be attached again.
 
 The R2 ledger reserves before every supported put/get, including reads for model context. It applies cumulative caps of 8,000,000,000 uploaded/reserved bytes, 800,000 Class A calls, and 8,000,000 Class B calls. These are conservative **lifetime application counters**, stricter than the monthly proposal: no automatic monthly reset and no refund after uncertain outcomes or deletion. Each verified student also has daily caps of 50 upload attempts and 500 image reads. Limits refuse image operations while text remains usable. A missing ledger or missing explicit storage opt-in refuses operations.
 
 This choice avoids resetting budgets with uncertain in-flight requests or billing-period assumptions. It trades availability for conservative accounting: historical uploads eventually consume the application cap even after deletion. The owner can review/reconcile usage before a future reset policy is designed. Counts do not represent Cloudflare's complete account bill. Dashboard actions or future outside applications can add usage. R2 has no provider-enforced hard spending cap.
 
-The configured bucket name is `neocortex-chat-images`. Live image operations remain disabled by configuration until the owner creates a fresh private Standard bucket, applies the migrations, and enables `CHAT_IMAGE_STORAGE_ENABLED`. This work performs no live object calls or production deployment.
+The Standard bucket `neocortex-chat-images` was created and verified empty/private on November 27. Hosted image operations remain disabled by configuration until the real authentication integration, reviewed remote migrations, and storage enablement. No remote image upload or production deployment was performed. Local runtime tests use a separate local bucket and database.
 
 Attachment cascades queue deletions. Cleanup deletes acknowledged stored objects before acknowledging their queue rows. Uncertain reserved uploads remain conservatively accounted and their deletion is retried, including possible late writes. Failed/uncertain queue entries rotate behind other work. The ledger is not refunded by cleanup.
 
@@ -130,12 +130,17 @@ The implementation uses R2 Standard. Cloudflare documents monthly Standard allow
 | Private image round trip and retained-image follow-up (resume 4/4a) | routes.test.ts; frontend authenticated download/object-URL cleanup test. |
 | Budget ceilings, concurrent last reservation, uncertain put, delete retry | routes.test.ts. |
 | Title failure does not fail coaching; safe usage logs | routes.test.ts plus existing model tests. |
+| Database/title-write outage, first-save rollback, reply-save failure, missing image/ledger, interrupted cleanup | routes.test.ts with injected storage faults. |
+| Local initialization failure preserves draft; unconfirmed saves are labeled accurately; image decoding failure supports retry | SavedCoach.test.tsx. |
 | Account change, expired session, late results (resume any-step) | SavedCoach.test.tsx. |
 | Migration integrity and retention invariants | Existing schema.test.ts; local Wrangler migration application. |
 | Real Supabase verifier/provider, two-real-account access, deployed R2, cron execution | Pending feature integration and deployed smoke tests; do not mark Verified. |
+| Actual local Worker/D1/R2 restart persistence, retry, ownership refusal and cleanup | runtime.test.ts; local browser upload/refresh/reopen/account-switch checks. |
 | Keyboard and responsive UI | Existing accessible controls plus Playwright inspection with fabricated preview data. |
 
-The architecture's persistence paragraph now explicitly permits the two short chat transactions around external inference. Tests run production repository SQL on SQLite with a D1-shaped test adapter. Local Wrangler migration acceptance is an additional D1 check; these tests are not proof of a deployed authenticated service.
+The architecture permits the two short chat transactions around external inference. Unit/HTTP tests run production repository SQL on SQLite with a D1-shaped adapter. The additional runtime test executes the production handlers in Miniflare's actual local Worker/D1/R2 implementations, including persistence across restart. `npm run dev:chat:test` provides the repeatable browser fixture. Real Supabase verification and hosted storage/cron tests remain integration work.
+
+The hardening pass fixed a title-write outage incorrectly failing an already committed reply, preserved drafts when local ID preparation fails, distinguished unconfirmed saves from retained server messages, and isolated new image object keys from old queued deletions. R2 preparation is complete; the remaining release checklist is real authentication/provider composition, app-entry/baseline admission, reviewed remote migration/enablement, and hosted two-account/cleanup verification. No new feature or duplicate specification is required before that integration.
 
 ## References
 

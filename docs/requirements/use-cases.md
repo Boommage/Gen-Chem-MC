@@ -835,6 +835,7 @@ Estimated one to several times per study session for students using printed or h
 - **3c2.** The response continues and is saved only in its original conversation. It cannot replace the selected chat's contents.
 
 **4a. Conversation initialization fails — Exception**
+- Conversation IDs are prepared on first submission at step 8. A local ID-preparation failure preserves the draft and current saved conversation before any request is sent.
 - **4a1.** The system detects initialization failure.
 - **4a2.** The system displays an error.
 - **4a3.** The system preserves the existing conversation where possible.

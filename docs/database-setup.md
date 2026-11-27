@@ -43,11 +43,11 @@ The binding configuration reaches a deployed Worker after a deployment containin
 
 ## Private images: endpoint owner setup
 
-R2 is enabled on the account, but this feature does not create a remote bucket or upload production objects. The configuration reserves the binding name `CHAT_IMAGES` and bucket name `neocortex-chat-images`. Live image operations are explicitly disabled until setup is complete. Cloudflare has no R2 hard spending cap; the owner accepted this limitation. Application quotas reduce risk but cannot guarantee a zero invoice.
+The endpoint owner's Standard bucket `neocortex-chat-images` was created on November 27, 2026. Wrangler confirmed zero objects/zero bytes, r2.dev public access disabled, and no custom domains. Its binding is `CHAT_IMAGES`. No remote objects were uploaded by this work. Hosted image operations remain explicitly disabled until authentication and deployment integration are complete. Cloudflare has no R2 hard spending cap; the owner accepted this limitation. Application quotas reduce risk but cannot guarantee a zero invoice.
 
 After the feature and real authentication integration are reviewed, the endpoint owner:
 
-1. Creates a **fresh, dedicated** bucket: `npx wrangler r2 bucket create neocortex-chat-images`. Keep all public bucket access disabled. The image helper explicitly writes Standard objects.
+1. Verifies the already-created private bucket with `npx wrangler r2 bucket info neocortex-chat-images`, `npx wrangler r2 bucket dev-url get neocortex-chat-images`, and `npx wrangler r2 bucket domain list neocortex-chat-images`. Keep public access disabled. The image helper explicitly writes Standard objects.
 2. Applies the reviewed D1 migrations using the shared-database commands above. Migration 0003 initializes conservative counters at zero, so an existing bucket or outside R2 usage requires reconciliation before enabling it.
 3. Sets `CHAT_IMAGE_STORAGE_ENABLED` to `"true"` in the intended Wrangler environment, regenerates `npm run types:worker`, and reviews that configuration change. Never enable it globally just to bypass a missing binding or ledger.
 4. Connects the real login verifier and conversation handler as described in the team guide, then deploys the reviewed integration with `npm run deploy:team`. This remains the existing `neocortex-gemma-team` endpoint; teammates keep their current proxy URL/token.
@@ -67,4 +67,20 @@ Only reconcile/reset counters after reviewing provider totals, retained objects,
 
 Configure the Supabase Auth project with the login team. Follow AGENTS.md for entering public configuration and secrets. Existing account credentials stay in their managed services.
 
-A database record deletion cascades to its child records and queues image removal. `backend/conversations/cleanup.ts` processes that queue; reserved uploads with uncertain outcomes remain accounted and are repeatedly cleaned up. The current tests use fabricated identities, SQLite, and fake R2 transports. They do not replace real Supabase verification or a deployed storage smoke test.
+A database record deletion cascades to its child records and queues image removal. `backend/conversations/cleanup.ts` processes that queue; reserved uploads with uncertain outcomes remain accounted and are repeatedly cleaned up. Storage-fault tests use fabricated identities, SQLite, and fake R2 transports; an additional suite uses the actual local Worker/D1/R2 runtime. Neither replaces real Supabase verification or a deployed storage smoke test.
+
+## Full local integration test without authentication-team dependencies
+
+From `gen-chem-mc`, run:
+
+~~~bash
+npm run dev:chat:test
+~~~
+
+Open `http://127.0.0.1:5176/tests/chat/index.html`. This serves the real Coach history UI against the production conversation handlers inside a local Workers runtime, with local D1 and R2. It uses two explicit test identities and canned model replies. It does not load the production Vite configuration, private settings, real Supabase, or a remote AI/storage binding. No Cloudflare login is required. The fixtures live under `tests/chat` and are not imported by the production app or Worker entry point.
+
+Send text and an image, refresh, reopen the chat, and verify the image and messages remain. Switch between Test student A and Test student B to verify their histories stay separate. Begin a message with `[test failure]` to fail its first response, then select Retry. Chat switching, New chat, draft discard, and Markdown/math use the actual feature code.
+
+Local test data persists across refresh and server restart in the ignored `.wrangler/chat-local-test` directory. Stop the fixture with Ctrl+C. Linux/macOS use the commands above; on Windows use `npm.cmd run dev:chat:test`. This is an integration test interface with fabricated identities, not the production login flow.
+
+`npm test -- backend/conversations/runtime.test.ts` automatically verifies local Worker restart persistence, image byte retrieval, owner refusal, model-failure recovery, expiration, and object cleanup using isolated test storage. The full `npm run check` includes it. Local runtime success does not replace the remaining hosted Supabase/two-account and R2/cron rollout checks.

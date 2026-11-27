@@ -31,6 +31,8 @@ The coordinated create-request change is `{ id, firstTurn }`, returning `{ conve
 
 Confirmed chat decisions: Gemma generates the title with a safe fallback; discard drafts without confirmation on switching; keep an in-flight response in its original conversation; retain failed turns with stable Retry IDs; expire fourteen days after the last saved message. No rename/manual deletion or durable draft recovery is added in this increment. The application image counters are conservative cumulative limits without an automatic billing-period reset; see the design and database setup before enabling hosted images.
 
+The independent hardening checks are complete: database-failure recovery, local initialization/draft preservation, title-write failures, unconfirmed-save labeling, image read failures, queued deletion safety, and local Worker restart persistence. `npm run dev:chat:test` starts a repeatable local UI + Worker + D1 + R2 fixture with two fabricated accounts and canned replies, without Cloudflare login or production configuration. The private Standard bucket is created and public access is verified disabled; hosted image operations remain off. Remaining integration is the login team's real provider/verifier and admission policy, followed by reviewed remote migrations/enablement and hosted two-account/cleanup tests.
+
 ## 1. Agree on the behavior before feature implementation
 
 Use these existing identifiers when writing or extending requirements.

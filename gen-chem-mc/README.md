@@ -37,6 +37,7 @@ Run these from `gen-chem-mc`:
 | `npm run dev` | Frontend on port 5173 |
 | `npm run dev:api` | Local Worker on port 8787, calling real Cloudflare-hosted Gemma; Cloudflare login required |
 | `npm run dev:mock` | Local canned-response backend on port 8787; no model calls |
+| `npm run dev:chat:test` | Real local Worker/D1/R2 history integration at `http://127.0.0.1:5176/tests/chat/index.html`, using test accounts and canned replies |
 | `npm run check` | Lint, backend type checks, tests, and frontend build |
 | `npm run types:worker` | Regenerate committed Cloudflare runtime/binding declarations after Wrangler configuration changes |
 | `npm run deploy:team` | Upgrade the existing shared text endpoint with text-and-image support; endpoint owner only |
