@@ -1,0 +1,2 @@
+# Preserve Wrangler output verbatim and collapse generated declarations in reviews.
+gen-chem-mc/worker-configuration.d.ts linguist-generated=true whitespace=-blank-at-eol

@@ -11,6 +11,18 @@ This guide defines the directory boundaries, interfaces, visual conventions, and
 
 The working plan uses Supabase Auth for student identity, Cloudflare D1 for conversation records, private image storage, and the existing Cloudflare Worker for requests and Gemma. R2 is the proposed image store, subject to the owner's zero-overage requirement. See the [database design](chat.md). The team confirmed that reopened chats must retain both text and images and that Victor coordinates shared changes.
 
+### Shared foundation handoff, November 27, 2026
+
+The foundation on `codex/auth-chat-foundation` supplies the contracts below, the auth context and hook, authenticated JSON fetch helper, optional account-menu slot, Worker composition boundary, and extracted Gemma inference. Both feature branches should incorporate this reviewed foundation before changing these interfaces. This increment does not implement the sign-in provider or saved-chat UI/API. The existing database schema remains the persistence foundation.
+
+Zan and Aria implement `AuthProvider` using the supplied `AuthContext` and implement `requireUser` with real Supabase verification. Victor and DJ implement `handleConversations` using the supplied DTOs and `generateCoachingReply`. After both handlers are ready, Victor imports them into `backend/app.ts` and changes its default export to `createAppHandler({ requireUser, handleConversations })`. The Worker entry point keeps its single default export. The current default application refuses saved-data requests while these handlers are absent. The local mock uses the same application boundary.
+
+For browser requests, obtain a current token through `useAuth().getAccessToken()` and call `apiRequest<unknown>('/api/conversations', token, { signal })`. Handle a null token as signed out before calling. Feature API modules validate the returned JSON fields. The helper accepts application `/api/` paths, preserves cancellation, prohibits redirects, and does not automatically replay writes. Private attachment downloads require the history feature's authenticated binary fetch path; this helper is for JSON responses.
+
+The development proxy injects `X-Team-Token` and preserves a supplied student `Authorization` header. For compatibility with the already deployed stateless Worker, it also supplies the old bearer team token on `/api/coach` and `/api/health` when the browser supplies no authorization. Saved-data routes receive no legacy bearer fallback. The updated legacy handler accepts the separate team header; the saved-data router requires the configured team header plus a student bearer token and successful `requireUser` verification. No `.env.local` value needs to change for this transition.
+
+`worker-configuration.d.ts` contains Wrangler-generated runtime and binding declarations. `backend/env.ts` adds the planned Supabase configuration and optional `DB`/`CHAT_IMAGES` bindings. Conversation code must reject missing storage bindings before querying or claiming a save. The optional types support the existing stateless handler and local mock; they do not provision an image bucket. Run `npm run types:worker` from `gen-chem-mc` after changing Wrangler bindings or compatibility settings, and commit the regenerated declarations with the configuration change. No runtime package was added by the foundation.
+
 ## 1. Agree on the behavior before feature implementation
 
 Use these existing identifiers when writing or extending requirements.

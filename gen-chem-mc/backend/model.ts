@@ -1,6 +1,7 @@
 import { MAX_HISTORY_CHARACTERS, MAX_MESSAGE_CHARACTERS, MAX_MESSAGES, type ChatMessage } from '../shared/coach.ts'
 import { COACH_INSTRUCTIONS } from './policy.ts'
 import { inspectImage, MAX_HISTORY_IMAGES, MAX_IMAGE_BYTES } from '../shared/images.ts'
+import { failure, json } from './http.ts'
 
 export const GEMMA_MODEL = '@cf/google/gemma-4-26b-a4b-it'
 export const MAX_BODY_BYTES = Math.ceil(MAX_HISTORY_IMAGES * MAX_IMAGE_BYTES * 4 / 3) + 64 * 1024
@@ -21,12 +22,16 @@ export interface Env {
   TEAM_API_TOKEN?: string
 }
 
-function json(body: unknown, status = 200) {
-  return Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } })
-}
+export class CoachInferenceError extends Error {
+  readonly code: string
+  readonly status: number
 
-function failure(code: string, message: string, status: number) {
-  return json({ error: { code, message } }, status)
+  constructor(code: string, message: string, status: number) {
+    super(message)
+    this.name = 'CoachInferenceError'
+    this.code = code
+    this.status = status
+  }
 }
 
 async function readBody(request: Request): Promise<unknown> {
@@ -127,7 +132,10 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
       const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
       // Unconfigured hosted Workers fail closed. Local development needs no token.
       if (!env.TEAM_API_TOKEN && !local) return failure('NOT_CONFIGURED', 'The team coach endpoint has not been configured.', 503)
-      if (env.TEAM_API_TOKEN && request.headers.get('Authorization') !== `Bearer ${env.TEAM_API_TOKEN}`) {
+      const teamToken = request.headers.has('X-Team-Token')
+        ? request.headers.get('X-Team-Token')
+        : request.headers.get('Authorization') === `Bearer ${env.TEAM_API_TOKEN}` ? env.TEAM_API_TOKEN : null
+      if (env.TEAM_API_TOKEN && teamToken !== env.TEAM_API_TOKEN) {
         return failure('UNAUTHORIZED', 'The team coach access token is missing or incorrect. Check your local setup.', 401)
       }
       if (url.pathname === '/api/health' && request.method === 'GET') return json({ status: 'ok', model: GEMMA_MODEL, capabilities: { images: true } })
@@ -146,42 +154,61 @@ export function createHandler(timeoutMs = PROVIDER_TIMEOUT_MS) {
       const messages = validateMessages(body)
       if (!messages) return failure('INVALID_MESSAGES', 'Use valid text and JPEG or PNG attachments under 2 MB, with no more than two images in the recent conversation.', 400)
 
-      const providerMessages: ProviderMessage[] = messages.map(message => ({
-        role: message.role,
-        content: message.image ? [
-          { type: 'text', text: message.content },
-          { type: 'image_url', image_url: { url: message.image.dataUrl } },
-        ] : message.content,
-      }))
-
-      const startedAt = Date.now()
-      let timer: ReturnType<typeof setTimeout> | undefined
       try {
-        const result = await Promise.race([
-          env.AI.run(GEMMA_MODEL, {
-            messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...providerMessages],
-            max_completion_tokens: 1024,
-            // Gemma defaults to reasoning mode, which can exhaust this short reply budget before any final text.
-            chat_template_kwargs: { enable_thinking: false },
-            stream: false,
-          }),
-          new Promise<never>((_, reject) => {
-            timer = setTimeout(() => reject(new Error('PROVIDER_TIMEOUT')), timeoutMs)
-          }),
-        ])
-        const reply = finalReply(result)
-        logUsage(result, reply ? 'success' : 'invalid_reply', startedAt)
-        if (!reply) return failure('INVALID_REPLY', 'The coach could not finish a usable response. Please retry.', 502)
-        return json({ reply, model: GEMMA_MODEL })
+        return json(await generateCoachingReply(messages, env, timeoutMs))
       } catch (error) {
-        logUsage(null, error instanceof Error && error.message === 'PROVIDER_TIMEOUT' ? 'timeout' : isQuotaError(error) ? 'quota_exhausted' : 'provider_error', startedAt)
-        if (error instanceof Error && error.message === 'PROVIDER_TIMEOUT') return failure('TIMEOUT', 'The coach is taking too long. Please retry in a moment.', 504)
-        if (isQuotaError(error)) return failure('QUOTA_EXHAUSTED', 'The coach is busy or its free allowance has been reached. Try again later.', 429)
+        if (error instanceof CoachInferenceError) return failure(error.code, error.message, error.status)
         return failure('COACH_UNAVAILABLE', 'The coach is unavailable right now. Please try again shortly.', 503)
-      } finally {
-        if (timer !== undefined) clearTimeout(timer)
       }
     },
+  }
+}
+
+// Internal inference boundary for server-loaded conversation context. It has
+// no HTTP/team-token dependency and applies the same limits as the legacy API.
+export async function generateCoachingReply(messages: ChatMessage[], env: Env, timeoutMs = PROVIDER_TIMEOUT_MS): Promise<{ reply: string; model: string }> {
+  const validated = validateMessages({ messages })
+  if (!validated) throw new CoachInferenceError('INVALID_MESSAGES', 'Use valid text and JPEG or PNG attachments under 2 MB, with no more than two images in the recent conversation.', 400)
+  const providerMessages: ProviderMessage[] = validated.map(message => ({
+    role: message.role,
+    content: message.image ? [
+      { type: 'text', text: message.content },
+      { type: 'image_url', image_url: { url: message.image.dataUrl } },
+    ] : message.content,
+  }))
+  const startedAt = Date.now()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  // Use a private identity so an upstream error cannot impersonate our timeout.
+  const timeout = new Error('PROVIDER_TIMEOUT')
+  try {
+    let result: unknown
+    try {
+      result = await Promise.race([
+        env.AI.run(GEMMA_MODEL, {
+          messages: [{ role: 'system', content: COACH_INSTRUCTIONS }, ...providerMessages],
+          max_completion_tokens: 1024,
+          // Gemma defaults to reasoning mode, which can exhaust this short reply budget before any final text.
+          chat_template_kwargs: { enable_thinking: false },
+          stream: false,
+        }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(timeout), timeoutMs)
+        }),
+      ])
+    } catch (error) {
+      const timedOut = error === timeout
+      const quota = !timedOut && isQuotaError(error)
+      logUsage(null, timedOut ? 'timeout' : quota ? 'quota_exhausted' : 'provider_error', startedAt)
+      if (timedOut) throw new CoachInferenceError('TIMEOUT', 'The coach is taking too long. Please retry in a moment.', 504)
+      if (quota) throw new CoachInferenceError('QUOTA_EXHAUSTED', 'The coach is busy or its free allowance has been reached. Try again later.', 429)
+      throw new CoachInferenceError('COACH_UNAVAILABLE', 'The coach is unavailable right now. Please try again shortly.', 503)
+    }
+    const reply = finalReply(result)
+    logUsage(result, reply ? 'success' : 'invalid_reply', startedAt)
+    if (!reply) throw new CoachInferenceError('INVALID_REPLY', 'The coach could not finish a usable response. Please retry.', 502)
+    return { reply, model: GEMMA_MODEL }
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
   }
 }
 

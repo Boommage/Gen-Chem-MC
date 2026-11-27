@@ -8,6 +8,7 @@
     "dev:api": "wrangler dev --ip 127.0.0.1 --port 8787",
     "dev:mock": "node backend/dev-mock.ts",
     "typecheck:api": "tsc -p tsconfig.backend.json",
+    "types:worker": "wrangler types worker-configuration.d.ts --env-interface CloudflareBindings",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck:api && npm test && npm run build",
     "deploy:team": "wrangler deploy --env team",

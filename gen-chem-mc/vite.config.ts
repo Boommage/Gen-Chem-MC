@@ -23,7 +23,19 @@ export default defineConfig(({ mode, command }) => {
         '/api': {
           target,
           changeOrigin: true,
-          headers: env.COACH_API_TOKEN ? { Authorization: `Bearer ${env.COACH_API_TOKEN}` } : undefined,
+          headers: env.COACH_API_TOKEN ? { 'X-Team-Token': env.COACH_API_TOKEN } : undefined,
+          configure(proxy) {
+            proxy.on('proxyReq', (upstream, request) => {
+              const path = request.url?.split('?')[0]
+              // Support the deployed stateless Worker during the transition.
+              // Never overwrite a student's bearer token or inject legacy
+              // credentials into a saved-data request.
+              if (env.COACH_API_TOKEN && !request.headers.authorization
+                && (path === '/api/coach' || path === '/api/health')) {
+                upstream.setHeader('Authorization', `Bearer ${env.COACH_API_TOKEN}`)
+              }
+            })
+          },
         },
       },
     },
