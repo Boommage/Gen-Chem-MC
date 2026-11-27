@@ -214,7 +214,7 @@ it('recovers a committed first turn after a lost response without replaying the 
 it('loads private attachments with authorization and revokes their blob URLs on chat changes', async () => {
   seed(1)
   chats.get(id(1))!.messages[0].attachment = { id: id(500), mimeType: 'image/png', width: 1, height: 1, bytes: 20 }
-  const createObjectURL = vi.fn(() => 'blob:test-only-image')
+  const createObjectURL = vi.fn().mockReturnValueOnce('blob:test-only-image').mockReturnValue('blob:test-only-image-2')
   const revokeObjectURL = vi.fn()
   vi.stubGlobal('URL', Object.assign(class extends URL {}, { createObjectURL, revokeObjectURL }))
   const normal = fetchMock.getMockImplementation()!
@@ -226,8 +226,13 @@ it('loads private attachments with authorization and revokes their blob URLs on 
   expect(image.getAttribute('src')).toBe('blob:test-only-image')
   const download = fetchMock.mock.calls.find(call => call[0].includes('/attachments/'))!
   expect(new Headers(download[1].headers).get('Authorization')).toBe('Bearer test-only-a')
+  fireEvent.error(image)
+  fireEvent.click(await screen.findByRole('button', { name: 'Retry image' }))
+  expect((await screen.findByAltText('Saved problem attachment')).getAttribute('src')).toBe('blob:test-only-image-2')
   fireEvent.click(screen.getByRole('button', { name: 'New chat' }))
-  expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith('blob:test-only-image')
+  expect(revokeObjectURL).toHaveBeenCalledTimes(2)
+  expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-only-image')
+  expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-only-image-2')
 })
 
 it('prompts for an empty submission without creating a conversation', async () => {
@@ -270,4 +275,35 @@ it('edits a failed message into a new turn while retaining the failed record', a
   const post = fetchMock.mock.calls.find(call => call[1]?.method === 'POST')!
   expect(JSON.parse(post[1].body).clientTurnId).not.toBe(original.turnId)
   expect(chats.get(id(1))!.messages[0].turnStatus).toBe('failed')
+})
+
+it('keeps the draft and current chat intact when local message initialization fails', async () => {
+  render(view())
+  await screen.findByText('No saved chats yet. Send your first message to start one.')
+  vi.spyOn(crypto, 'randomUUID').mockImplementationOnce(() => { throw new Error('test ID initialization failure') })
+  send('Keep this draft')
+  await screen.findByText('The message could not be prepared. Your draft is still here. Please retry.')
+  expect((screen.getByRole('textbox', { name: 'Message to coach' }) as HTMLInputElement).value).toBe('Keep this draft')
+  expect(fetchMock.mock.calls.some(call => call[1]?.method === 'POST')).toBe(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+  await screen.findByRole('button', { name: /Gemma study title/ })
+})
+
+it('does not claim an uncommitted message was retained and retries with the original IDs', async () => {
+  const normal = fetchMock.getMockImplementation()!
+  let fail = true
+  fetchMock.mockImplementation(async (path: string, init: RequestInit = {}) => {
+    if (init.method === 'POST' && fail) { fail = false; return Response.json({ error: { code: 'SAVE_UNAVAILABLE', message: 'The message could not be saved. Please retry.' } }, { status: 503 }) }
+    return normal(path, init)
+  })
+  render(view())
+  await screen.findByText('No saved chats yet. Send your first message to start one.')
+  send('Retry this exact message')
+  await screen.findByText('Save unconfirmed · retry before leaving this page')
+  expect(screen.queryByText('Response failed · message retained')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Retry', exact: true }))
+  await screen.findByRole('button', { name: /Gemma study title/ })
+  const writes = fetchMock.mock.calls.filter(call => call[1]?.method === 'POST').map(call => JSON.parse(call[1].body))
+  expect(writes).toHaveLength(2)
+  expect(writes[1]).toEqual(writes[0])
 })

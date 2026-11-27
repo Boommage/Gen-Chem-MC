@@ -38,7 +38,10 @@ async function reserve(env: WorkerEnv, userId: string, kind: 'upload' | 'read', 
 export function attachmentMetadata(conversationId: string, turnId: string, hash: string, image: ImageAttachment): StoredAttachment {
   const inspected = inspectImage(image)
   if (!inspected) throw new ConversationError('INVALID_IMAGE', 'The image could not be read.', 400)
-  return { id: crypto.randomUUID(), object_key: `chat/${conversationId}/${turnId}/${hash}`, mime_type: image.dataUrl.startsWith('data:image/png;') ? 'image/png' : 'image/jpeg', width: inspected.width, height: inspected.height, bytes: inspected.bytes }
+  const id = crypto.randomUUID()
+  // A fresh attachment has a fresh immutable object key, including when old
+  // client IDs are reused after retention. Old queued deletes cannot target it.
+  return { id, object_key: `chat/${conversationId}/${turnId}/${id}/${hash}`, mime_type: image.dataUrl.startsWith('data:image/png;') ? 'image/png' : 'image/jpeg', width: inspected.width, height: inspected.height, bytes: inspected.bytes }
 }
 
 export async function saveImage(env: WorkerEnv, userId: string, attachment: StoredAttachment, image: ImageAttachment) {

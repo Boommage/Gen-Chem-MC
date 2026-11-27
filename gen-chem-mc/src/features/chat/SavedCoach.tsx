@@ -30,7 +30,7 @@ function SavedImage({ message, api }: { message: SavedMessage; api: Conversation
     }).catch(() => { if (!controller.signal.aborted) setFailed(true) })
     return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl) }
   }, [api, message.conversationId, attachmentId, attempt])
-  return url ? <img className="chat-image" src={url} alt="Saved problem attachment" />
+  return url ? <img className="chat-image" src={url} alt="Saved problem attachment" onError={() => { setFailed(true); setUrl(null) }} />
     : failed ? <span className="chat-image-unavailable">Image unavailable. <button type="button" className="suggestion-chip" onClick={() => { setFailed(false); setUrl(null); setAttempt(value => value + 1) }}>Retry image</button></span>
       : <span role="status">Loading image…</span>
 }
@@ -56,7 +56,7 @@ function ChatPanel({ history }: { history: History }) {
     const content = input.trim() || (image ? 'Help me think through the problem in this image.' : '')
     if (!content) { setImageError('Enter a message or attach an image.'); return }
     if (blocked || reading) return
-    history.send(content, image ?? undefined)
+    if (!history.send(content, image ?? undefined)) return
     setInput('')
     setImage(null)
     setEditing(false)
@@ -109,7 +109,8 @@ function ChatPanel({ history }: { history: History }) {
           {history.localImage(message) ? <img className="chat-image" src={history.localImage(message)!.dataUrl} alt="Attached problem" />
             : message.attachment && <SavedImage message={message} api={history.api} />}
           <span>{message.content}</span>
-          {message.turnStatus === 'failed' && <span className="chat-turn-status">Response failed · message retained</span>}
+          {message.turnStatus === 'failed' && <span className="chat-turn-status">{message.turnError?.code === 'DELIVERY_UNCONFIRMED'
+            ? 'Save unconfirmed · retry before leaving this page' : 'Response failed · message retained'}</span>}
           {message.turnStatus === 'pending' && <span className="chat-turn-status">Response pending</span>}
         </div>}
       </div>)}

@@ -3,6 +3,7 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite'
 import { readFileSync } from 'node:fs'
 
 export function testDatabase() {
+  let fault: ((sql: string) => void) | undefined
   const sqlite = new DatabaseSync(':memory:')
   sqlite.exec('PRAGMA foreign_keys = ON')
   for (const name of ['0001_conversations', '0002_conversation_retention', '0003_chat_delivery']) {
@@ -10,13 +11,14 @@ export function testDatabase() {
   }
   function prepare(sql: string, args: SQLInputValue[] = []) {
     function runSync() {
+      fault?.(sql)
       const result = sqlite.prepare(sql).run(...args)
       return { results: [], success: true, meta: { changes: Number(result.changes) } }
     }
     return {
       bind(...values: SQLInputValue[]) { return prepare(sql, values) },
-      async first() { return sqlite.prepare(sql).get(...args) ?? null },
-      async all() { return { results: sqlite.prepare(sql).all(...args), success: true, meta: {} } },
+      async first() { fault?.(sql); return sqlite.prepare(sql).get(...args) ?? null },
+      async all() { fault?.(sql); return { results: sqlite.prepare(sql).all(...args), success: true, meta: {} } },
       async run() { return runSync() },
       runSync,
     }
@@ -36,5 +38,5 @@ export function testDatabase() {
       }
     },
   } as unknown as D1Database
-  return { sqlite, db }
+  return { sqlite, db, setFault: (value?: (sql: string) => void) => { fault = value } }
 }

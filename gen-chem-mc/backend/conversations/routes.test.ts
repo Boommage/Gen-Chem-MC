@@ -48,6 +48,93 @@ beforeEach(() => {
 afterEach(() => { storage.sqlite.close(); vi.restoreAllMocks() })
 
 describe('saved chat HTTP integration', () => {
+  it('rolls back a failed first save without allocating an empty conversation, then retries cleanly', async () => {
+    storage.setFault(sql => { if (sql.includes('INSERT INTO messages')) throw new Error('private write diagnostic') })
+    const response = await call('', 'POST', first())
+    expect(response.status).toBe(503)
+    expect(await response.text()).not.toContain('private')
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM conversations').get()?.count).toBe(0)
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM turns').get()?.count).toBe(0)
+    expect(run).not.toHaveBeenCalled()
+    storage.setFault()
+    expect((await call('', 'POST', first())).status).toBe(200)
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM messages').get()?.count).toBe(2)
+  })
+
+  it('retains one retryable user message when saving the generated reply fails', async () => {
+    storage.setFault(sql => { if (sql.includes("'assistant'")) throw new Error('private reply write diagnostic') })
+    const response = await call('', 'POST', first())
+    expect(response.status).toBe(503)
+    expect(await response.text()).not.toContain('private')
+    storage.setFault()
+    expect(await (await call(`/${id(1)}/turns/${id(1001)}`)).json()).toMatchObject({ status: 'failed', messages: [{ role: 'user' }] })
+    expect((await call('', 'POST', first())).status).toBe(200)
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM messages').get()?.count).toBe(2)
+  })
+
+  it('returns the accepted reply even when saving its best-effort title fails', async () => {
+    storage.setFault(sql => { if (sql.includes('SET title =')) throw new Error('private title write diagnostic') })
+    const response = await call('', 'POST', first())
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ conversation: { title: 'New chat' }, turn: { status: 'completed' } })
+  })
+
+  it('refuses unavailable image reads safely while saved text remains readable', async () => {
+    await call('', 'POST', first(1, 'Check image', PNG_IMAGE))
+    const attachment = storage.sqlite.prepare('SELECT id FROM attachments').get()?.id
+    get.mockRejectedValueOnce(new Error('private object read diagnostic'))
+    const response = await call(`/${id(1)}/attachments/${attachment}`)
+    expect(response.status).toBe(503)
+    expect(await response.text()).not.toContain('private')
+    expect((await call(`/${id(1)}/messages`)).status).toBe(200)
+  })
+
+  it('does not consume storage operations when the usage ledger is unavailable', async () => {
+    storage.setFault(sql => { if (sql.includes('UPDATE r2_usage')) throw new Error('private ledger diagnostic') })
+    expect((await call('', 'POST', first(1, 'Check image', PNG_IMAGE))).status).toBe(503)
+    expect(put).not.toHaveBeenCalled()
+    expect(get).not.toHaveBeenCalled()
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  it('reuses the persisted attachment key when retrying an uncertain upload', async () => {
+    put.mockRejectedValueOnce(new Error('upload outcome unknown'))
+    expect((await call('', 'POST', first(1, 'Check image', PNG_IMAGE))).status).toBe(503)
+    expect((await call('', 'POST', first(1, 'Check image', PNG_IMAGE))).status).toBe(200)
+    expect(put.mock.calls[1][0]).toBe(put.mock.calls[0][0])
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM attachments').get()?.count).toBe(1)
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM image_objects').get()?.count).toBe(1)
+  })
+
+  it('does not let an old queued deletion remove a newly allocated attachment with reused client IDs', async () => {
+    await call('', 'POST', first(1, 'Check image', PNG_IMAGE))
+    const oldKey = put.mock.calls[0][0]
+    storage.sqlite.prepare("UPDATE conversations SET expires_at = '2000-01-01T00:00:00.000Z'").run()
+    await cleanupConversations({ ...env, CHAT_IMAGE_STORAGE_ENABLED: 'false' })
+    await call('', 'POST', first(1, 'Check image', PNG_IMAGE))
+    const newKey = put.mock.calls[1][0]
+    expect(newKey).not.toBe(oldKey)
+    await cleanupConversations(env)
+    expect(objects.has(oldKey)).toBe(false)
+    expect(objects.has(newKey)).toBe(true)
+    const attachment = storage.sqlite.prepare('SELECT id FROM attachments').get()?.id
+    expect((await call(`/${id(1)}/attachments/${attachment}`)).status).toBe(200)
+  })
+
+  it('retries cleanup safely after object deletion succeeds but database acknowledgement fails', async () => {
+    await call('', 'POST', first(1, 'Check image', PNG_IMAGE))
+    storage.sqlite.prepare("UPDATE conversations SET expires_at = '2000-01-01T00:00:00.000Z'").run()
+    storage.setFault(sql => { if (sql.startsWith('DELETE FROM image_objects')) throw new Error('test cleanup interruption') })
+    await cleanupConversations(env)
+    expect(objects.size).toBe(0)
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM image_deletions').get()?.count).toBe(1)
+    storage.setFault()
+    await cleanupConversations(env)
+    expect(remove).toHaveBeenCalledTimes(2)
+    expect(storage.sqlite.prepare('SELECT COUNT(*) AS count FROM image_deletions').get()?.count).toBe(0)
+    expect(storage.sqlite.prepare('SELECT upload_bytes FROM r2_usage').get()?.upload_bytes).toBeGreaterThan(0)
+  })
+
   it('atomically saves the first turn, generates a title, resumes and follows up with stored context', async () => {
     const created = await call('', 'POST', first())
     expect(created.status).toBe(200)

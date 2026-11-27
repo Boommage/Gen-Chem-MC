@@ -170,16 +170,27 @@ export function useConversations() {
   }
 
   const send = (content: string, image?: ImageAttachment) => {
-    const id = selected.current ?? crypto.randomUUID()
-    if (jobs.current.has(id) || cache.current[id]?.loading) return
-    const input: SendTurnRequest = { clientTurnId: crypto.randomUUID(), content, ...(image ? { image } : {}) }
+    let id: string
+    let turnId: string
+    let messageId: string
+    try {
+      id = selected.current ?? crypto.randomUUID()
+      turnId = crypto.randomUUID()
+      messageId = crypto.randomUUID()
+    } catch {
+      setListError('The message could not be prepared. Your draft is still here. Please retry.')
+      return false
+    }
+    if (jobs.current.has(id) || cache.current[id]?.loading) return false
+    const input: SendTurnRequest = { clientTurnId: turnId, content, ...(image ? { image } : {}) }
     inputs.current.set(id + '/' + input.clientTurnId, input)
     selected.current = id
     setSelectedId(id)
-    const message: SavedMessage = { id: crypto.randomUUID(), conversationId: id, turnId: input.clientTurnId,
+    const message: SavedMessage = { id: messageId, conversationId: id, turnId: input.clientTurnId,
       role: 'user', content, createdAt: new Date().toISOString(), turnStatus: 'pending' }
     update(id, chat => ({ ...chat, messages: [...chat.messages, message] }))
     void deliver(id, input)
+    return true
   }
 
   const editInput = async (message: SavedMessage) => {

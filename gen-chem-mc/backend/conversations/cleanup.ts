@@ -16,7 +16,9 @@ export async function cleanupConversations(env: WorkerEnv, now = new Date().toIS
   // are exhausted. Do not perform any object calls without the explicit opt-in.
   if (!env.CHAT_IMAGES || env.CHAT_IMAGE_STORAGE_ENABLED !== 'true') return
   const queued = await db.prepare(`SELECT q.object_key, o.state FROM image_deletions q
-    LEFT JOIN image_objects o ON o.object_key = q.object_key ORDER BY q.queued_at LIMIT 100`).all<{ object_key: string; state: string | null }>()
+    LEFT JOIN image_objects o ON o.object_key = q.object_key
+    WHERE NOT EXISTS (SELECT 1 FROM attachments a WHERE a.object_key = q.object_key)
+    ORDER BY q.queued_at LIMIT 100`).all<{ object_key: string; state: string | null }>()
   for (const item of queued.results) {
     try {
       await env.CHAT_IMAGES.delete(item.object_key)

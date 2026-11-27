@@ -14,7 +14,7 @@ export async function submitTurn(repo: ConversationRepository, env: WorkerEnv, i
   const reservation = await repo.reserve(id, input.clientTurnId, hash, input.content, first, attachment)
   if (reservation.replay) return reservation.replay
   try {
-    if (attachment && input.image) await saveImage(env, repo.userId, attachment, input.image)
+    if (input.image) await saveImage(env, repo.userId, await repo.turnAttachment(id, input.clientTurnId), input.image)
     const rows = await repo.context(id, input.clientTurnId)
     // Bound context before fetching any saved image bytes. Failed turns are not
     // included by the repository and cannot leave unmatched student messages.
@@ -36,7 +36,9 @@ export async function submitTurn(repo: ConversationRepository, env: WorkerEnv, i
     const result = await repo.result(id, input.clientTurnId)
     if (accepted && result.status === 'completed' && (await repo.conversation(id)).title === 'New chat') {
       const title = await generateConversationTitle(input.content, reply, env)
-      if (title) await repo.title(id, title)
+      // Title persistence is best-effort too. The coaching reply is already
+      // committed and must not become an HTTP failure because of its label.
+      if (title) await repo.title(id, title).catch(() => {})
     }
     return result
   } catch (error) {

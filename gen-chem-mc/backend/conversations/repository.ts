@@ -179,6 +179,14 @@ export class ConversationRepository {
     return row
   }
 
+  async turnAttachment(id: string, turnId: string) {
+    const row = await this.db.prepare(`SELECT a.* FROM attachments a JOIN messages m ON m.id = a.message_id
+      JOIN conversations c ON c.id = a.conversation_id WHERE c.id = ? AND c.user_id = ? AND c.expires_at > ?
+      AND m.turn_id = ? AND m.role = 'user'`).bind(id, this.userId, this.clock(), turnId).first<StoredAttachment>()
+    if (!row) notFound()
+    return row
+  }
+
   async title(id: string, title: string) {
     await this.db.prepare("UPDATE conversations SET title = ? WHERE id = ? AND user_id = ? AND expires_at > ? AND title = 'New chat'")
       .bind(title, id, this.userId, this.clock()).run()
