@@ -42,6 +42,7 @@ export interface MessagePage {
 
 export interface CreateConversationRequest {
   id: string
+  firstTurn: SendTurnRequest
 }
 
 export interface SendTurnRequest {

@@ -24,10 +24,21 @@
       "database_id": "3f58c909-f0a4-4c55-b3bf-1ff7ccd5c7f0"
     }
   ],
+  "r2_buckets": [
+    { "binding": "CHAT_IMAGES", "bucket_name": "neocortex-chat-images" }
+  ],
+  // Enable only after the owner creates a fresh private Standard R2 bucket.
+  "vars": { "CHAT_IMAGE_STORAGE_ENABLED": "false" },
+  "triggers": { "crons": ["0 * * * *"] },
   "env": {
     "team": {
       "name": "neocortex-gemma-team",
       "ai": { "binding": "AI", "remote": true },
+      "r2_buckets": [
+        { "binding": "CHAT_IMAGES", "bucket_name": "neocortex-chat-images" }
+      ],
+      "vars": { "CHAT_IMAGE_STORAGE_ENABLED": "false" },
+      "triggers": { "crons": ["0 * * * *"] },
       "d1_databases": [
         {
           "binding": "DB",
