@@ -795,10 +795,10 @@ Estimated one to several times per study session for students using printed or h
 
 **Trigger:** The student selects the option to start a new conversation.
 
-**Description:** The student starts a separate conversation with the AI coach without carrying previous messages into the new conversation's active context.
+**Description:** The signed-in student starts a separate saved conversation without carrying previous messages into its model context. Confirmed by Victor on November 27, 2026: discard unsent drafts on chat changes, let in-flight replies finish in their original chats, and let Gemma generate chat titles.
 
 ### Preconditions
-- **PRE-1.** The student can access the chat interface.
+- **PRE-1.** The student has an authenticated account and can access the saved-chat interface.
 - **PRE-2.** The interface provides an enabled new-conversation option.
 
 ### Postconditions
@@ -810,14 +810,15 @@ Estimated one to several times per study session for students using printed or h
 ### Main Success Scenario
 1. The student opens the chat interface.
 2. The system displays the active conversation or an empty chat.
-3. The student selects "New Conversation."
+3. The student selects "New chat."
 4. The system initializes a new conversation state separate from the previous one.
 5. The system clears previous messages from the active chat display.
 6. The system displays an empty conversation and message input.
 7. The student enters a new chemistry question or problem.
-8. The system validates the input and sends it to the AI service without previous conversation messages as active context.
-9. The AI coaching service generates a response.
-10. The system displays the response in the new conversation.
+8. The system validates the input and atomically saves the owned conversation, pending turn, user message, and attachment metadata on first submission. Empty chats create no database record. Image bytes must be saved before requesting coaching for that image.
+9. The AI coaching service generates a response without previous conversation messages as active context.
+10. The system saves the accepted reply before displaying it. Gemma generates a short title; title failure leaves the usable fallback "New chat".
+11. The conversation becomes available in the student's history. It and its images expire fourteen days after its last saved message.
 
 ### Extensions
 **3a. Current conversation already empty — Alternative flow**
@@ -826,13 +827,15 @@ Estimated one to several times per study session for students using printed or h
 - **3a3.** The flow rejoins at step 6.
 
 **3b. Unsent text exists — Alternative flow**
-- **3b1.** The system detects an unsent draft.
-- **3b2.** The system follows the configured draft-handling policy.
-- **3b3.** If confirmation is required, the system asks whether to discard the draft.
-- **3b4.** If the student cancels, the system keeps the current conversation and ends the use case.
-- **3b5.** If the student confirms, the flow rejoins at step 4.
+- **3b1.** The system discards unsent text and image selections without confirmation.
+- **3b2.** The flow rejoins at step 4. Previously saved messages are retained.
+
+**3c. A response is running — Alternative flow**
+- **3c1.** The student may still start a new chat or select another saved chat.
+- **3c2.** The response continues and is saved only in its original conversation. It cannot replace the selected chat's contents.
 
 **4a. Conversation initialization fails — Exception**
+- Conversation IDs are prepared on first submission at step 8. A local ID-preparation failure preserves the draft and current saved conversation before any request is sent.
 - **4a1.** The system detects initialization failure.
 - **4a2.** The system displays an error.
 - **4a3.** The system preserves the existing conversation where possible.
@@ -851,8 +854,17 @@ Estimated one to several times per study session for students using printed or h
 **8b. AI service unavailable — Exception**
 - **8b1.** The system detects a service error or timeout.
 - **8b2.** The system displays an error.
-- **8b3.** The new conversation remains active.
-- **8b4.** The student may retry from step 7.
+- **8b3.** The submitted user message remains saved with a failed turn status.
+- **8b4.** Retry uses the same turn ID and content. Editing a failed message creates a new turn and retains the failed record.
+
+**8c. Message or image storage fails — Exception**
+- **8c1.** The system reports the save failure and preserves the draft or unconfirmed submitted text for retry.
+- **8c2.** It does not claim unsaved bytes are stored. A failed image upload can require reattaching the original file after a reload.
+- **8c3.** Storage limits refuse further image operations while text chat remains available.
+
+**10a. Response delivery is lost — Exception**
+- **10a1.** The system checks the saved turn by its stable ID before offering Retry. A replay returns the accepted result without another model request.
+- **10a2.** Interrupted pending attempts become retryable after two minutes. An older attempt cannot overwrite a newer attempt's reply.
 
 ### Priority
 **High** — Basic chat separation and context isolation.
@@ -875,7 +887,7 @@ No verified rule identifier specifically governs starting a new conversation.
 
 **Quality attributes:** Responsive transition and isolation of prior conversation context.
 
-**Display strategy:** Show an empty message area and input field; history navigation is not assumed.
+**Display strategy:** Show an empty message area and input beside the student's history. New chat stays available during generation. The active conversation and account scope determine which messages are displayed.
 
 **Systemic failure handling:** Do not report a saved conversation if creation fails. Preserve previous conversation where possible. Rollback depends on whether records are created immediately or on the first message.
 
@@ -888,14 +900,50 @@ No verified rule identifier specifically governs starting a new conversation.
 - Students can initiate separate conversations.
 - New conversations exclude previous messages from active context.
 - Starting a new conversation does not automatically delete the previous one.
-- Authentication is not necessarily required.
-- Persistence may differ between authenticated and unauthenticated students.
+- Saved conversations require verified student authentication; the existing stateless prototype remains a separate compatibility path.
 - Empty conversations may exist only in frontend state until the first message.
 
 ### Open Issues
-- **OI-CHAT-16:** Create a conversation immediately or on the first message?
-- **OI-CHAT-17:** Should students access prior conversations through history?
-- **OI-CHAT-18:** Can unauthenticated students retain conversations across sessions?
-- **OI-CHAT-19:** Confirm before discarding unsent text?
-- **OI-CHAT-20:** How should titles be generated, if required?
-- **OI-CHAT-21:** What happens to an in-progress AI response when a new conversation starts?
+- **OI-CHAT-16 resolved:** save on first submitted message.
+- **OI-CHAT-17 resolved:** offer the student's own saved chat history.
+- **OI-CHAT-18 resolved:** require verified authentication for persistence.
+- **OI-CHAT-19 resolved:** discard unsent drafts without confirmation.
+- **OI-CHAT-20 resolved:** Gemma generates titles, with a safe fallback.
+- **OI-CHAT-21 resolved:** let in-flight replies finish in their original chat.
+
+---
+
+## UC-CHAT-resume-conversation — Resume Saved Conversation
+
+**Primary Actor:** Authenticated student. **Secondary Actors:** Supabase Auth, D1, private R2 storage, Gemma.
+
+**Trigger:** The student opens Coach and selects a saved conversation.
+
+**Preconditions:** The student is authenticated and admitted to the app. The selected conversation belongs to that student and has not expired.
+
+**Postconditions:** Saved messages are shown in chronological order, private images can be reopened, and follow-up coaching uses bounded server-loaded context from this conversation only. Chat content is not exposed to other students or the instructor.
+
+### Main Success Scenario
+1. The student opens Coach. The system lists the student's latest saved chats, with titles and last-message dates.
+2. The student selects a chat. Any unsent draft in the previous chat is discarded without confirmation.
+3. The system verifies ownership and expiration, then loads the latest message page in chronological order. Older pages remain available.
+4. The system retrieves private attachments through authenticated requests and displays them alongside the saved text. Assistant Markdown and math formatting are preserved.
+5. The student submits a follow-up. The system saves the user turn, obtains a reply using completed earlier pairs and the current message, and saves the accepted reply.
+6. The system displays the reply and updates history activity. Saving a message renews the fourteen-day retention period; merely opening a chat or changing its title does not.
+
+### Extensions
+- **1a. No saved chats:** show the empty-history state and New chat.
+- **1b/3a. Loading fails:** show a usable error and a retry control; a failed request cannot replace another selected conversation's contents.
+- **2a. Generation is running:** allow switching; completion updates only its original chat.
+- **3b. Missing, expired, or another student's ID:** return the same unavailable/404 response and no private fields.
+- **3c. More history exists:** load bounded cursor pages, preserving order and avoiding duplicates.
+- **4a. Attachment unavailable or usage-limited:** keep text usable; show image failure and an image retry control. Never put credentials into an image URL.
+- **5a. Saved pending/failed turn:** show pending or failed status. Recover pending work by its known ID. Explicit Retry uses the same input/turn ID; edited input starts a separate turn.
+- **5b. A response is lost or two tabs send:** recover committed results without duplicate inference; reject a competing pending turn. Conditional finalization rejects stale attempts.
+- **Any step, session ends or account changes:** clear private messages, drafts, pending UI updates, and image object URLs; ignore late responses from the previous account.
+
+**Rules and qualities:** `SEC-authentication`, `SEC-student-isolation`, `ROB-external-service`; existing coaching policy continues to govern model replies.
+
+**Limits:** twenty conversations per list page, fifty messages per message page; existing text/image inference bounds are independent of retained display history. Retention is fourteen days from the last saved message, with immediate access refusal at expiration and bounded hourly physical cleanup.
+
+**Open integration:** real Supabase session verification and the app-entry/baseline gate are owned by the login team. End-to-end two-real-account verification is required before this use case is marked Verified.

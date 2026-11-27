@@ -22,6 +22,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "shared"],
+  "include": ["src", "shared", "tests/chat/**/*.tsx"],
   "exclude": ["src/**/*.test.tsx", "src/**/*.test.ts"]
 }

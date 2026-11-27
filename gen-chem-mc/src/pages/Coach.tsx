@@ -1,10 +1,12 @@
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, type FormEvent, useContext, useEffect, useRef, useState } from 'react'
 import { MAX_MESSAGE_CHARACTERS, recentConversation, type ChatMessage } from '../../shared/coach'
 import type { ImageAttachment } from '../../shared/images'
 import { readImageFile } from '../lib/imageAttachment'
 import { Icon } from '../components/AppLayout'
 import CoachMessage from '../components/CoachMessage'
 import PageHeader from '../components/PageHeader'
+import { AuthContext } from '../features/auth/AuthContext'
+import SavedCoach from '../features/chat/SavedCoach'
 
 const suggestions = [
   'Help me plan for my exam',
@@ -13,7 +15,7 @@ const suggestions = [
   'Help me understand my study habits',
 ]
 
-export default function Coach() {
+function LegacyCoach() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
@@ -202,4 +204,13 @@ export default function Coach() {
       </section>
     </>
   )
+}
+
+export default function Coach() {
+  const auth = useContext(AuthContext)
+  if (!auth) return <LegacyCoach />
+  if (auth.state.status === 'authenticated') return <SavedCoach key={auth.state.user.id} />
+  return <><PageHeader title="Coach" subtitle="A space to plan, reflect, and think through your approach." />
+    <p role={auth.state.status === 'error' ? 'alert' : 'status'}>{auth.state.status === 'loading' ? 'Checking your session…'
+      : auth.state.status === 'error' ? auth.state.message : 'Sign in to use your saved chats.'}</p></>
 }

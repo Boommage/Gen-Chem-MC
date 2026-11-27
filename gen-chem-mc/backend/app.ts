@@ -2,6 +2,7 @@ import type { AuthUser } from '../shared/auth.ts'
 import type { WorkerEnv } from './env.ts'
 import { failure } from './http.ts'
 import legacyCoach from './model.ts'
+import { cleanupConversations } from './conversations/cleanup.ts'
 
 export interface AppHandlers {
   requireUser(request: Request, env: WorkerEnv): Promise<AuthUser | Response>
@@ -12,6 +13,9 @@ export interface AppHandlers {
 // them, saved-data requests fail closed, including on localhost.
 export function createAppHandler(handlers?: AppHandlers) {
   return {
+    async scheduled(_controller: ScheduledController, env: WorkerEnv) {
+      await cleanupConversations(env)
+    },
     async fetch(request: Request, env: WorkerEnv): Promise<Response> {
       const path = new URL(request.url).pathname
       if (path === '/api/coach' || path === '/api/health') return legacyCoach.fetch(request, env)

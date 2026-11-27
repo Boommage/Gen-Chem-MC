@@ -7,4 +7,5 @@ export interface WorkerEnv extends Env {
   // Conversation handlers must check their required bindings before use.
   DB?: CloudflareBindings['DB']
   CHAT_IMAGES?: R2Bucket
+  CHAT_IMAGE_STORAGE_ENABLED?: string
 }

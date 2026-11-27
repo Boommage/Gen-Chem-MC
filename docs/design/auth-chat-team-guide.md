@@ -9,7 +9,7 @@
 
 This guide defines the directory boundaries, interfaces, visual conventions, and integration sequence for agents working on student login and saved conversations. Use it with [AGENTS.md](../../AGENTS.md), the [use cases](../requirements/use-cases.md), and the selected area's merged design. Directory and interface examples below describe the intended implementation. Create them through the shared foundation and feature PRs described here.
 
-The working plan uses Supabase Auth for student identity, Cloudflare D1 for conversation records, private image storage, and the existing Cloudflare Worker for requests and Gemma. R2 is the proposed image store, subject to the owner's zero-overage requirement. See the [database design](chat.md). The team confirmed that reopened chats must retain both text and images and that Victor coordinates shared changes.
+The working plan uses Supabase Auth for student identity, Cloudflare D1 for conversation records, private R2 image storage, and the existing Cloudflare Worker for requests and Gemma. On November 27 Victor accepted R2 with application usage limits, acknowledging that zero charges cannot be guaranteed. See the [chat design](chat.md). Reopened chats retain both text and images, and Victor coordinates shared changes.
 
 ### Shared foundation handoff, November 27, 2026
 
@@ -22,6 +22,16 @@ For browser requests, obtain a current token through `useAuth().getAccessToken()
 The development proxy injects `X-Team-Token` and preserves a supplied student `Authorization` header. For compatibility with the already deployed stateless Worker, it also supplies the old bearer team token on `/api/coach` and `/api/health` when the browser supplies no authorization. Saved-data routes receive no legacy bearer fallback. The updated legacy handler accepts the separate team header; the saved-data router requires the configured team header plus a student bearer token and successful `requireUser` verification. No `.env.local` value needs to change for this transition.
 
 `worker-configuration.d.ts` contains Wrangler-generated runtime and binding declarations. `backend/env.ts` adds the planned Supabase configuration and optional `DB`/`CHAT_IMAGES` bindings. Conversation code must reject missing storage bindings before querying or claiming a save. The optional types support the existing stateless handler and local mock; they do not provision an image bucket. Run `npm run types:worker` from `gen-chem-mc` after changing Wrangler bindings or compatibility settings, and commit the regenerated declarations with the configuration change. No runtime package was added by the foundation.
+
+### Chat feature handoff, November 27, 2026
+
+The chat branch supplies the saved-chat UI, validated API client, owned repository/routes, inference orchestration, R2 usage reservations, and scheduled cleanup. Login-team code still supplies the real AuthProvider and requireUser. Mounting AuthProvider makes Coach use the saved-chat screen for an authenticated user. The default Worker remains closed to saved-data requests until the real verifier and handleConversations are composed. Preserve the existing AuthContext/User contracts.
+
+The coordinated create-request change is `{ id, firstTurn }`, returning `{ conversation, turn }`: the first turn contains the existing SendTurnRequest. This replaces ID-only allocation so a blank New chat never creates a database record, and the first submitted message is committed with its conversation atomically. Both the browser client and routes use this shape. Completed responses use 200; pending replays use 202. Use the current shared types rather than copying the foundation's earlier ID-only example.
+
+Confirmed chat decisions: Gemma generates the title with a safe fallback; discard drafts without confirmation on switching; keep an in-flight response in its original conversation; retain failed turns with stable Retry IDs; expire fourteen days after the last saved message. No rename/manual deletion or durable draft recovery is added in this increment. The application image counters are conservative cumulative limits without an automatic billing-period reset; see the design and database setup before enabling hosted images.
+
+The independent hardening checks are complete: database-failure recovery, local initialization/draft preservation, title-write failures, unconfirmed-save labeling, image read failures, queued deletion safety, and local Worker restart persistence. `npm run dev:chat:test` starts a repeatable local UI + Worker + D1 + R2 fixture with two fabricated accounts and canned replies, without Cloudflare login or production configuration. The private Standard bucket is created and public access is verified disabled; hosted image operations remain off. Remaining integration is the login team's real provider/verifier and admission policy, followed by reviewed remote migrations/enablement and hosted two-account/cleanup tests.
 
 ## 1. Agree on the behavior before feature implementation
 
@@ -39,9 +49,9 @@ The team still needs to answer the following questions in the use cases. Both ag
 
 - Which email addresses can register, and which sign-in method ships first? Is email verification required, and does password reset ship in this increment?
 - Earlier discussions required a baseline assessment before general app access. Does this increment temporarily admit students to Coach, or include that gate? Record any changed decision and its impact.
-- Chats and images expire fourteen days after the last saved message. Do rename, manual deletion, and unsent draft recovery belong in the first release?
-- What happens when a student selects New chat, changes conversations, or signs out during generation? Agree on cancellation and any unfinished-turn recovery.
-- A conversation is saved when its first message is submitted. What title is shown?
+- Chats and images expire fourteen days after the last saved message. Rename, manual deletion, and durable draft recovery remain outside this increment.
+- New chat and chat switching discard unsent drafts and allow the original response to finish. Sign-out/account changes clear private UI state and abort browser requests; interrupted server attempts remain recoverable.
+- A conversation is saved on first submission. Gemma generates a short title after its first successful response; failures leave "New chat".
 
 Victor confirmed that a submitted user message is saved before model completion and remains retryable with a failed status if Gemma fails. Student chats remain private. The previously agreed instructor view covers approved metrics and pseudonyms, with chat content excluded from instructor access.
 
@@ -252,7 +262,7 @@ The core DTOs are `ConversationSummary`, `SavedMessage`, `SavedAttachment`, `Con
 | `SavedMessage` | `id`, `conversationId`, `turnId`, `role` (`user` or `assistant`), `content`, `createdAt`, `turnStatus` (`pending`, `completed`, or `failed`), optional `turnError: { code, message }`, optional `attachment`. |
 | `ConversationPage` | `conversations: ConversationSummary[]`, `nextCursor: string \| null`. |
 | `MessagePage` | `messages: SavedMessage[]`, `nextCursor: string \| null`. |
-| `CreateConversationRequest` | `id: string`, allocated once by the client and retained when retrying creation. |
+| `CreateConversationRequest` | `id: string`, allocated once by the client, and `firstTurn: SendTurnRequest`; retain both through recovery/retry. |
 | `SendTurnRequest` | `clientTurnId: string`, `content: string`, optional `image` using the existing `ImageAttachment` type. |
 | `TurnResult` | `turnId`, `status` (`pending`, `completed`, or `failed`), `messages: SavedMessage[]`, optional `error: { code, message }`. |
 
@@ -265,13 +275,13 @@ Populate each saved message's turn state from the associated turn record when re
 | Endpoint | Contract |
 |---|---|
 | `GET /api/conversations?cursor=...` | Return `ConversationPage` for the verified owner. |
-| `POST /api/conversations` | Accept `CreateConversationRequest`. Return `{ conversation: ConversationSummary }`, status 201 on creation or 200 on replay of the same owned ID. Creation is safe to retry. |
+| `POST /api/conversations` | Accept `CreateConversationRequest` including `firstTurn`. Atomically create the conversation with its submitted user turn. Return `{ conversation: ConversationSummary, turn: TurnResult }`, status 200 on completion or 202 on a pending replay. Same input/IDs are safe to retry. |
 | `GET /api/conversations/:id/messages?cursor=...` | Return `MessagePage` after checking ownership. |
 | `POST /api/conversations/:id/turns` | Accept `SendTurnRequest`. Persist the user turn and request a Gemma reply. Return completed `TurnResult` with 200, or pending `TurnResult` with 202 for a replay still running. On failure use the shared error envelope and retain the turn's safe status for recovery. |
 | `GET /api/conversations/:id/turns/:turnId` | Return the stored `TurnResult`, including its failure status, for recovery after a lost response. |
 | `GET /api/conversations/:id/attachments/:attachmentId` | Return private image bytes after verifying the conversation owner and attachment relationship. Use the stored MIME type, `nosniff`, and private no-store caching. |
 
-The application stores the conversation's title chosen by the approved New chat use case. Freeze that title behavior before implementation. Only create a record at the trigger agreed in that use case. Retain the allocated conversation ID through network retries. Conversation creation never accepts an owner from the client.
+The application obtains a short Gemma title after the first accepted reply, retaining "New chat" when title generation fails. Only create a record on first submission. Retain the allocated conversation and turn IDs through network retries. Conversation creation never accepts an owner from the client.
 
 All conversation reads and mutations check ownership through the verified user. A direct-ID request for another student's record returns the same 404 shape as a missing record. Resolve attachments through their owned conversation. Server code loads the stored history and applies `recentConversation` and existing limits before calling Gemma. Model context limits constrain inference independently of how much history is retained for display.
 
